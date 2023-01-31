@@ -1,0 +1,29 @@
+---
+title: "Splicing Script for JUM analysis"
+output: html_document
+date: "2022-10-04"
+---
+
+#SIXTH
+
+# Path to folder where JUM files are:
+```{r}
+setwd("")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+#For i vs j in singletypesprac (8 x 8){
+ #For j in singletypesprac{
+ 
+     #setwd("D:/Zach Wolfe's JUM analysis/.../FINAL_OUTPUT...")
+     #names <- c('i;j', i, j)
+     #read.csv("A3S... .csv")... etc.
+     #rownames()
+     #nrow()

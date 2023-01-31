@@ -1,0 +1,89 @@
+---
+title: "8 x 8 neuron type comparison heatmaps"
+output: html_document
+date: "2022-08-02"
+---
+
+
+```{r}
+eightbydata <- read.table("Barrett_et_al_2022_CeNGEN_8_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
+condition8 = read.table("experimental_conditions8.csv", header = TRUE, sep=",", row.names=1)
+dds8 <- DESeqDataSetFromMatrix(countData = eightbydata, colData = condition8, design= ~ type)
+dds8 <- DESeq(dds8)
+resultsNames(dds8)
+
+dds8 <- estimateSizeFactors(dds8)
+sizeFactors(dds8)
+normalized_counts8 <- counts(dds8, normalized=TRUE)
+normalized_countsdata8 <- write.table(normalized_counts8, file="data/normalized_counts.txt", sep="\t", quote=F, col.names = NA) # Use for UMAP later
+```
+
+```{r}
+vsd8 <- vst(dds8, blind=FALSE)
+sampleDists8 <- dist(t(assay(vsd8)))
+```
+
+```{r}
+select <- order(rowMeans(counts(dds8,normalized=TRUE)),
+                decreasing=TRUE)[1:25]
+
+df <- as.data.frame(colData(dds8)[,c("condition","type")])
+pheatmap(assay(vsd8)[select,], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df, fontsize = 7.5)
+```
+
+
+```{r}
+sampleDistMatrix <- as.matrix(sampleDists8)
+rownames(sampleDistMatrix) <- paste(vsd8$type, sep=":")
+colnames(sampleDistMatrix) <- paste(vsd8$type, sep=":")
+colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(250)
+pheatmap(sampleDistMatrix, # Change rows and columns for clearer view
+         clustering_distance_rows=sampleDists8,
+         clustering_distance_cols=sampleDists8,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize = 7)
+```
+
+```{r}
+singletypes8 <- c("ASG","AVE","AVG","AWA","AWB","DD","PVD","VD")
+```
+
+```{r}
+new_results8 <- matrix(nrow = 8, ncol = 8, dimnames = list(singletypes8,singletypes8))
+new_results8[is.na(new_results8)] <- 0
+
+for(i in singletypes8){
+  for(j in singletypes8){
+    if(i != j){
+  contrast = c("type",i, j)
+res <- results(dds8, contrast = contrast)
+
+res <- res[order(res$padj),]
+sum <- summary(res)
+
+new_results8[i,j] <- print(length(which(abs(res$log2FoldChange)>2 & res$padj < .05))) # Change values if desired
+    }
+    if(i == j) next
+    
+    }
+  }
+```
+
+```{r}
+colors <- colorRampPalette(brewer.pal(6, "Reds"))(300)
+pheatmap(new_results8,
+         cluster_rows = F,
+         cluster_cols = F,
+         legend = F,
+         fontsize_col = 12,
+         fontsize_row = 12,
+         col=colors,
+         display_numbers = T, 
+         number_format = "%.0f",
+         number_color = "black",
+         fontsize_number = 15)
+```
+```
+

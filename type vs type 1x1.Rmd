@@ -1,0 +1,175 @@
+---
+title: "type vs type 1x1"
+output: html_document
+date: "2022-07-19"
+---
+
+#SECOND
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(stringr)
+library(magrittr)
+library(dplyr)
+library(pheatmap)
+library(DESeq2)
+library(RColorBrewer)
+```
+
+# Loop this:
+```{r}
+# By type, ADL vs ASG:
+
+contrast <- c("type","ADL","ASG")
+res <- results(dds, contrast = contrast)
+
+res <- res[order(res$padj),]
+sum <- summary(res)
+
+sumwrite <- write.csv(sum, file="ADLvsASGsummary.csv") #No data in excel file. See sink() below
+reswrite <- write.csv(res, file="ADLvsASG.csv")
+
+sumsink <- sink("sumADL_ASG.txt")
+resprint <- print(summary(res))
+sink()
+```
+
+```{r}
+singletypes <- c("ADL","AFD","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","AVA","AVE","AVG","AVH","AVK","AVM","AWA","AWB","AWC","BAG","CAN","DA","DD","I5","IL1","IL2","NSM","OLL","OLQ","PHA","PVC","PVD","PVM","RIA","RIC","RIM","RIS","RMD","SMD","VB","VC","VD")
+```
+
+```{r}
+singlereps <- c("ADLr171",	"ADLr172",	"ADLr173",	"ADLr174",	"AFDr35",	"AFDr36",	"AFDr37",	"AFDr38",	"AFDr39",	"AINr184",	"AINr185",	"AINr186",	"AINr187",	"AINr188",	"AINr189",	"AIYr65",	"AIYr66",	"AIYr67",	"ASELr149",	"ASELr150",	"ASELr151",	"ASERr144",	"ASERr145",	"ASERr146",	"ASERr147",	"ASGr13",	"ASGr14",	"ASGr15",	"ASGr16",	"ASIr152",	"ASIr153",	"ASIr154",	"ASIr155",	"ASKr46",	"ASKr47",	"ASKr48",	"ASKr49",	"AVAr21",	"AVAr22",	"AVAr23",	"AVAr24",	"AVAr25",	"AVAr26",	"AVEr40",	"AVEr41",	"AVEr42",	"AVGr43",	"AVGr44",	"AVGr45",	"AVHr175",	"AVHr176",	"AVHr177",	"AVHr178",	"AVKr109",	"AVKr110",	"AVKr111",	"AVKr112",	"AVMr226",	"AVMr227",	"AVMr228",	"AWAr17",	"AWAr18",	"AWAr19",	"AWAr20",	"AWBr50",	"AWBr51",	"AWBr52",	"AWBr53",	"AWBr54",	"AWCr156",	"AWCr157",	"AWCr158",	"AWCr159",	"BAGr118",	"BAGr119",	"BAGr120",	"BAGr121",	"CANr104",	"CANr91",	"CANr93",	"DAr87",	"DAr88",	"DAr89",	"DAr90",	"DDr83",	"DDr84",	"DDr85",	"DDr86",	"I5r208",	"I5r209",	"I5r210",	"I5r211",	"IL1r105",	"IL1r106",	"IL1r108",	"IL2r94",	"IL2r95",	"IL2r96",	"IL2r97",	"NSMr59",	"NSMr68",	"NSMr69",	"OLLr212",	"OLLr213",	"OLQr219",	"OLQr220",	"OLQr221",	"PHAr204",	"PHAr205",	"PHAr206",	"PHAr207",	"PVCr214",	"PVCr215",	"PVCr216",	"PVCr217",	"PVCr218",	"PVDr62",	"PVDr63",	"PVMr123",	"PVMr126",	"RIAr71",	"RIAr72",	"RIAr73",	"RIAr74",	"RIAr75",	"RIAr76",	"RICr134",	"RICr135",	"RICr136",	"RICr137",	"RIMr222",	"RIMr223",	"RIMr224",	"RIMr225",	"RISr129",	"RISr131",	"RISr132",	"RMDr179",	"RMDr180",	"RMDr181",	"RMDr182",	"RMDr183",	"SMDr200",	"SMDr201",	"SMDr202",	"SMDr203",	"VBr31",	"VBr32",	"VBr33",	"VBr34",	"VCr138",	"VCr139",	"VCr140",	"VCr141",	"VCr142",	"VCr143",	"VDr77",	"VDr78",	"VDr79",	"VDr81")
+```
+
+
+```{r}
+for(i in singletypes){
+  contrast = c("type","ADL", i)
+  print(contrast)
+}
+```
+
+# This took me ~24 hours to run, nearly 3,300 files in total. Use an external hard drive and make sure to keep your compurter on and connected.
+```{r}
+setwd("D:/Zach Wolfe's DESeq analysis") # setwd() change to external hard drive
+
+new_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
+new_results[is.na(new_results)] <- 0
+
+for(i in singletypes){
+  for(j in singletypes){
+    if(i != j){
+  contrast = c("type",i, j)
+res <- results(dds, contrast = contrast)
+
+res <- res[order(abs(res$log2FoldChange), decreasing = TRUE),]
+sum <- summary(res)
+write.csv(res, file=paste("res", i, "vs", j, ".csv", sep=""))
+
+sink(file=paste("sum", i, "vs", j, ".txt", sep=""))
+print(summary(res))
+sink()
+
+new_results[i,j] <- print(length(which(abs(res$log2FoldChange)>2 & res$padj < .05))) # Change values if desired
+    }
+    if(i == j) next
+    
+    }
+  }
+```
+
+# write/read.csv backup:
+```{r}
+#write.csv(new_results, file = "new_results_all_41_cell_types.csv")
+#new_results <- read.csv("new_results_all_41_cell_types.csv")
+```
+
+
+# Why doesn't the following chunk work?
+# It's because you can't do rep x rep DESeq. They disabled this ability 2 versions ago. It has to be a broader type x type comparison. Otherwise, we might as well just make normal graphs and normal heatmaps with no DESeq
+```{r}
+normalized_counts_results <- matrix(nrow = 160, ncol = 160, dimnames = list(singlereps,singlereps))
+normalized_counts_results[is.na(new_results)] <- 0
+
+for(i in singlereps){
+  for(j in singlereps){
+    if(i != j){
+  contrast = c("type",i, j)
+res <- results(dds, contrast = contrast)
+
+res <- res[order(res$padj),]
+sum <- summary(res)
+
+normalized_counts_results[i,j] <- print(length(which(abs(res$log2FoldChange)>2 & res$padj < .05))) # Change values if desired
+    }
+    if(i == j) next
+    
+    }
+}
+
+write.csv(normalized_counts_results, file = "normalized_counts_results")
+```
+
+
+# Here we will make another matrix differentiating the number of significant genes between each treatment type (combined with above chunk on 7-28):
+```{r}
+# Number of genes with abs(log2foldchange) values greater than x (change at bottom of chunk)
+
+# new_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
+# new_results[is.na(new_results)] <- 0
+
+# for(i in singletypes){
+  # for(j in singletypes){
+    # if(i != j){
+  # contrast = c("type",i, j)
+# res <- results(dds, contrast = contrast)
+
+# res <- res[order(res$padj),]
+# sum <- summary(res)
+    # }
+    # if(i == j) next
+    
+  # }
+# }
+```
+
+```{r}
+pheatmap(new_results, cluster_rows=FALSE, show_rownames=TRUE,
+         cluster_cols=FALSE, fontsize = 7.5)
+
+pdf(file = "heatmap with clusters.pdf", width = 10, height = 10)
+
+colors <- colorRampPalette(brewer.pal(6, "Reds"))(300)
+pheatmap(new_results,
+         cluster_rows = F,
+         cluster_cols = F,
+         legend = F,
+         fontsize_col = 7.5,
+         fontsize_row = 7.5,
+         col=colors,
+         display_numbers = T, 
+         number_format = "%.0f",
+         number_color = "black",
+         fontsize_number = 5)
+
+dev.off()
+
+colors <- colorRampPalette(brewer.pal(6, "Reds"))(300)
+pheatmap(new_results,
+         cluster_rows = T,
+         cluster_cols = T,
+         legend = F,
+         fontsize_col = 9,
+         fontsize_row = 9,
+         col=colors,
+         display_numbers = T, 
+         number_format = "%.0f",
+         number_color = "black",
+         fontsize_number = 5)
+```
+

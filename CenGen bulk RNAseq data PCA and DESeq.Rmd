@@ -1,0 +1,272 @@
+---
+title: "CenGen bulk RNAseq Data PCA and DESeq"
+output: html_document
+date: '2022-07-13'
+---
+
+#FIRST
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#DESeq setup
+```{r}
+setwd("C:/Users/xcwol/Downloads")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+ 
+BiocManager::install("DESeq2")
+install.packages("tidyverse")
+library(DESeq2)
+library(ggplot2)
+library(stringr)
+library(dplyr)
+library(reshape2)
+library(RColorBrewer)
+library(pheatmap)
+library(tidyverse)
+library(broom)
+library(ggfortify)
+```
+
+```{r}
+save.image("C:/Users/xcwol/Downloads/.RData")
+load("C:/Users/xcwol/Downloads/.RData")
+```
+
+```{r}
+bulkData <- read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
+```
+
+```{r}
+t_PCA <- prcomp(t(bulkData[,2:161]))
+```
+
+```{r}
+# Unweighted for read depth or STDev (will do in DESeq later):
+
+print(t_PCA)
+
+plot(t_PCA$x, type = "p", cex = 1, pch = 16)
+
+title(main = "PCA Plot of Transposed Gene Data PCs 1-2")
+```
+
+```{r}
+genenames <- read.csv("genenames.csv")
+rownames(t_PCA$rotation) <- make.names(1:nrow(genenames))
+
+list(sort(t_PCA$rotation[,1], decreasing = TRUE)[1:10])
+list(sort(t_PCA$rotation[,1], decreasing = FALSE)[1:10])
+
+list(sort(t_PCA$rotation[,2], decreasing = TRUE)[1:10])
+list(sort(t_PCA$rotation[,2], decreasing = FALSE)[1:10])
+
+list(sort(t_PCA$rotation[,3], decreasing = TRUE)[1:10])
+list(sort(t_PCA$rotation[,3], decreasing = FALSE)[1:10])
+```
+
+# Old countData and metaData setup:
+```{r}
+# Neuron = read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
+# countData <- Neuron
+# str(countData)
+
+## attempt to make Neurons.clean, without gene column:
+# countData <- Neuron[,2:161]
+
+### MetaData:
+
+oldcondition = as.factor(c(rep("Sensory",9),rep("Interneuron",9),rep("Sensory",19),rep("Interneuron",20),rep("Sensory",20),rep("Unknown",3),rep("Motor",8),rep("Interneuron",4),rep("Polymodal",3),rep("Sensory",4),rep("Motor",3),rep("Sensory",2),rep("Polymodal",3),rep("Sensory",4),rep("Interneuron",5),rep("Sensory",4),rep("Interneuron",17),rep("Motor",23)))
+
+oldtype = as.factor(c(rep("ADL",4),rep("AFD",5),rep("AIN",6),rep("AIY",3),rep("ASEL",3),rep("ASER",4),rep("ASG",4),rep("ASI",4),rep("ASK",4),rep("AVA",6),rep("AVE",3),rep("AVG",3),rep("AVH",4),rep("AVK",4),rep("AVM",3),rep("AWA",4),rep("AWB",5),rep("AWC",4),rep("BAG",4),rep("CAN",3),rep("DA",4),rep("DD",4),rep("I5",4),rep("IL1",3),rep("IL2",4),rep("NSM",3),rep("OLL",2),rep("OLQ",3),rep("PHA",4),rep("PVC",5),rep("PVD",2),rep("PVM",2),rep("RIA",6),rep("RIC",4),rep("RIM",4),rep("RIS",3),rep("RMD",5),rep("SMD",4),rep("VB",4),rep("VC",6),rep("VD",4)))
+
+## We can change "type" and/or "condition" later to adjust which variable we will look at
+
+# metaData = read.csv("metadata rownames.csv") #This file  is a list of all neuron replicates
+
+# metaData = data.frame(row.names = row.names(metaData), type, condition)
+
+## ADLr171	ADLr172	ADLr173	ADLr174	AFDr35	AFDr36	AFDr37	AFDr38	AFDr39	AINr184	AINr185	AINr186	AINr187	AINr188	AINr189	AIYr65	AIYr66	AIYr67	ASELr149	ASELr150	ASELr151	ASERr144	ASERr145	ASERr146	ASERr147	ASGr13	ASGr14	ASGr15	ASGr16	ASIr152	ASIr153	ASIr154	ASIr155	ASKr46	ASKr47	ASKr48	ASKr49	AVAr21	AVAr22	AVAr23	AVAr24	AVAr25	AVAr26	AVEr40	AVEr41	AVEr42	AVGr43	AVGr44	AVGr45	AVHr175	AVHr176	AVHr177	AVHr178	AVKr109	AVKr110	AVKr111	AVKr112	AVMr226	AVMr227	AVMr228	AWAr17	AWAr18	AWAr19	AWAr20	AWBr50	AWBr51	AWBr52	AWBr53	AWBr54	AWCr156	AWCr157	AWCr158	AWCr159	BAGr118	BAGr119	BAGr120	BAGr121	CANr104	CANr91	CANr93	DAr87	DAr88	DAr89	DAr90	DDr83	DDr84	DDr85	DDr86	I5r208	I5r209	I5r210	I5r211	IL1r105	IL1r106	IL1r108	IL2r94	IL2r95	IL2r96	IL2r97	NSMr59	NSMr68	NSMr69	OLLr212	OLLr213	OLQr219	OLQr220	OLQr221	PHAr204	PHAr205	PHAr206	PHAr207	PVCr214	PVCr215	PVCr216	PVCr217	PVCr218	PVDr62	PVDr63	PVMr123	PVMr126	RIAr71	RIAr72	RIAr73	RIAr74	RIAr75	RIAr76	RICr134	RICr135	RICr136	RICr137	RIMr222	RIMr223	RIMr224	RIMr225	RISr129	RISr131	RISr132	RMDr179	RMDr180	RMDr181	RMDr182	RMDr183	SMDr200	SMDr201	SMDr202	SMDr203	VBr31	VBr32	VBr33	VBr34	VCr138	VCr139	VCr140	VCr141	VCr142	VCr143	VDr77	VDr78	VDr79	VDr81
+
+# metaData = read.csv("experimental_conditions.csv", header = TRUE, row.names = 1) # New metadata excel file
+
+# print(countData)
+
+# print(metaData)
+```
+
+```{r}
+cts <- read.table("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
+#make a condition table.csv
+condition = read.table("experimental_conditions.csv", header = TRUE, sep=",", row.names=1)
+
+dds <- DESeqDataSetFromMatrix(countData = cts, colData = condition, design= ~ type)
+dds <- DESeq(dds)
+resultsNames(dds)
+
+dds <- estimateSizeFactors(dds)
+sizeFactors(dds)
+normalized_counts <- counts(dds, normalized=TRUE)
+normalized_countsdata <- write.csv(normalized_counts, file="normalized_counts.csv", sep="\t", quote=F, col.names = NA) # Use for UMAP later
+```
+
+# Doesn't work. Parameters can't be type = rep
+```{r}
+cts <- read.table("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
+#make a condition table.csv
+condition = read.table("experimental_conditions_reps.csv", header = TRUE, sep=",", row.names=1)
+
+dds <- DESeqDataSetFromMatrix(countData = cts, colData = condition, design = ~ type)
+dds <- DESeq(dds)
+resultsNames(dds)
+
+dds <- estimateSizeFactors(dds)
+sizeFactors(dds)
+normalized_counts <- counts(dds, normalized=TRUE)
+normalized_countsdata <- write.table(normalized_counts, file="data/normalized_counts.txt", sep="\t", quote=F, col.names = NA) # Use for UMAP later
+```
+
+```{r}
+write.csv(normalized_counts, file = "normalized_counts.csv")
+```
+
+```{r}
+# Re-order results
+res <- results(dds)
+res[order(res$padj),]
+```
+
+# DESeq:
+# Step 1: DESeq
+# Step 2: results(DESeq object)
+# Step 3: contrast(s)
+# Step 4: LOOP
+# Step 5: write.csv summaries
+
+# See 'type vs type 1x1' for statistical summaries and outputs
+# Insert desired res object below:
+
+```{r}
+with(res, plot(log2FoldChange, -log10(pvalue), pch = 18, main="", xlim=c(-4,4), ylim=c(2,35)))
+
+with(subset(res, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=18, col="black"))
+with(subset(res, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=18, col="red"))
+```
+
+```{r}
+# Need to find gene names for log2foldchange values > 3
+
+with(subset(res, padj<.01 ), print(log2FoldChange))
+with(subset(res, padj<.01 ), print(res$rownames)) # rownames are NULL
+with(res, print(pvalue)) # Already re-ordered from smallest to largest (2 chunks above)
+```
+
+```{r}
+sig_res <- res[(res$padj<.05 & abs(res$log2FoldChange)>2 & !is.na(res$padj) & !is.na(row.names(res))) ,]
+write.csv(sig_res, file="sig_results")
+
+plotMA(res, ylim=c(-10,10))
+plotMA(sig_res, ylim=c(-10,10))
+```
+
+# Run this before the plot chunk to change whether we graph reps (assay(vsd) %>% t()) or genes:
+# This chunk has been obsoleted as of 8-3-22 when we chose to not perform assay() before normalized_counts
+```{r}
+# normalized_counts_assay <- assay(vsd) %>%
+  # t() # We need to transpose this data so each row is a sample
+
+# Now perform UMAP on the normalized data
+# umap_results <- umap(normalized_counts, config = custom.settings, labels=as.factor(row.names(normalized_counts)), controlscale=TRUE, scale=3)
+```
+
+# PCA plots:
+```{r}
+vsd <- vst(dds, blind=FALSE)
+
+plotPCA(vsd, intgroup="condition") 
+plotPCA(vsd, intgroup="type")
+
+normalized_counts_assay <- assay(vsd)
+```
+
+```{r}
+select <- order(rowMeans(counts(dds,normalized=TRUE)),
+                decreasing=TRUE)[1:25]
+
+df <- as.data.frame(colData(dds)[,c("condition","type")])
+pheatmap(assay(vsd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df, fontsize = 7.5)
+
+df <- as.data.frame(colData(dds)[1:40,c("condition","type")])
+pheatmap(assay(vsd)[select,1:40], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df, fontsize = 7.5)
+
+df <- as.data.frame(colData(dds)[41:80,c("condition","type")])
+pheatmap(assay(vsd)[select,41:80], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df, fontsize = 7.5)
+
+df <- as.data.frame(colData(dds)[81:120,c("condition","type")])
+pheatmap(assay(vsd)[select,81:120], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df, fontsize = 7.5)
+
+df <- as.data.frame(colData(dds)[121:160,c("condition","type")])
+pheatmap(assay(vsd)[select,121:160], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df, fontsize = 7.5)
+```
+
+```{r}
+sampleDists <- dist(t(assay(vsd)))
+```
+
+# Find a way to combine replicates here:
+```{r}
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colnames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(250)
+pheatmap(sampleDistMatrix[1:40,1:40], # Change rows and columns for clearer view
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize = 7)
+
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colnames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(250)
+pheatmap(sampleDistMatrix[41:80,41:80], # Change rows and columns for clearer view
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize = 7,
+         col=colors)
+
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colnames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(250)
+pheatmap(sampleDistMatrix[81:160,81:160], # Change rows and columns for clearer view
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize = 6,
+         col=colors)
+
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colnames(sampleDistMatrix) <- paste(vsd$type, sep=":")
+colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(250)
+pheatmap(sampleDistMatrix, # Change rows and columns for clearer view
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize = 7,
+         col=colors)
+```

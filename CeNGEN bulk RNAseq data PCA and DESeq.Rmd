@@ -1,5 +1,5 @@
 ---
-title: "CenGen bulk RNAseq Data PCA and DESeq"
+title: "CeNGEN bulk RNAseq Data PCA and DESeq"
 output: html_document
 date: '2022-07-13'
 ---

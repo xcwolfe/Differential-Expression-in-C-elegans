@@ -88,7 +88,7 @@ comparison <- print(paste(ADL, "vs", VD))
 ```
 
 # Print names of RNABPs from chart above:
-#STOP: Before you run this whole chunk, run line 121 JUST ONCE, then "#" it out. This is the easiest way to create the correctly formatted topDEgene object
+#STOP: Before you run this whole chunk, run line 116 JUST ONCE, then "#" it out. This is the easiest way to create the correctly formatted topDEgene object
 ```{r, include=FALSE}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -140,7 +140,7 @@ cutoffgenes <- as.data.frame(totaldata[which(abs(totaldata$log2FoldChange)>2 & t
 RBP_cutoff_results[is.na(RBP_cutoff_results)] <- 0
 ```
 
-# Get rid of the first row in topDEgene (created in line 119):
+# Get rid of the first row in topDEgene (created in line 116):
 ```{r}
 # topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
 ```

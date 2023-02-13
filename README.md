@@ -7,7 +7,6 @@ I have also acquired the names of 484 known C. elegans RNA-binding proteins from
 You will need to adjust the parameters in these files for the specific cell types you are interested in - I was interested in 41 C. elegans neurons, for instance, so that is how my pipeline has been constructed.
 
 Zachery Wolfe, Ph.D.
-Postdoctoral Researcher
-Southern Methodist University
+
 zwolfe@smu.edu
 

@@ -8,5 +8,9 @@ You will need to adjust the parameters in these files for the specific cell type
 
 Zachery Wolfe, Ph.D.
 
+Postdoctoral Researcher
+
+Southern Methodist University
+
 zwolfe@smu.edu
 

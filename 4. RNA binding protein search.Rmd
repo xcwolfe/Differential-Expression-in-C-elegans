@@ -56,7 +56,6 @@ print(length(which(match(RBP_list, overlap_data$V1) < 486 ))) # We know our RNAB
 ```
 
 # Then, I want to display these differential expression measures in a new table:
-# Maybe use Microsoft Access or try to do this manually
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -88,7 +87,7 @@ comparison <- print(paste(ADL, "vs", VD))
 ```
 
 # Print names of RNABPs from chart above:
-#STOP: Before you run this whole chunk, run line 116 JUST ONCE, then "#" it out. This is the easiest way to create the correctly formatted topDEgene object
+#STOP: Before you run this whole chunk, run line 115 JUST ONCE, then "#" it out. This is the easiest way to create the correctly formatted topDEgene object
 ```{r, include=FALSE}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -113,7 +112,7 @@ new_row3 <- print(paste(comparison, "#3"))
 
 totaldata <- data.frame(overlap_data[intersection,])
 totaldata <- na.omit(totaldata)
-# topDEgene <- as.data.frame(totaldata[1,], row.names = comparison, col.names = c("V1", "log2FoldChange", "padj")) # run this AFTER the line above JUST ONCE, then "#" out this row. This is how we create the correctly formatted original topDEgene object
+# topDEgene <- as.data.frame(totaldata[1,], row.names = comparison, col.names = c("V1", "log2FoldChange", "padj")) # run through this line in the chunk JUST ONCE, then "#" out this row. This is how we create the correctly formatted original topDEgene object
 topDEgene[new_row,] <- rbind(totaldata[1,], new_row)
 topDEgene[new_row2,] <- rbind(totaldata[2,], new_row2)
 topDEgene[new_row3,] <- rbind(totaldata[3,], new_row3)
@@ -140,11 +139,11 @@ cutoffgenes <- as.data.frame(totaldata[which(abs(totaldata$log2FoldChange)>2 & t
 RBP_cutoff_results[is.na(RBP_cutoff_results)] <- 0
 ```
 
-# Get rid of the first row in topDEgene (created in line 116):
+# Get rid of the first row in topDEgene (created in line 115):
 ```{r}
 # topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
 ```
-
+# Save as .csv:
 ```{r}
 write.csv(topDEgene[1641:6560,], file = "topDifferentiallyExpressedGenesbyComparison.csv")
 write.csv(RBP_cutoff_results, file = "RBP_cutoff_results.csv")
@@ -183,7 +182,6 @@ pheatmap(RBP_cutoff_results,
          main = "Number of Differentially Expressed RBPs by Cell Type (out of top 1% diff. expressed genes)")
 ```
 
-## (12-19-22) Redo this chunk by including 0-row data frames, then make a chunk below to save/reload the correct log2foldchange_per_gene:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -737,7 +735,7 @@ OLLplot <- barplot(table(OLLuniqueRBPs$V1),
 text(x = OLLplot, y = as.numeric(table(OLLuniqueRBPs$V1)), label = as.numeric(table(OLLuniqueRBPs$V1)), cex = 1, pos = 1, col = "black")
 ```
 
-# Attempt at ggplot bubble plot:
+# ggplot bubble plot:
 ```{r}
 ggplot(AINuniqueRBPs, aes(x=rev(padj), y=V1, size=log2FoldChange)) +
   geom_point(aes(col = "blue")) +

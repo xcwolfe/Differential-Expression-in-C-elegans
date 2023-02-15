@@ -1,14 +1,13 @@
 ---
 title: "Heatmap Script for JUM analysis"
 output: html_document
-date: "2022-10-04"
 ---
 
 #SIXTH
 
-##Note from Zach: You'll notice that many of these heatmap scripts are slightly varied forms of one another. This is because the .txt final output of JUM varies by splicing event - this is particularly true for columns containing deltaPSI values.
+## Note from Zach: You'll notice that many of these heatmap scripts are slightly varied forms of one another. This is because the .txt final output of JUM varies by splicing event - this is particularly true for columns containing deltaPSI values.
 
-###If running many conditions, JUM will output incorrect data for cell types that are not in alphabetical order (i.e. ASG vs AVE will output correct data, but AVE vs ASG would not). You may need to hide or move spreadsheets (or boxes in the case of heatmaps) in order to return the correct 50% of data.
+### If running many conditions, JUM will output incorrect data for cell types that are not in alphabetical order (i.e. ASG vs AVE will output correct data, but AVE vs ASG would not). You may need to hide or move spreadsheets (or boxes in the case of heatmaps) in order to return the correct 50% of data.
 
 ```{r}
 library("pheatmap")
@@ -29,7 +28,7 @@ save.image("C:/Users/xcwol/Downloads/.RData")
 load("C:/Users/xcwol/Downloads/.RData")
 ```
 
-# This is where you list your cell types/conditions:
+# List your cell types/conditions:
 ```{r}
 singletypesprac <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD")
 ```
@@ -725,7 +724,7 @@ A3S_event_ID_VD_count <- A3S_event_ID_VD_count[rev(order(A3S_event_ID_VD_count$F
 write.csv(LargeA3Sdf_VD, file = "LargeA3Sdf_VD.csv")
 write.csv(A3S_event_ID_VD_count, file = "A3S_event_ID_VD_count.csv")
 write.csv(A3S_VD_deltaPSI_sums, file = "A3S_VD_deltaPSI_sums.csv")
-# write.csv(A3S_VD_first_PSI_Sums, file = "A3S_VD_first_PSI_sums.csv")
+write.csv(A3S_VD_first_PSI_Sums, file = "A3S_VD_first_PSI_sums.csv")
 ```
 
 # A5S events:
@@ -793,7 +792,7 @@ A5S_event_ID_VD_count <- A5S_event_ID_VD_count[rev(order(A5S_event_ID_VD_count$F
 write.csv(LargeA5Sdf_VD, file = "LargeA5Sdf_VD.csv")
 write.csv(A5S_event_ID_VD_count, file = "A5S_event_ID_VD_count.csv")
 write.csv(A5S_VD_deltaPSI_sums, file = "A5S_VD_deltaPSI_sums.csv")
-# write.csv(A5S_VD_first_PSI_Sums, file = "A5S_VD_first_PSI_sums.csv")
+write.csv(A5S_VD_first_PSI_Sums, file = "A5S_VD_first_PSI_sums.csv")
 ```
 
 # Cassette exons:
@@ -861,7 +860,7 @@ cassette_event_ID_VD_count <- cassette_event_ID_VD_count[rev(order(cassette_even
 write.csv(Largecassettedf_VD, file = "Largecassettedf_VD.csv")
 write.csv(cassette_event_ID_VD_count, file = "cassette_event_ID_VD_count.csv")
 write.csv(cassette_VD_deltaPSI_sums, file = "cassette_VD_deltaPSI_sums.csv")
-# write.csv(cassette_VD_first_PSI_Sums, file = "cassette_VD_first_PSI_sums.csv")
+write.csv(cassette_VD_first_PSI_Sums, file = "cassette_VD_first_PSI_sums.csv")
 ```
 
 # Composite events: # still have to remove infs (12-12-22) <------
@@ -927,7 +926,7 @@ composite_event_ID_VD_count <- composite_event_ID_VD_count[rev(order(composite_e
 write.csv(Largecompositedf_VD, file = "Largecompositedf_VD.csv")
 write.csv(composite_event_ID_VD_count, file = "composite_event_ID_VD_count.csv")
 write.csv(composite_VD_deltaPSI_sums, file = "composite_VD_deltaPSI_sums.csv")
-# write.csv(composite_VD_first_PSI_Sums, file = "composite_VD_first_PSI_sums.csv")
+write.csv(composite_VD_first_PSI_Sums, file = "composite_VD_first_PSI_sums.csv")
 ```
 
 # Intron retention:
@@ -993,15 +992,15 @@ intron_event_ID_VD_count <- intron_event_ID_VD_count[rev(order(intron_event_ID_V
 write.csv(Largeintrondf_VD, file = "Largeintrondf_VD.csv")
 write.csv(intron_event_ID_VD_count, file = "intron_event_ID_VD_count.csv")
 write.csv(intron_VD_deltaPSI_sums, file = "intron_VD_deltaPSI_sums.csv")
-# write.csv(intron_VD_first_PSI_Sums, file = "intron_VD_first_PSI_sums.csv")
+write.csv(intron_VD_first_PSI_Sums, file = "intron_VD_first_PSI_sums.csv")
 ```
 
 # Mutually exclusive exons:
 ```{r}
 setwd("D:/Zach Wolfe's JUM analysis")
 
-# The following loop is to ensure we don't parse through .csv files with 0 data/AS events in them. R does not know how to combine an empty .csv with a normally populated .csv.
-# If you get the error message "Error: Can't combine `..1` <character> and `..2` <logical>" you may need to run this loop:
+## The following loop is to ensure we don't parse through .csv files with 0 data/AS events in them. R does not know how to combine an empty .csv with a normally populated .csv.
+## If you get the error message "Error: Can't combine `..1` <character> and `..2` <logical>" you may need to run this loop:
 
 for (i in singletypesprac){
     if (i != "VD"){                     # change cell type here
@@ -1082,10 +1081,10 @@ MXE_event_ID_VD_count <- MXE_event_ID_VD_count[rev(order(MXE_event_ID_VD_count$F
 write.csv(LargeMXEdf_VD, file = "LargeMXEdf_VD.csv")
 write.csv(MXE_event_ID_VD_count, file = "MXE_event_ID_VD_count.csv")
 write.csv(MXE_VD_deltaPSI_sums, file = "MXE_VD_deltaPSI_sums.csv")
-# write.csv(MXE_VD_first_PSI_Sums, file = "MXE_VD_first_PSI_sums.csv")
+write.csv(MXE_VD_first_PSI_Sums, file = "MXE_VD_first_PSI_sums.csv")
 ```
 
-# Plots for AS events: <---- still have to save these as pdfs
+# Plots for AS events:
 ```{r}
 ggplot(data = A3S_event_ID_ASG_count, aes(x = A3S_event_ID, y = Freq)) +
   geom_point(size = 2) +
@@ -1164,7 +1163,7 @@ MXE_events_dataframe$Freq <- MXE_events_dataframe$Freq/2
 MXE_events_dataframe <- MXE_events_dataframe[rev(order(MXE_events_dataframe$Freq)),]
 ```
 
-# Graphs of A.S. events in all comparisons:
+# Plots of A.S. events in all comparisons:
 ```{r}
 ggplot(data = A3S_events_dataframe, aes(x = Freq, y = A3S_event_ID, fill = A3S_event_ID)) +
   geom_bar(stat = "identity", color = "black") +

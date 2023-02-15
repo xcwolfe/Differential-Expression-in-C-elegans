@@ -14,6 +14,7 @@ Make a folder to put all your fastq files in:
 Now we need to import our SRA toolkit:
 
 `export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"`
+
 `module load sratoolkit`
 
 Setup the parameters for the cluster computer:
@@ -30,6 +31,7 @@ Setup the parameters for the cluster computer:
     ii. Save and exit
     
 `fastq-dump -I --split-files SRRXXXXXX SRRXXXXXX SRRXXXXXX…`
+
 `du -sh * `
 
   a. This is to verify that all file sizes are correct. Some may download incorrectly or partially due to timeouts on HPC.
@@ -37,14 +39,19 @@ Setup the parameters for the cluster computer:
 Go to the directory that includes your genome and initialize STAR:
       
 `dos2unix initialize_star.txt`
+
 `sbatch initialize_star.txt`
 
 Now, let's actually run STAR on each file/cell type:
 
 `export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"`
+
 `module load star`
+
 `mkdir XXX`
+
 `mkdir rep1 rep2 rep3`
+
 `cp /scratch/group/norrislab/Zach/run_STAR_chimeras`
 
   a. Add parameters --chimOutType Junctions SeparateSAMold
@@ -52,7 +59,9 @@ Now, let's actually run STAR on each file/cell type:
   b. Make sure to change this file every time to reflect the names of the neuron type (ASG, etc.)
       
 `cd rep1/`
+
 `cp /work/users/zwolfe/srrfiles/SRRXXXXXXXX*.fastq`
+
 `mv SRR13995310_1.fastq XXX_SRR13995310_1.fastq`
 
   a. XXX = neuron type
@@ -104,6 +113,7 @@ Create experimental_design.txt:
 `treat3 treatment`
 
 Load r module:
+
 `module load rstudio`
 
 `Rscript /scratch/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experimental_design.txt >outputFile.Rout 2> errorFile.Rout`

@@ -1,20 +1,20 @@
 # This pipeline illustrates how to run JUM using a large cluster computer (with hopefully lots of memory). We will be utilizing Unix (C language) and later R to analyze our JUM data
 
-# Navigate to your working directory:
+Navigate to your working directory:
 
 `cd /work/users/zwolfe`
 
-# Make a folder to put all your fastq files in:
+Make a folder to put all your fastq files in:
 
 `mkdir srrfiles`
 `cd srrfiles/`
 
-# Now we need to import our SRA toolkit:
+Now we need to import our SRA toolkit:
 
 `export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"`
 `module load sratoolkit`
 
-# Setup the parameters for the cluster computer:
+Setup the parameters for the cluster computer:
 
 `vdb-config –interactive`
 
@@ -32,12 +32,12 @@
 
   a. This is to verify that all file sizes are correct. Some may download incorrectly or partially due to timeouts on HPC.
       
- # Go to the directory that includes your genome and initialize STAR:
+Go to the directory that includes your genome and initialize STAR:
       
 `dos2unix initialize_star.txt`
 `sbatch initialize_star.txt`
 
-# Now, let's actually run STAR on each file/cell type:
+Now, let's actually run STAR on each file/cell type:
 
 `export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"`
 `module load star`
@@ -57,7 +57,7 @@
   
 `sbatch ../run_STAR_chimeras` (once you are in the rep/ folder)
 
- # Run samtools:
+Run samtools:
      
 `cd /work/users/zwolfe/srrfiles/XXX/rep1`
 
@@ -66,16 +66,16 @@
 `dos2unix run_samtools.txt`
 `sbatch run_samtools.txt in each folder`
 
-# RENAME Aligned.out.sam, Aligned.out_sorted.bam  , and SJ.out.tab files:
+RENAME Aligned.out.sam, Aligned.out_sorted.bam  , and SJ.out.tab files:
 
   a. ASG1Aligned.out.sam
   
-# Put these renamed files, ALONG WITH all JUM and experimental_design files, in their own JUM_analysis folder 
+Put these renamed files, ALONG WITH all JUM and experimental_design files, in their own JUM_analysis folder 
 
   a. JUM_analysis_ASGvsAVE
   
 
-# Change run_JUM_A to reflect appropriate neuron type:
+Change run_JUM_A to reflect appropriate neuron type:
   a.	fust1-1 to ASG1, N2-1 to AVE1, etc.
     i.	Make sure reps are separated by a comma and do not contain spaces.
   b.	repeat for EVERY comparison
@@ -84,7 +84,14 @@
 `sbatch run_JUM_A.txt`
 `cd /JUM_diff`
 
-# Create experimental_design.txt:
+Create experimental_design.txt:
+`  condition
+ctrl1 control
+ctrl2 control
+ctrl3 control
+treat1 treatment
+treat2 treatment
+treat3 treatment`
 
 
 `module load rstudio`
@@ -92,7 +99,7 @@
 
   a.	Make sure the R script outputs a file called AS_differential.txt
   
-# Change run_JUM_B to reflect appropriate neuron type:
+Change run_JUM_B to reflect appropriate neuron type:
 
   a. fust1-1 to ASG1, N2-1 to AVE1, etc.
   b. -- TotalFileNum to 7 instead of 6
@@ -104,11 +111,11 @@
 `dos2unix run_JUM_B.txt`
 `sbatch run_JUM_B.txt`
 
-# Download and moved refFlat.txt and run_JUM_C.txt to FINAL_OUTPUT_pvalue_1 directory 
+Download and moved refFlat.txt and run_JUM_C.txt to FINAL_OUTPUT_pvalue_1 directory 
 
 `cd FINAL_OUTPUT_pvalue_1`
 
-# Change run_JUM_C to reflect appropriate neuron type:
+Change run_JUM_C to reflect appropriate neuron type:
 
   a. fust1-1 to ASG1, N2-1 to AVE1, etc.
   b. -- TotalFileNum to 7 instead of 6
@@ -121,16 +128,16 @@
 
   a. This is where the detailed and simplified summaries of each AS event are
   
-# When complete with the previous step, it is wise to save and export this unique FINAL_JUM_OUTPUT folder because it will be replaced when you run JUM through again.
-# I have simplified this process by generating the necessary .txt files in R. See JUM file automation.Rmd
+When complete with the previous step, it is wise to save and export this unique FINAL_JUM_OUTPUT folder because it will be replaced when you run JUM through again.
+I have simplified this process by generating the necessary .txt files in R. See JUM file automation.Rmd
 
   a. I put the entire output (all .txt files) in each of the following folders for smooth runs: Jum_analysis, JUM_diff, temp_JUM_C_run
 
 
-# Download JUM results from the cluster:
+Download JUM results from the cluster:
 
   a. WinSCP to D:/Zach Wolfe’s JUM analysis
   b. Make a NEW DIRECTORY for each JUM comparison. For example: D:\Zach Wolfe's JUM analysis\FINAL_JUM_OUTPUT_pvalue_1ASGvsAVE
 
-# Open the downloaded results in R/Rstudio. See “Heatmap Script for JUM analysis.Rmd”
+Open the downloaded results in R/Rstudio. See “Heatmap Script for JUM analysis.Rmd”
 

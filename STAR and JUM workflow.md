@@ -1,5 +1,5 @@
-# JUM workflow
-This pipeline illustrates how to run JUM using a large cluster computer (with hopefully lots of memory). We will be utilizing Unix (C language) and later R to analyze our JUM data
+# STAR and JUM workflow
+This pipeline illustrates how to run STAR and JUM using a large cluster computer (with hopefully lots of memory). We will be utilizing Unix (C language) and later R to analyze our JUM data
 
 Navigate to your working directory:
 

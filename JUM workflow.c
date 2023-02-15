@@ -133,5 +133,3 @@
 
 #	Open the downloaded results in R/Rstudio. See “Heatmap Script for JUM analysis.Rmds”
 
-
-

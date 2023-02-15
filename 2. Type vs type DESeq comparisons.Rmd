@@ -1,7 +1,6 @@
 ---
 title: "type vs type 1x1"
 output: html_document
-date: "2022-07-19"
 ---
 
 #SECOND
@@ -20,7 +19,7 @@ library(DESeq2)
 library(RColorBrewer)
 ```
 
-# Loop this:
+# In this script, we will be looping a data frame that looks something like the following:
 ```{r}
 # By type, ADL vs ASG:
 
@@ -38,23 +37,20 @@ resprint <- print(summary(res))
 sink()
 ```
 
+## Basically, we need to take our DESeq results for all cell types and compare them against one another, then print the number of differentially expressed genes for each cell x cell comparison.
+
+# Start by saving your cell types below:
 ```{r}
 singletypes <- c("ADL","AFD","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","AVA","AVE","AVG","AVH","AVK","AVM","AWA","AWB","AWC","BAG","CAN","DA","DD","I5","IL1","IL2","NSM","OLL","OLQ","PHA","PVC","PVD","PVM","RIA","RIC","RIM","RIS","RMD","SMD","VB","VC","VD")
 ```
 
+# Now load the individual replicates, i.e. the cell types followed by their respective replicate number:
 ```{r}
 singlereps <- c("ADLr171",	"ADLr172",	"ADLr173",	"ADLr174",	"AFDr35",	"AFDr36",	"AFDr37",	"AFDr38",	"AFDr39",	"AINr184",	"AINr185",	"AINr186",	"AINr187",	"AINr188",	"AINr189",	"AIYr65",	"AIYr66",	"AIYr67",	"ASELr149",	"ASELr150",	"ASELr151",	"ASERr144",	"ASERr145",	"ASERr146",	"ASERr147",	"ASGr13",	"ASGr14",	"ASGr15",	"ASGr16",	"ASIr152",	"ASIr153",	"ASIr154",	"ASIr155",	"ASKr46",	"ASKr47",	"ASKr48",	"ASKr49",	"AVAr21",	"AVAr22",	"AVAr23",	"AVAr24",	"AVAr25",	"AVAr26",	"AVEr40",	"AVEr41",	"AVEr42",	"AVGr43",	"AVGr44",	"AVGr45",	"AVHr175",	"AVHr176",	"AVHr177",	"AVHr178",	"AVKr109",	"AVKr110",	"AVKr111",	"AVKr112",	"AVMr226",	"AVMr227",	"AVMr228",	"AWAr17",	"AWAr18",	"AWAr19",	"AWAr20",	"AWBr50",	"AWBr51",	"AWBr52",	"AWBr53",	"AWBr54",	"AWCr156",	"AWCr157",	"AWCr158",	"AWCr159",	"BAGr118",	"BAGr119",	"BAGr120",	"BAGr121",	"CANr104",	"CANr91",	"CANr93",	"DAr87",	"DAr88",	"DAr89",	"DAr90",	"DDr83",	"DDr84",	"DDr85",	"DDr86",	"I5r208",	"I5r209",	"I5r210",	"I5r211",	"IL1r105",	"IL1r106",	"IL1r108",	"IL2r94",	"IL2r95",	"IL2r96",	"IL2r97",	"NSMr59",	"NSMr68",	"NSMr69",	"OLLr212",	"OLLr213",	"OLQr219",	"OLQr220",	"OLQr221",	"PHAr204",	"PHAr205",	"PHAr206",	"PHAr207",	"PVCr214",	"PVCr215",	"PVCr216",	"PVCr217",	"PVCr218",	"PVDr62",	"PVDr63",	"PVMr123",	"PVMr126",	"RIAr71",	"RIAr72",	"RIAr73",	"RIAr74",	"RIAr75",	"RIAr76",	"RICr134",	"RICr135",	"RICr136",	"RICr137",	"RIMr222",	"RIMr223",	"RIMr224",	"RIMr225",	"RISr129",	"RISr131",	"RISr132",	"RMDr179",	"RMDr180",	"RMDr181",	"RMDr182",	"RMDr183",	"SMDr200",	"SMDr201",	"SMDr202",	"SMDr203",	"VBr31",	"VBr32",	"VBr33",	"VBr34",	"VCr138",	"VCr139",	"VCr140",	"VCr141",	"VCr142",	"VCr143",	"VDr77",	"VDr78",	"VDr79",	"VDr81")
 ```
 
-
-```{r}
-for(i in singletypes){
-  contrast = c("type","ADL", i)
-  print(contrast)
-}
-```
-
-# This took me ~24 hours to run, nearly 3,300 files in total. Use an external hard drive and make sure to keep your compurter on and connected.
+# Loop through all the DESeq data:
+## This took me ~24 hours to run, nearly 3,300 files in total. Use an external hard drive and make sure to keep your compurter on and connected.
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis") # setwd() change to external hard drive
 

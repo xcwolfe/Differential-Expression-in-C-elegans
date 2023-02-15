@@ -89,15 +89,21 @@ Change run_JUM_A to reflect appropriate neuron type:
 `cd /JUM_diff`
 
 Create experimental_design.txt:
-`  condition
-ctrl1 control
-ctrl2 control
-ctrl3 control
-treat1 treatment
-treat2 treatment
-treat3 treatment`
+`  condition`
 
+`ctrl1 control`
 
+`ctrl2 control`
+
+`ctrl3 control`
+
+`treat1 treatment`
+
+`treat2 treatment`
+
+`treat3 treatment`
+
+Load r module:
 `module load rstudio`
 
 `Rscript /scratch/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experimental_design.txt >outputFile.Rout 2> errorFile.Rout`

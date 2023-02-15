@@ -66,7 +66,7 @@
 `dos2unix run_samtools.txt`
 `sbatch run_samtools.txt in each folder`
 
-# RENAME (in WinSCP) Aligned.out.sam, Aligned.out_sorted.bam  , and SJ.out.tab files:
+# RENAME Aligned.out.sam, Aligned.out_sorted.bam  , and SJ.out.tab files:
 
   a.	ASG1Aligned.out.sam
   
@@ -121,15 +121,15 @@
   a.	This is where the detailed and simplified summaries of each AS event are
   
 # When complete with the previous step, it is wise to save and export this unique FINAL_JUM_OUTPUT folder because it will be replaced when you run JUM through again.
-#	I have simplified this process by generating the necessary .txt files in R. See JUM file automation.Rmd
+# I have simplified this process by generating the necessary .txt files in R. See JUM file automation.Rmd
 
   a.	I put the entire output (all .txt files) in each of the following folders for smooth runs: Jum_analysis, JUM_diff, temp_JUM_C_run
 
 
-#	Download JUM results from the cluster:
+# Download JUM results from the cluster:
 
   a.	WinSCP to D:/Zach Wolfe’s JUM analysis
   b.	Make a NEW DIRECTORY for each JUM comparison. For example: D:\Zach Wolfe's JUM analysis\FINAL_JUM_OUTPUT_pvalue_1ASGvsAVE
 
-#	Open the downloaded results in R/Rstudio. See “Heatmap Script for JUM analysis.Rmds”
+# Open the downloaded results in R/Rstudio. See “Heatmap Script for JUM analysis.Rmds”
 

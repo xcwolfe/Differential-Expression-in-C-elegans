@@ -90,33 +90,7 @@ new_results[i,j] <- print(length(which(abs(res$log2FoldChange)>2 & res$padj < .0
 ```
 
 
-# Why doesn't the following chunk work?
-# It's because you can't do rep x rep DESeq. They disabled this ability 2 versions ago. It has to be a broader type x type comparison. Otherwise, we might as well just make normal graphs and normal heatmaps with no DESeq
-```{r}
-normalized_counts_results <- matrix(nrow = 160, ncol = 160, dimnames = list(singlereps,singlereps))
-normalized_counts_results[is.na(new_results)] <- 0
-
-for(i in singlereps){
-  for(j in singlereps){
-    if(i != j){
-  contrast = c("type",i, j)
-res <- results(dds, contrast = contrast)
-
-res <- res[order(res$padj),]
-sum <- summary(res)
-
-normalized_counts_results[i,j] <- print(length(which(abs(res$log2FoldChange)>2 & res$padj < .05))) # Change values if desired
-    }
-    if(i == j) next
-    
-    }
-}
-
-write.csv(normalized_counts_results, file = "normalized_counts_results")
-```
-
-
-# Here we will make another matrix differentiating the number of significant genes between each treatment type (combined with above chunk on 7-28):
+# Here we will make another matrix differentiating the number of significant genes between each treatment type:
 ```{r}
 # Number of genes with abs(log2foldchange) values greater than x (change at bottom of chunk)
 
@@ -138,6 +112,7 @@ write.csv(normalized_counts_results, file = "normalized_counts_results")
 # }
 ```
 
+# Heatmap plots:
 ```{r}
 pheatmap(new_results, cluster_rows=FALSE, show_rownames=TRUE,
          cluster_cols=FALSE, fontsize = 7.5)

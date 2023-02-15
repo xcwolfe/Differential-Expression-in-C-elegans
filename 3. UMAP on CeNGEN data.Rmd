@@ -1,7 +1,6 @@
 ---
 title: "UMAP on CeNGEN data"
 output: html_document
-date: "2022-07-28"
 ---
 
 #THIRD
@@ -15,16 +14,19 @@ if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("M3C")
+
+library(umap)
+library(tidyverse)
 ```
+
+## UMAP, or Uniform Manifold Approximation and Projection, is a machine learning method by which we can generate visuals which may (or may not) predict the likelihood of a gene being upregulated, downregulated, or more related to another gene of interest. There are important rules and limitations to using this approach; tips can be found in McInnes, L, Healy, J, UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction, ArXiv e-prints 1802.03426, 2018
+
+## https://umap-learn.readthedocs.io/en/latest/
+
 
 ```{r}
 new_results <- read.csv(file = "log2foldchange_2_p-value_05.csv", header = T, row.names = 1)
 results.labels <- row.names(new_results)
-```
-
-```{r}
-library(umap)
-library(tidyverse)
 ```
 
 ```{r}
@@ -114,18 +116,6 @@ if (!dir.exists(results_dir)) {
 ```
 
 
-# Why doesn't this work?
-# It's because normalized_counts is just the counts data. In order to get this dataframe, we NEED a DESeq dataset, not just counts data. Unfortunately, you can't do a rep x rep DESeq, they disabled this ability 2 versions ago.
-# Maybe try to do type x type DESeq, but ensure that normalized counts are somehow integrated?
-```{r}
-normalized_counts <- assay(vsd) %>%
-  t() # We need to transpose this data so each row is a sample
-
-# Now perform UMAP on the normalized data
-umap_results <- umap(normalized_counts, config = custom.settings, labels=as.factor(row.names(normalized_counts)), controlscale=TRUE, scale=3)
-```
-
-
 ```{r}
 # Make into data frame for plotting with `ggplot2`
 # The UMAP values for plotting are stored in the `layout` element
@@ -180,8 +170,8 @@ final_annotated_umap_plot <- ggplot(
 final_annotated_umap_plot
 ```
 
-# UMAP notes:
+## UMAP notes:
 
-# The coordinates of UMAP output for any given cell can change dramatically depending on parameters, and even run to run with the same parameters (Why setting the seed is important). This means that you should not rely too heavily on the exact values of UMAP’s output.
+## The coordinates of UMAP output for any given cell can change dramatically depending on parameters, and even run to run with the same parameters (Why setting the seed is important). This means that you should not rely too heavily on the exact values of UMAP’s output.
 
-# One particular limitation of UMAP is that while observed clusters have some meaning, the distance and density between clusters usually does not. The fact that two clusters are near each other should NOT be interpreted to mean that they are more related to each other than to more distant clusters.
+## One particular limitation of UMAP is that while observed clusters have some meaning, the distance and density between clusters usually does not. The fact that two clusters are near each other should NOT be interpreted to mean that they are more related to each other than to more distant clusters.

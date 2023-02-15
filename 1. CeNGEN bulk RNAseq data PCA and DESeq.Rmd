@@ -44,9 +44,8 @@ bulkData <- read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
 t_PCA <- prcomp(t(bulkData[,2:161]))
 ```
 
-```{r}
 # Unweighted for read depth or STDev (will do in DESeq later):
-
+```{r}
 print(t_PCA)
 
 plot(t_PCA$x, type = "p", cex = 1, pch = 16)

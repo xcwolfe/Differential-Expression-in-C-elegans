@@ -43,7 +43,19 @@ Setup the parameters for the cluster computer:
 
   a. This is to verify that all file sizes are correct. Some may download incorrectly or partially due to timeouts on HPC.
       
-Go to the directory that includes your genome and initialize STAR:
+Create a new directory that includes your genome and initialize STAR:
+
+Go to http://genome.ucsc.edu/cgi-bin/hgTables and download the latest C. elegans genome as a .gtf file:
+
+`mkdir genome`
+
+`cd genome/`
+
+`wget ftp://ftp.ensembl.org/pub/release-107/fasta/caenorhabditis_elegans/dna/*.fa.gz`
+
+`gunzip *.gz`
+
+Now we can initialize STAR to generate Genome and SA output files:
       
 `dos2unix initialize_star.txt`
 

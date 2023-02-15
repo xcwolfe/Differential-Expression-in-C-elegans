@@ -19,7 +19,7 @@ library(dplyr)
 ```{r}
 singletypesprac <-  c("ASG","AVE","AVG","AWA","AWB","DD","PVD","VD")
 
-# Create n-1 data.frame to print --Condition1_fileNum_threshold later:
+# Create a data frame with your cell types and number of replicates per cell type (used to print --Condition1_fileNum_threshold later):
 oldtypesprac = c("ASG","AVE","AVG","AWA","AWB","DD","PVD","VD")
 oldtypespraccounts = c(3,2,2,3,4,2,1,3)
 combinedtype = as.data.frame(list(Type = oldtypesprac, Count = oldtypespraccounts, TrueCount = as.numeric(oldtypespraccounts+1)))

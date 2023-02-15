@@ -1,7 +1,6 @@
 ---
 title: "RNA binding protein search"
 output: html_document
-date: "2022-08-05"
 ---
 
 #FOURTH
@@ -79,15 +78,8 @@ RBP_results[i,j] <- print(length(which(match(RBP_list, overlap_data$V1) < 312)))
 }
 ```
 
-```{r}
-comparison <- print(paste(ADL, "vs", VD))
-# gene <- print(overlap_data$V1[which(match(RBP_list, overlap_data$V1) < 312)])
-# log2foldchange <- print(overlap_data$log2FoldChange[which(match(RBP_list, overlap_data$V1) < 312)])
-# pvalue <- print(overlap_data$padj[which(match(RBP_list, overlap_data$V1) < 312)])
-```
-
 # Print names of RNABPs from chart above:
-#STOP: Before you run this whole chunk, run line 115 JUST ONCE, then "#" it out. This is the easiest way to create the correctly formatted topDEgene object
+# STOP: Before you run this whole chunk, run line 107 JUST ONCE, then "#" it out. This is the easiest way to create the correctly formatted topDEgene object
 ```{r, include=FALSE}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -139,10 +131,11 @@ cutoffgenes <- as.data.frame(totaldata[which(abs(totaldata$log2FoldChange)>2 & t
 RBP_cutoff_results[is.na(RBP_cutoff_results)] <- 0
 ```
 
-# Get rid of the first row in topDEgene (created in line 115):
+# Get rid of the first row in topDEgene (created in line 107):
 ```{r}
 # topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
 ```
+
 # Save as .csv:
 ```{r}
 write.csv(topDEgene[1641:6560,], file = "topDifferentiallyExpressedGenesbyComparison.csv")
@@ -156,6 +149,7 @@ write.csv(RBP_cutoff_results, file = "RBP_cutoff_results.csv")
 #RBP_cutoff_results <- RBP_cutoff_results[2:42]
 ```
 
+# Plot heatmaps:
 ```{r}
 plot.new()
 pheatmap(RBP_cutoff_results,
@@ -182,6 +176,7 @@ pheatmap(RBP_cutoff_results,
          main = "Number of Differentially Expressed RBPs by Cell Type (out of top 1% diff. expressed genes)")
 ```
 
+# Calculate total log2foldchange for each gene:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -225,6 +220,7 @@ print(max(log2foldchange_per_gene[,k]-min(log2foldchange_per_gene[,k])))
 }
 ```
 
+# Plot heatmaps:
 ```{r}
 colors <- colorRampPalette(brewer.pal(6, "Greens"))(250)
 pheatmap(log2foldchange_per_gene,
@@ -307,9 +303,7 @@ log2foldchange_per_gene <- read.csv("sum of log2foldchange per gene.csv", row.na
 
 # Combine every excel file for each cell type:
 
-# Note: If there are 0 Diff. Exp. RBPs in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunk. You may have to examine each Diff. Exp. RBP file and manually move them outside of your working directory if there are 0 rows:
-
-## cell types with 0 Diff. Exp. RBPs in my example can be found in D:\Zach Wolfe's DESeq analysis\Zero_Diff_Exp_RBPs_comparisons 
+## Note: If there are 0 Diff. Exp. RBPs in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunk. You may have to examine each Diff. Exp. RBP file and manually move them outside of your working directory if there are 0 rows:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -361,7 +355,6 @@ VDDiffExpRBPfiles <- list.files(pattern = "DiffExpRBPsVDvs*")
 ```{r}
 DiffExpRBPfileList <- rep(paste0(singletypes, "DiffExpRBPfiles"), len = 41)
 ```
-
 
 # Log2FoldChange values for unique RBP names in individual "cell type vs" files:
 ```{r}
@@ -560,31 +553,6 @@ pheatmap(logSums_table[,c("AFD", "ASEL", "ASER")],
          main = "Sum of All log2FoldChange Values for AFD, ASEL, and ASER vs All Other Cell Types")
 ```
 
-
-# This is an attempt to loop several chunks above, but does not work as of 12-6-22:
-```{r}
-setwd("D:/Zach Wolfe's DESeq analysis")
-
-for(j in DiffExpRBPfileList){
-  for(k in singletypes){
-
-LargeRBPdf <- cat(j, "\n") %>% map_dfr(read.csv) # can't open the connection??
-#LargeRBPdf <- LargeRBPdf[,-c(1)]
-uniqueRBPs <- unique(LargeRBPdf[[V1]]) #can't find column $V1, and can't subset columns using [,1] #because LargeRBPdf is empty!
-
-logSums <- matrix(nrow = length(uniqueRBPs), ncol = 1, dimnames = list(uniqueRBPs), log2foldchange)
-logSums[is.na(logSums)] <- 0
-
-logMeans <- matrix(nrow = length(uniqueRBPs), ncol = 1, dimnames = list(uniqueRBPs), log2foldchange)
-logMeans[is.na(logMeans)] <- 0
-
-for(i in uniqueRBPs){
-logSums[i,1] <- sum(LargeRBPdf[LargeRBPdf$V1 == i, 2]) # perhaps mean would be more appropriate than sum for this type of comparison?
-logMeans[i,1] <- mean(LargeRBPdf[LargeRBPdf$V1 == i, 2])
-}
-write.csv(logMeans, file = paste0("RBP_logMeans_for_", k, ".csv"))}
-}
-```
 
 # Top Differentially Expressed ("topDE") genes for each cell type:
 ```{r}

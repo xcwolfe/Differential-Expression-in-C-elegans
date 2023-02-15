@@ -97,6 +97,7 @@ Put these renamed files, ALONG WITH all JUM and experimental_design files, in th
 Change run_JUM_A to reflect appropriate neuron type:
 
   a. fust1-1 to ASG1, N2-1 to AVE1, etc.
+  
     i. Make sure reps are separated by a comma and do not contain spaces.
     
   b. repeat for EVERY comparison

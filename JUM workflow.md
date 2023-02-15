@@ -22,12 +22,19 @@ Setup the parameters for the cluster computer:
 `vdb-config –interactive`
 
   a.	Enable remote access [X]
+  
   b.	Cache tab
+  
     i.	Enable local file-sharing [X]
+    
     ii.	choose user-repository: /work/users/zwolfe/srrfiles
+    
     iii. Save
+    
   c.	AWS tab
+  
     i. report cloud instance identity [X]
+    
     ii. Save and exit
     
 `fastq-dump -I --split-files SRRXXXXXX SRRXXXXXX SRRXXXXXX…`
@@ -75,6 +82,7 @@ Run samtools:
   a. add run_samtools.txt (from Olivia) to each folder.
       
 `dos2unix run_samtools.txt`
+
 `sbatch run_samtools.txt in each folder`
 
 RENAME Aligned.out.sam, Aligned.out_sorted.bam  , and SJ.out.tab files:
@@ -87,8 +95,11 @@ Put these renamed files, ALONG WITH all JUM and experimental_design files, in th
   
 
 Change run_JUM_A to reflect appropriate neuron type:
+
   a.	fust1-1 to ASG1, N2-1 to AVE1, etc.
+  
     i.	Make sure reps are separated by a comma and do not contain spaces.
+    
   b.	repeat for EVERY comparison
   
 `dos2unix run_JUM_A.txt`
@@ -123,10 +134,15 @@ Load r module:
 Change run_JUM_B to reflect appropriate neuron type:
 
   a. fust1-1 to ASG1, N2-1 to AVE1, etc.
+  
   b. -- TotalFileNum to 7 instead of 6
+  
   c. -- Condition1_FileNum_threshold to 3 instead of 2
-  d. -- Cutoff to your desired p-value (default is 1 to see all splicing events). 
+  
+  d. -- Cutoff to your desired p-value (default is 1 to see all splicing events)
+  
   e. repeat for EVERY comparison
+  
   f. NOTE: If you want to do multiple p-value comparisons, make sure to delete the previous JUM_B runs or you will create a downward spiral of directories
   
 `dos2unix run_JUM_B.txt`
@@ -140,8 +156,11 @@ Download and moved refFlat.txt and run_JUM_C.txt to FINAL_OUTPUT_pvalue_1 direct
 Change run_JUM_C to reflect appropriate neuron type:
 
   a. fust1-1 to ASG1, N2-1 to AVE1, etc.
+  
   b. -- TotalFileNum to 7 instead of 6
+  
   c. -- TotalCondition1_FileNum to 4 instead of 3
+  
   d. repeat for EVERY comparison
   
 `dos2unix run_JUM_C.txt`
@@ -161,6 +180,7 @@ I have simplified this process by generating the necessary .txt files in R. See 
 Download JUM results from the cluster:
 
   a. WinSCP to D:/Zach Wolfe’s JUM analysis
+  
   b. Make a NEW DIRECTORY for each JUM comparison. For example: D:\Zach Wolfe's JUM analysis\FINAL_JUM_OUTPUT_pvalue_1ASGvsAVE
 
 Open the downloaded results in R/Rstudio. See “Heatmap Script for JUM analysis.Rmd”

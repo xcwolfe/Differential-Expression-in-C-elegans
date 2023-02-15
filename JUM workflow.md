@@ -25,9 +25,9 @@ Setup the parameters for the cluster computer:
   
   b.	Cache tab
   
-    i.	Enable local file-sharing [X]
+    i. Enable local file-sharing [X]
     
-    ii.	choose user-repository: /work/users/zwolfe/srrfiles
+    ii. choose user-repository: /work/users/zwolfe/srrfiles
     
     iii. Save
     

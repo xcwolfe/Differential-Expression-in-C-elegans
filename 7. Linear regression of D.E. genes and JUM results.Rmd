@@ -1,7 +1,6 @@
 ---
 title: "Linear regression of D.E. genes and JUM results"
 output: html_document
-date: "2022-12-29"
 ---
 
 #SEVENTH

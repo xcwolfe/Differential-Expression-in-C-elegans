@@ -1,7 +1,6 @@
 ---
 title: "Creating new JUM txts"
 output: html_document
-date: "2022-08-29"
 ---
 
 #FIFTH

@@ -1,4 +1,5 @@
-# This pipeline illustrates how to run JUM using a large cluster computer (with hopefully lots of memory). We will be utilizing Unix (C language) and later R to analyze our JUM data
+# JUM workflow
+This pipeline illustrates how to run JUM using a large cluster computer (with hopefully lots of memory). We will be utilizing Unix (C language) and later R to analyze our JUM data
 
 Navigate to your working directory:
 
@@ -7,6 +8,7 @@ Navigate to your working directory:
 Make a folder to put all your fastq files in:
 
 `mkdir srrfiles`
+
 `cd srrfiles/`
 
 Now we need to import our SRA toolkit:
@@ -81,7 +83,9 @@ Change run_JUM_A to reflect appropriate neuron type:
   b.	repeat for EVERY comparison
   
 `dos2unix run_JUM_A.txt`
+
 `sbatch run_JUM_A.txt`
+
 `cd /JUM_diff`
 
 Create experimental_design.txt:
@@ -95,6 +99,7 @@ treat3 treatment`
 
 
 `module load rstudio`
+
 `Rscript /scratch/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experimental_design.txt >outputFile.Rout 2> errorFile.Rout`
 
   a.	Make sure the R script outputs a file called AS_differential.txt
@@ -109,6 +114,7 @@ Change run_JUM_B to reflect appropriate neuron type:
   f. NOTE: If you want to do multiple p-value comparisons, make sure to delete the previous JUM_B runs or you will create a downward spiral of directories
   
 `dos2unix run_JUM_B.txt`
+
 `sbatch run_JUM_B.txt`
 
 Download and moved refFlat.txt and run_JUM_C.txt to FINAL_OUTPUT_pvalue_1 directory 
@@ -123,7 +129,9 @@ Change run_JUM_C to reflect appropriate neuron type:
   d. repeat for EVERY comparison
   
 `dos2unix run_JUM_C.txt`
+
 `sbatch run_JUM_C.txt`
+
 `cd /work/users/zwolfe/srrfiles/JUM_analysis/JUM_diff/FINAL_JUM_OUTPUT_pvalue_1/`
 
   a. This is where the detailed and simplified summaries of each AS event are

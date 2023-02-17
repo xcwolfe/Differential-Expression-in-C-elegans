@@ -24,16 +24,6 @@ library("rlang")
 ```
 
 ```{r}
-save.image("C:/Users/xcwol/Downloads/.RData")
-load("C:/Users/xcwol/Downloads/.RData")
-```
-
-# List your cell types/conditions:
-```{r}
-singletypesprac <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD")
-```
-
-```{r}
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
@@ -45,6 +35,17 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
     install.packages("devtools")
 }
 ```
+
+```{r}
+save.image("C:/Users/xcwol/Downloads/.RData")
+load("C:/Users/xcwol/Downloads/.RData")
+```
+
+# List your cell types/conditions:
+```{r}
+singletypesprac <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD")
+```
+
 
 ##You can change any of these cutoffs as desired:
 
@@ -381,7 +382,7 @@ pheatmap(JUM_table_intron,
          fontsize_number = 16,
          angle_col = 0,
          col = colors,
-         main = "Intron Retention between Cell Types")
+         main = "Number of Intron Retention Events between Cell Types")
 
 colors <- colorRampPalette(brewer.pal(6, "PuRd"))(250)
 pheatmap(JUM_table_MXE,

@@ -5,11 +5,20 @@ output: html_document
 
 #FIRST
 
+# DESeq:
+# Step 1: DESeq
+# Step 2: results(DESeq object)
+# Step 3: contrast(s) between cell types
+# Step 4: LOOP
+# Step 5: make write.csv summaries
+
+# See 'type vs type 1x1' for statistical summaries and outputs
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#DESeq setup
+# DESeq setup
 ```{r}
 setwd("C:/Users/xcwol/Downloads") # Change your working directory!
 
@@ -99,6 +108,7 @@ oldtype = as.factor(c(rep("ADL",4),rep("AFD",5),rep("AIN",6),rep("AIY",3),rep("A
 # print(metaData)
 ```
 
+# Make your cts object and run DESeq:
 ```{r}
 cts <- read.table("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
 #make a condition table.csv
@@ -118,22 +128,14 @@ normalized_countsdata <- write.csv(normalized_counts, file="normalized_counts.cs
 write.csv(normalized_counts, file = "normalized_counts.csv")
 ```
 
-```{r}
 # Re-order results
+```{r}
 res <- results(dds)
 res[order(res$padj),]
 ```
 
-# DESeq:
-# Step 1: DESeq
-# Step 2: results(DESeq object)
-# Step 3: contrast(s)
-# Step 4: LOOP
-# Step 5: write.csv summaries
 
-# See 'type vs type 1x1' for statistical summaries and outputs
 # Insert desired res object below:
-
 ```{r}
 with(res, plot(log2FoldChange, -log10(pvalue), pch = 18, main="", xlim=c(-4,4), ylim=c(2,35)))
 
@@ -147,6 +149,7 @@ with(subset(res, padj<.01 ), print(res$rownames)) # rownames are NULL
 with(res, print(pvalue)) # Already re-ordered from smallest to largest (2 chunks above)
 ```
 
+# Now, we are only interested in significant results:
 ```{r}
 sig_res <- res[(res$padj<.05 & abs(res$log2FoldChange)>2 & !is.na(res$padj) & !is.na(row.names(res))) ,]
 write.csv(sig_res, file="sig_results")
@@ -154,7 +157,6 @@ write.csv(sig_res, file="sig_results")
 plotMA(res, ylim=c(-10,10))
 plotMA(sig_res, ylim=c(-10,10))
 ```
-
 
 # PCA plots:
 ```{r}

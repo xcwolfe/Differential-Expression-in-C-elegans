@@ -35,12 +35,14 @@ save.image("C:/Users/xcwol/Downloads/.RData")
 load("C:/Users/xcwol/Downloads/.RData")
 ```
 
+# Read your bulk RNA-seq data:
 ```{r}
 bulkData <- read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
 ```
 
+# Transform your bulk RNA-seq data:
 ```{r}
-t_PCA <- prcomp(t(bulkData[,2:161]))
+t_PCA <- prcomp(t(bulkData[,2:161])) # I had 160 total samples, so I am  using columns 2:161 for my principal component analysis
 ```
 
 # Unweighted for read depth or STDev (will do in DESeq later):

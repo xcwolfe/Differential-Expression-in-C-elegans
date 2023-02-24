@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #DESeq setup
 ```{r}
-setwd("C:/Users/xcwol/Downloads")
+setwd("C:/Users/xcwol/Downloads") # Change your working directory!
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -52,6 +52,7 @@ plot(t_PCA$x, type = "p", cex = 1, pch = 16)
 title(main = "PCA Plot of Transposed Gene Data PCs 1-2")
 ```
 
+# Import your gene names and add them to the PCA:
 ```{r}
 genenames <- read.csv("genenames.csv")
 rownames(t_PCA$rotation) <- make.names(1:nrow(genenames))
@@ -111,22 +112,6 @@ normalized_counts <- counts(dds, normalized=TRUE)
 normalized_countsdata <- write.csv(normalized_counts, file="normalized_counts.csv", sep="\t", quote=F, col.names = NA) # Use for UMAP later
 ```
 
-# Doesn't work. Parameters can't be type = rep
-```{r}
-cts <- read.table("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
-#make a condition table.csv
-condition = read.table("experimental_conditions_reps.csv", header = TRUE, sep=",", row.names=1)
-
-dds <- DESeqDataSetFromMatrix(countData = cts, colData = condition, design = ~ type)
-dds <- DESeq(dds)
-resultsNames(dds)
-
-dds <- estimateSizeFactors(dds)
-sizeFactors(dds)
-normalized_counts <- counts(dds, normalized=TRUE)
-normalized_countsdata <- write.table(normalized_counts, file="data/normalized_counts.txt", sep="\t", quote=F, col.names = NA) # Use for UMAP later
-```
-
 ```{r}
 write.csv(normalized_counts, file = "normalized_counts.csv")
 ```
@@ -155,8 +140,6 @@ with(subset(res, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log1
 ```
 
 ```{r}
-# Need to find gene names for log2foldchange values > 3
-
 with(subset(res, padj<.01 ), print(log2FoldChange))
 with(subset(res, padj<.01 ), print(res$rownames)) # rownames are NULL
 with(res, print(pvalue)) # Already re-ordered from smallest to largest (2 chunks above)
@@ -170,15 +153,6 @@ plotMA(res, ylim=c(-10,10))
 plotMA(sig_res, ylim=c(-10,10))
 ```
 
-# Run this before the plot chunk to change whether we graph reps (assay(vsd) %>% t()) or genes:
-# This chunk has been obsoleted as of 8-3-22 when we chose to not perform assay() before normalized_counts
-```{r}
-# normalized_counts_assay <- assay(vsd) %>%
-  # t() # We need to transpose this data so each row is a sample
-
-# Now perform UMAP on the normalized data
-# umap_results <- umap(normalized_counts, config = custom.settings, labels=as.factor(row.names(normalized_counts)), controlscale=TRUE, scale=3)
-```
 
 # PCA plots:
 ```{r}
@@ -190,6 +164,7 @@ plotPCA(vsd, intgroup="type")
 normalized_counts_assay <- assay(vsd)
 ```
 
+# Heatmaps of DESeq data:
 ```{r}
 select <- order(rowMeans(counts(dds,normalized=TRUE)),
                 decreasing=TRUE)[1:25]
@@ -215,11 +190,12 @@ pheatmap(assay(vsd)[select,121:160], cluster_rows=FALSE, show_rownames=FALSE,
          cluster_cols=FALSE, annotation_col=df, fontsize = 7.5)
 ```
 
+# Get sample distances:
 ```{r}
 sampleDists <- dist(t(assay(vsd)))
 ```
 
-# Find a way to combine replicates here:
+# Heatmaps of Individual Replicates:
 ```{r}
 sampleDistMatrix <- as.matrix(sampleDists)
 rownames(sampleDistMatrix) <- paste(vsd$type, sep=":")

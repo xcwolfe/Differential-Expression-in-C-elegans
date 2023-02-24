@@ -46,9 +46,6 @@ RBP_list <- c(mined_RBPs[,1])
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-# This works. The select() function is the problem.
-# select() function is for variables, not values (I think). We need to find a function for selecting values
-
 overlap_data <- fread(file = "resAWBvsVC.csv", header = TRUE)[,c(1,3,7)]
 match(RBP_list, overlap_data$V1, nomatch = NA)
 print(length(which(match(RBP_list, overlap_data$V1) < 486 ))) # We know our RNABP list is 484 genes long. I need to add 2 to 484 (row 1 is header (+1), less than function adds +1) I am searching the list of ALL genes and printing the number of RNABPs expressed in the top 484 entries of each comparison. Not statistically accurate but we are getting somewhere.
@@ -79,7 +76,53 @@ RBP_results[i,j] <- print(length(which(match(RBP_list, overlap_data$V1) < 312)))
 ```
 
 # Print names of RNABPs from chart above:
-# STOP: Before you run this whole chunk, run line 107 JUST ONCE, then "#" it out. This is the easiest way to create the correctly formatted topDEgene object
+# This will be a practice chunk to ensure everything works:
+```{r, include=FALSE}
+setwd("D:/Zach Wolfe's DESeq analysis")
+
+RBP_cutoff_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
+RBP_cutoff_results[is.na(untrimmed_cutoff_results)] <- 0
+
+for(i in c("ADL")){
+   for(j in c("AFD")){
+    if(i != j){
+
+overlap_data <- fread(file = paste("res", i, "vs", j, ".csv", sep = ""))[,c(1,3,7)] %>% as.data.frame()
+
+rownames(overlap_data) <- overlap_data$V1
+RBP_list %in% rownames(overlap_data)
+intersection <- rownames(overlap_data)
+# print(overlap_data[intersection,])
+
+comparison <- print(paste(i, "vs", j))
+new_row <- print(paste(comparison, "#1"))
+new_row2 <- print(paste(comparison, "#2"))
+new_row3 <- print(paste(comparison, "#3"))
+
+totaldata <- data.frame(overlap_data[intersection,])
+totaldata <- na.omit(totaldata)
+topDEgene <- as.data.frame(totaldata[1,], row.names = comparison, col.names = c("V1", "log2FoldChange", "padj"))
+topDEgene[new_row,] <- rbind(totaldata[1,], new_row)
+topDEgene[new_row2,] <- rbind(totaldata[2,], new_row2)
+topDEgene[new_row3,] <- rbind(totaldata[3,], new_row3)
+cutoffgenes <- as.data.frame(totaldata[which(abs(totaldata$log2FoldChange)>2 & totaldata$padj < .01),]) # Change cutoffs and abs() if desired
+untrimmed_cutoff_results[i,j] <- print(nrow(cutoffgenes))
+
+write.csv(cutoffgenes, file=paste("DiffExpGenes", i, "vs", j, ".csv", sep=""))
+     }
+    if (i == j) next
+   }
+}
+
+untrimmed_cutoff_results[is.na(untrimmed_cutoff_results)] <- 0
+```
+
+# Get rid of the first row in topDEgene (created in line 104):
+```{r}
+topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
+```
+
+# Now let's run the RNABP loop in full:
 ```{r, include=FALSE}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -104,13 +147,11 @@ new_row3 <- print(paste(comparison, "#3"))
 
 totaldata <- data.frame(overlap_data[intersection,])
 totaldata <- na.omit(totaldata)
-# topDEgene <- as.data.frame(totaldata[1,], row.names = comparison, col.names = c("V1", "log2FoldChange", "padj")) # run through this line in the chunk JUST ONCE, then "#" out this row. This is how we create the correctly formatted original topDEgene object
 topDEgene[new_row,] <- rbind(totaldata[1,], new_row)
 topDEgene[new_row2,] <- rbind(totaldata[2,], new_row2)
 topDEgene[new_row3,] <- rbind(totaldata[3,], new_row3)
 cutoffgenes <- as.data.frame(totaldata[which(abs(totaldata$log2FoldChange)>2 & totaldata$padj < .01),]) # Change cutoffs and abs() if desired
-# topDEgene[new_row,] <- rbind(totaldata[which(abs(overlap_data$log2FoldChange)>2 & overlap_data$padj < .01),], new_row) # Only codes 1 row. WRONG
-# RBP_cutoff_results[i,j] <- print(nrow(cutoffgenes))
+RBP_cutoff_results[i,j] <- print(nrow(cutoffgenes))
 # write.csv(cutoffgenes, file=paste("DiffExpRBPs", i, "vs", j, ".csv", sep=""))
 
 # generate histograms using cutoffgenes:
@@ -129,11 +170,6 @@ cutoffgenes <- as.data.frame(totaldata[which(abs(totaldata$log2FoldChange)>2 & t
 }
 
 RBP_cutoff_results[is.na(RBP_cutoff_results)] <- 0
-```
-
-# Get rid of the first row in topDEgene (created in line 107):
-```{r}
-# topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
 ```
 
 # Save as .csv:

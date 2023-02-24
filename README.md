@@ -3,7 +3,7 @@ This repository contains the scripts, commands, and input files necessary to ana
 
 I have ordered the R scripts in chronological order (1-7). I recommend running all scripts in this order to generate the correct files and file types.
 
-You can run STAR and JUM workflow any time before R script #5 (JUM file automation.R), although I would recommend running it as soon as possible. If you are starting this pipeline with .fastq or .fastq.gz files, you `have` to run STAR before the first script.
+You can run STAR and JUM workflow any time before R script #5 (JUM file automation.R), although I would recommend running it as soon as possible. If you are starting this pipeline with .fastq or .fastq.gz files, you *have* to run STAR before the first script.
 
 The Bulk RNA-seq data I use comes from Barrett et al. 2022 (CeNGEN)
 

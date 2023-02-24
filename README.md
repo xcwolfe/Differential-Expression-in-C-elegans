@@ -1,4 +1,4 @@
-# Differential Expression in C. elegans
+# Differential Expression in *C. elegans*
 This repository contains the scripts, commands, and input files necessary to analyze differential gene, RNA-binding protein, and A.S. expression in *C. elegans* (as of February 2023).
 
 I have ordered the R scripts in chronological order (1-7). I recommend running all scripts in this order to generate the correct files and file types.

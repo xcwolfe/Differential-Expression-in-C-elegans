@@ -7,7 +7,7 @@ You can run STAR and JUM workflow any time before R script #5 (JUM file automati
 
 The Bulk RNA-seq data I use comes from Barrett et al. 2022 (CeNGEN)
 
-I have also acquired the names of 484 known C. elegans RNA-binding proteins from WormBase (simplemine_results.csv)
+I have also acquired the names of 31173 knon C. elegans genes (genenames.csv) and 484 known C. elegans RNA-binding proteins (simplemine_results.csv) from WormBase
 
 You will need to adjust the parameters in these files for the specific cell types you are interested in - I was interested in 41 C. elegans neurons, for instance, so that is how my pipeline has been constructed.
 

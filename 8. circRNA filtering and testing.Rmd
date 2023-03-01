@@ -140,6 +140,7 @@ for (j in rownames(test$summary_table)){
 ```{r}
 write.csv(test, file = "CircRNA test results.csv")
 write.csv(test$summary_table, file = "CircRNA test results summary.csv")
+write.csv(circRNA_table, file = "circRNA table.csv")
 write.csv(CircRNACount_filtered_combined, file = "CircRNACount_filtered_combined.csv")
 write.csv(LinearCount_filtered_combined, file = "LinearCount_filtered_combined.csv")
 write.csv(CircCoordinates_filtered_combined, file = "CircCoordinates_filtered_combined.csv")

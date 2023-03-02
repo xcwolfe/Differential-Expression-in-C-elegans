@@ -62,9 +62,10 @@ Create ASG1 directory in DCC folder:
 
 Create mate1 and mate2 folders in ASG1 directory:
 
- `cd ASG1`
- `mkdir mate1`
- `mkdir mate2`
+$ cd ASG1`
+$ mkdir mate1`
+$ mkdir mate2`
+ 
 
 11.	Moved ASG_SRR13995310_01.fastq and ASG_SRR13995310_02.fastq files to ASG1 directory.
 12.	Moved ASG_SRR13995310_01.fastq to mate1 folder and ASG_SRR13995310_02.fastq to mate2 folder

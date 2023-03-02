@@ -1,13 +1,21 @@
 # DCC pipeline:
 
 `mkdir genome`
+
 `cd genome/`
+
 `wget ftp://ftp.ensembl.org/pub/release-107/fasta/caenorhabditis_elegans/dna/*.fa.gz`
+
 `gunzip *.gz`
+
 Go to http://useast.ensembl.org/Caenorhabditis_elegans/Info/Index and download the latest *C. elegans* genome as a .gtf file:
+
 `ftp://ftp.ensembl.org/pub/release-107/gtf/caenorhabditis_elegans/*.gz`
+
 Initialize STAR on your genome:
+
   a.	create initialize_star.txt:
+  
 #!/bin/bash
 
 #SBATCH -N 1
@@ -23,25 +31,41 @@ STAR \
  --genomeFastaFiles /work/users/zwolfe/genome/*.fa \
  --sjdbGTFfile /work/users/zwolfe/genome/c_elegans.gtf \
  --sjdbOverhang 99
-  b.	dos2unix initialize_star.txt
-  c.	sbatch initialize_star.txt
-8.	Installed DCC and its dependencies:
-a.	cd $WORK; curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-b.	./bin/micromamba shell init -s bash -p ~/micromamba
-c.	source ~/.bashrc
-d.	micromamba create --name pysam_env -c defaults -c bioconda -c r -c conda-forge --override-channels  python=3.8 numpy pip jupyterlab matplotlib pandas pysam htseq
-e.	git clone https://github.com/dieterich-lab/DCC.git
-f.	cd DCC
-g.	module load gcc-9.2
-h.	micromamba activate pysam_env
-i.	python setup.py install –user
 
-9.	Created ASG1 directory in DCC folder:
-a.	mkdir ASG1
-10.	Created mate1 and mate2 folders in ASG1 directory:
-a.	cd ASG1
-b.	mkdir mate1
-c.	mkdir mate2
+`dos2unix initialize_star.txt`
+
+`sbatch initialize_star.txt`
+  
+Installed DCC and its dependencies:
+
+`cd $WORK; curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba`
+
+`./bin/micromamba shell init -s bash -p ~/micromamba`
+
+`source ~/.bashrc`
+
+`micromamba create --name pysam_env -c defaults -c bioconda -c r -c conda-forge --override-channels  python=3.8 numpy pip jupyterlab matplotlib pandas pysam htseq`
+
+`git clone https://github.com/dieterich-lab/DCC.git`
+
+`cd DCC`
+
+`module load gcc-9.2`
+
+`micromamba activate pysam_env`
+
+`python setup.py install –user`
+
+Create ASG1 directory in DCC folder:
+
+`mkdir ASG1`
+
+Create mate1 and mate2 folders in ASG1 directory:
+
+ `cd ASG1`
+ `mkdir mate1`
+ `mkdir mate2`
+
 11.	Moved ASG_SRR13995310_01.fastq and ASG_SRR13995310_02.fastq files to ASG1 directory.
 12.	Moved ASG_SRR13995310_01.fastq to mate1 folder and ASG_SRR13995310_02.fastq to mate2 folder
 13.	Create samplesheet.txt  and move into ASG1 directory

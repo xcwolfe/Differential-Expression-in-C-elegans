@@ -71,10 +71,10 @@ $ export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"
 $ module load star
 $ mkdir XXX
 $ mkdir rep1 rep2 rep3
-$ cp /scratch/group/norrislab/Zach/run_STAR_chimeras
+$ cp /scratch/group/norrislab/Zach/run_STAR_chimeras.txt
 ```
 
-run_STAR_chimeras:
+run_STAR_chimeras.txt:
 ```
 #!/bin/bash
 
@@ -103,8 +103,8 @@ $ mv SRR13995310_1.fastq XXX_SRR13995310_1.fastq
   a. XXX = neuron type
   
 ```
-$ dos2unix ../run_STAR_chiemras
-$ sbatch ../run_STAR_chimeras (once you are in the rep/ folder)
+$ dos2unix ../run_STAR_chiemras.txt
+$ sbatch ../run_STAR_chimeras.txt (once you are in the rep/ folder)
 ```
 
 Run samtools:

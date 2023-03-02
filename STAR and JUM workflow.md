@@ -103,6 +103,7 @@ $ mv SRR13995310_1.fastq XXX_SRR13995310_1.fastq
   a. XXX = neuron type
   
 ```
+$ dos2unix ../run_STAR_chiemras
 $ sbatch ../run_STAR_chimeras (once you are in the rep/ folder)
 ```
 

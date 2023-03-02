@@ -3,7 +3,7 @@ This pipeline illustrates how to run STAR and JUM using a large cluster computer
 
 Navigate to your working directory:
 
-`cd /work/users/zwolfe`
+`$ cd /work/users/zwolfe`
 
 Make a folder to put all your fastq files in:
 
@@ -59,8 +59,8 @@ $ gunzip *.gz
 Now we can initialize STAR to generate Genome and SA output files:
     
 ```
-dos2unix initialize_star.txt
-sbatch initialize_star.txt
+$ dos2unix initialize_star.txt
+$ sbatch initialize_star.txt
 ```
 
 Now, let's actually run STAR on each file/cell type:
@@ -98,13 +98,13 @@ $ cd /work/users/zwolfe/srrfiles/XXX/rep1
   a. add run_samtools.txt (from Olivia) to each folder.
 
 ```
-dos2unix run_samtools.txt
-sbatch run_samtools.txt 
+$ dos2unix run_samtools.txt
+$ sbatch run_samtools.txt 
 ```
 
 (Do this in each folder)
 
-RENAME Aligned.out.sam, Aligned.out_sorted.bam  , and SJ.out.tab files:
+RENAME Aligned.out.sam, Aligned.out_sorted.bam, and SJ.out.tab files:
 
   a. ASG1Aligned.out.sam
   

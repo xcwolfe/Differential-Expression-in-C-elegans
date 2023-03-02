@@ -31,9 +31,10 @@ STAR \
  --genomeFastaFiles /work/users/zwolfe/genome/*.fa \
  --sjdbGTFfile /work/users/zwolfe/genome/c_elegans.gtf \
  --sjdbOverhang 99
-
+```
+ 
+```
 $ dos2unix initialize_star.txt
-
 $ sbatch initialize_star.txt
  ```
   
@@ -41,21 +42,13 @@ Installed DCC and its dependencies:
 
 ```
 $ cd $WORK; curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-
 $ ./bin/micromamba shell init -s bash -p ~/micromamba
-
 $ source ~/.bashrc
-
 $ micromamba create --name pysam_env -c defaults -c bioconda -c r -c conda-forge --override-channels  python=3.8 numpy pip jupyterlab matplotlib pandas pysam htseq
-
 $ git clone https://github.com/dieterich-lab/DCC.git
-
 $ cd DCC
-
 $ module load gcc-9.2
-
 $ micromamba activate pysam_env
-
 $ python setup.py install –user
  ```
 
@@ -67,9 +60,7 @@ Create mate1 and mate2 folders in ASG1 directory:
 
 ```
 $ cd ASG1
-
 $ mkdir mate1
-
 $ mkdir mate2
  ```
 
@@ -173,7 +164,7 @@ $ sbatch STAR_in_DCC_mate_2.txt
 ```
 
 ```
-33.	cd .. 
+cd .. 
 ```
 
 Create run_samtools_DCC.txt:
@@ -203,6 +194,7 @@ $ dos2unix samplesheet.txt
 $ dos2unix mate1.txt
 $ dos2unix mate2.txt
 $ sbatch DCC_ASG.txt 
+```
 
 Once you have completed each DCC run, rename your DCC output files with the cell type and replicate number as a prefix for the output files:
 a.	CircSkipJunctions = ASG1CircSkipJunctions

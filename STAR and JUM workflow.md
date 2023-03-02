@@ -7,15 +7,16 @@ Navigate to your working directory:
 
 Make a folder to put all your fastq files in:
 
-`mkdir srrfiles`
-
-`cd srrfiles/`
+```
+$ mkdir srrfiles
+$ cd srrfiles/
+```
 
 Now we need to import our SRA toolkit:
 
-`export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"`
-
-`module load sratoolkit`
+```
+$ export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"
+$ module load sratoolkit
 
 Setup the parameters for the cluster computer:
 
@@ -37,65 +38,71 @@ Setup the parameters for the cluster computer:
     
     ii. Save and exit
     
-`fastq-dump -I --split-files SRRXXXXXX SRRXXXXXX SRRXXXXXX…`
-
-`du -sh * `
+ ```
+$ fastq-dump -I --split-files SRRXXXXXX SRRXXXXXX SRRXXXXXX…
+$ du -sh *
+```
 
   a. This is to verify that all file sizes are correct. Some may download incorrectly or partially due to timeouts on HPC.
       
 Create a new directory that includes your genome and initialize STAR:
 
-Go to http://genome.ucsc.edu/cgi-bin/hgTables and download the latest C. elegans genome as a .gtf file:
+Go to http://genome.ucsc.edu/cgi-bin/hgTables and download the latest *C. elegans* genome as a .gtf file:
 
-`mkdir genome`
-
-`cd genome/`
-
-`wget ftp://ftp.ensembl.org/pub/release-107/fasta/caenorhabditis_elegans/dna/*.fa.gz`
-
-`gunzip *.gz`
+```
+$ mkdir genome
+$ cd genome/
+$ wget ftp://ftp.ensembl.org/pub/release-107/fasta/caenorhabditis_elegans/dna/*.fa.gz
+$ gunzip *.gz
+```
 
 Now we can initialize STAR to generate Genome and SA output files:
-      
-`dos2unix initialize_star.txt`
-
-`sbatch initialize_star.txt`
+    
+```
+dos2unix initialize_star.txt
+sbatch initialize_star.txt
+```
 
 Now, let's actually run STAR on each file/cell type:
 
-`export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"`
-
-`module load star`
-
-`mkdir XXX`
-
-`mkdir rep1 rep2 rep3`
-
-`cp /scratch/group/norrislab/Zach/run_STAR_chimeras`
+```
+$ export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"
+$ module load star
+$ mkdir XXX
+$ mkdir rep1 rep2 rep3
+$ cp /scratch/group/norrislab/Zach/run_STAR_chimeras
+```
 
   a. Add parameters --chimOutType Junctions SeparateSAMold
   
   b. Make sure to change this file every time to reflect the names of the neuron type (ASG, etc.)
-      
-`cd rep1/`
-
-`cp /work/users/zwolfe/srrfiles/SRRXXXXXXXX*.fastq`
-
-`mv SRR13995310_1.fastq XXX_SRR13995310_1.fastq`
+  
+```      
+$ cd rep1/
+$ cp /work/users/zwolfe/srrfiles/SRRXXXXXXXX*.fastq
+$ mv SRR13995310_1.fastq XXX_SRR13995310_1.fastq
+```
 
   a. XXX = neuron type
   
-`sbatch ../run_STAR_chimeras` (once you are in the rep/ folder)
+```
+$ sbatch ../run_STAR_chimeras` (once you are in the rep/ folder)
+```
 
 Run samtools:
      
-`cd /work/users/zwolfe/srrfiles/XXX/rep1`
+```     
+$ cd /work/users/zwolfe/srrfiles/XXX/rep1
+```
 
   a. add run_samtools.txt (from Olivia) to each folder.
-      
-`dos2unix run_samtools.txt`
 
-`sbatch run_samtools.txt in each folder`
+```
+dos2unix run_samtools.txt
+sbatch run_samtools.txt 
+```
+
+(Do this in each folder)
 
 RENAME Aligned.out.sam, Aligned.out_sorted.bam  , and SJ.out.tab files:
 
@@ -114,11 +121,11 @@ Change run_JUM_A to reflect appropriate neuron type:
     
   b. repeat for EVERY comparison
   
-`dos2unix run_JUM_A.txt`
-
-`sbatch run_JUM_A.txt`
-
-`cd /JUM_diff`
+ ```
+$ dos2unix run_JUM_A.txt
+$ sbatch run_JUM_A.txt
+$ cd /JUM_diff
+```
 
 Create experimental_design.txt:
 `  condition`
@@ -137,9 +144,10 @@ Create experimental_design.txt:
 
 Load r module:
 
-`module load rstudio`
-
-`Rscript /scratch/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experimental_design.txt >outputFile.Rout 2> errorFile.Rout`
+```
+$ module load rstudio`
+$ Rscript /scratch/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experimental_design.txt >outputFile.Rout 2> errorFile.Rout
+```
 
   a.	Make sure the R script outputs a file called AS_differential.txt
   
@@ -157,13 +165,14 @@ Change run_JUM_B to reflect appropriate neuron type:
   
   f. NOTE: If you want to do multiple p-value comparisons, make sure to delete the previous JUM_B runs or you will create a downward spiral of directories
   
-`dos2unix run_JUM_B.txt`
-
-`sbatch run_JUM_B.txt`
+```
+$ dos2unix run_JUM_B.txt
+$ sbatch run_JUM_B.txt
+```
 
 Download and moved refFlat.txt and run_JUM_C.txt to FINAL_OUTPUT_pvalue_1 directory 
 
-`cd FINAL_OUTPUT_pvalue_1`
+`$ cd FINAL_OUTPUT_pvalue_1`
 
 Change run_JUM_C to reflect appropriate neuron type:
 
@@ -175,11 +184,11 @@ Change run_JUM_C to reflect appropriate neuron type:
   
   d. repeat for EVERY comparison
   
-`dos2unix run_JUM_C.txt`
-
-`sbatch run_JUM_C.txt`
-
-`cd /work/users/zwolfe/srrfiles/JUM_analysis/JUM_diff/FINAL_JUM_OUTPUT_pvalue_1/`
+```
+$ dos2unix run_JUM_C.txt
+$ sbatch run_JUM_C.txt
+$ cd /work/users/zwolfe/srrfiles/JUM_analysis/JUM_diff/FINAL_JUM_OUTPUT_pvalue_1/
+```
 
   a. This is where the detailed and simplified summaries of each AS event are
   

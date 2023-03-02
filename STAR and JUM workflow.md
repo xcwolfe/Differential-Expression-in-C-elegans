@@ -108,7 +108,7 @@ Put these renamed files, ALONG WITH all JUM and experimental_design files, in th
 
 Change run_JUM_A to reflect appropriate neuron type:
 
-  a. fust1-1 to ASG1, N2-1 to AVE1, etc.
+  a. ASG1, AVE1, etc.
   
     i. Make sure reps are separated by a comma and do not contain spaces.
     
@@ -145,11 +145,11 @@ Load r module:
   
 Change run_JUM_B to reflect appropriate neuron type:
 
-  a. fust1-1 to ASG1, N2-1 to AVE1, etc.
+  a. ASG1, AVE1, etc.
   
-  b. -- TotalFileNum to 7 instead of 6
+  b. -- TotalFileNum (depends on the total number of files you have between your two cell types)
   
-  c. -- Condition1_FileNum_threshold to 3 instead of 2
+  c. -- Condition1_FileNum_threshold/TotalCondition2_FileNum_threshold (depends on the total number of files you have between your two cell types; should be N - 1)
   
   d. -- Cutoff to your desired p-value (default is 1 to see all splicing events)
   
@@ -167,11 +167,11 @@ Download and moved refFlat.txt and run_JUM_C.txt to FINAL_OUTPUT_pvalue_1 direct
 
 Change run_JUM_C to reflect appropriate neuron type:
 
-  a. fust1-1 to ASG1, N2-1 to AVE1, etc.
+  a. ASG1, AVE1, etc.
   
-  b. -- TotalFileNum to 7 instead of 6
+  b. -- TotalFileNum (depends on the total number of files you have between your two cell types)
   
-  c. -- TotalCondition1_FileNum to 4 instead of 3
+  c. -- TotalCondition1_FileNum/TotalCondition2_FileNum (depends on the total number of files you have between your two cell types)
   
   d. repeat for EVERY comparison
   

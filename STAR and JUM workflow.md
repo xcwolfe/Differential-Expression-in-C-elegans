@@ -74,6 +74,22 @@ $ mkdir rep1 rep2 rep3
 $ cp /scratch/group/norrislab/Zach/run_STAR_chimeras
 ```
 
+run_STAR_chimeras:
+```
+#!/bin/bash
+
+
+#SBATCH -N 1
+#SBATCH -t 1400
+#SBATCH -o output.out
+#SBATCH -e output.err
+#SBATCH -p standard-mem-s
+
+module load star
+
+STAR --genomeDir /scratch/group/norrislab/genome --readFilesIn PAN_SRR13995337*.fastq --outSAMstrandField intronMotif --outReadsUnmapped Fastx --runThreadN 20 --chimSegmentMin 15
+```
+
   a. Add parameters --chimOutType Junctions SeparateSAMold
   
   b. Make sure to change this file every time to reflect the names of the neuron type (ASG, etc.)
@@ -87,7 +103,7 @@ $ mv SRR13995310_1.fastq XXX_SRR13995310_1.fastq
   a. XXX = neuron type
   
 ```
-$ sbatch ../run_STAR_chimeras` (once you are in the rep/ folder)
+$ sbatch ../run_STAR_chimeras (once you are in the rep/ folder)
 ```
 
 Run samtools:

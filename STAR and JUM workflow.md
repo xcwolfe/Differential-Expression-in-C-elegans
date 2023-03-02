@@ -113,7 +113,21 @@ Run samtools:
 $ cd /work/users/zwolfe/srrfiles/XXX/rep1
 ```
 
-  a. add run_samtools.txt (from Olivia) to each folder.
+  a. add run_samtools.txt (from Olivia) to each folder:
+  
+```
+#!/bin/bash
+
+#SBATCH -N 2
+#SBATCH -t 180
+#SBATCH -o output.out
+#SBATCH -e output.err
+#SBATCH -p standard-mem-s
+
+module load samtools
+
+samtools index Aligned.sortedByCoord.out.bam
+```
 
 ```
 $ dos2unix run_samtools.txt

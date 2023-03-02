@@ -17,6 +17,7 @@ Now we need to import our SRA toolkit:
 ```
 $ export MODULEPATH="${MODULEPATH}:/scratch/group/norrislab/modules/sratoolkit"
 $ module load sratoolkit
+```
 
 Setup the parameters for the cluster computer:
 

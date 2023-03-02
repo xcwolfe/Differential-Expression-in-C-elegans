@@ -63,7 +63,9 @@ Create ASG1 directory in DCC folder:
 Create mate1 and mate2 folders in ASG1 directory:
 
 `$ cd ASG1
+
 $ mkdir mate1
+
 $ mkdir mate2`
  
 

@@ -21,7 +21,7 @@ $ module load sratoolkit
 
 Setup the parameters for the cluster computer:
 
-`vdb-config –interactive`
+`$ vdb-config –interactive`
 
   a.	Enable remote access [X]
   

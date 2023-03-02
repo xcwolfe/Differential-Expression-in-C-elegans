@@ -2,11 +2,8 @@
 
  ```
 $ mkdir genome
-
 $ cd genome/
-
 $ wget ftp://ftp.ensembl.org/pub/release-107/fasta/caenorhabditis_elegans/dna/*.fa.gz
-
 $ gunzip *.gz
  ```
 
@@ -116,7 +113,9 @@ Create STAR_in_DCC.txt :
 
 module load star
 STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype BAM SortedByCoordinate --readFilesIn *_1.fastq *_2.fastq --readFilesCommand cat --outReadsUnmapped Fastx --outSJfilterOverhangMin 15 15 15 15 --alignSJoverhangMin 15 --alignSJDBoverhangMin 15 --outFilterMultimapNmax 20 --outFilterScoreMin 1 --outFilterMatchNmin 1 --outFilterMismatchNmax 2 --chimSegmentMin 15 --chimScoreMin 15 --chimScoreSeparation 10 --chimJunctionOverhangMin 15 --alignTranscriptsPerReadNmax 200000 --alignTranscriptsPerWindowNmax 20000 
+```
 
+```
 $ dos2unix STAR_in_DCC.txt
 $ sbatch STAR_in_DCC.txt
 ```
@@ -138,10 +137,14 @@ Create STAR_in_DCC_mate_1.txt:
 
 module load star
 STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype None --readFilesIn *_1.fastq --readFilesCommand cat --outReadsUnmapped Fastx --outSJfilterOverhangMin 15 15 15 15 --alignSJoverhangMin 15 --alignSJDBoverhangMin 15 --outFilterMultimapNmax 20 --outFilterScoreMin 1 --outFilterMatchNmin 1 --outFilterMismatchNmax 2 --chimSegmentMin 15 --chimScoreMin 15 --chimScoreSeparation 10 --chimJunctionOverhangMin 15 --alignTranscriptsPerReadNmax 200000 --alignTranscriptsPerWindowNmax 20000 
+```
 
+```
 $ dos2unix STAR_in_DCC_mate_1.txt
 $ sbatch STAR_in_DCC_mate_1.txt
+```
 
+```
 $ cd .. 
 ```
 
@@ -162,7 +165,9 @@ Create STAR_in_DCC_mate_2.txt:
 
 module load star
 STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype None --readFilesIn *_2.fastq --readFilesCommand cat --outReadsUnmapped Fastx --outSJfilterOverhangMin 15 15 15 15 --alignSJoverhangMin 15 --alignSJDBoverhangMin 15 --outFilterMultimapNmax 20 --outFilterScoreMin 1 --outFilterMatchNmin 1 --outFilterMismatchNmax 2 --chimSegmentMin 15 --chimScoreMin 15 --chimScoreSeparation 10 --chimJunctionOverhangMin 15 --alignTranscriptsPerReadNmax 200000 --alignTranscriptsPerWindowNmax 20000 
+```
 
+```
 $ dos2unix STAR_in_DCC_mate_2.txt
 $ sbatch STAR_in_DCC_mate_2.txt
 ```
@@ -185,7 +190,9 @@ Create run_samtools_DCC.txt:
 module load samtools
 
 samtools index Aligned.sortedByCoord.out.bam
+```
 
+```
 $ dos2unix run_samtools_DCC.txt
 $ sbatch run_samtools_DCC.txt
 ```

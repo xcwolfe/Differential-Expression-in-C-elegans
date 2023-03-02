@@ -197,9 +197,13 @@ $ sbatch DCC_ASG.txt
 ```
 
 Once you have completed each DCC run, rename your DCC output files with the cell type and replicate number as a prefix for the output files:
+
 a.	CircSkipJunctions = ASG1CircSkipJunctions
+
 b.	LinearCount = ASG1LinearCount
+
 c.	CircRNACount = ASG1CircRNACount
+
 d.	CircCoordinates = ASG1CircCoordinates
 
 Download each output file to your R working directory

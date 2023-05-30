@@ -3,7 +3,7 @@ title: "Linear regression of D.E. genes and JUM results"
 output: html_document
 ---
 
-#SEVENTH
+#EIGHTH
 
 ```{r}
 library("ggplot2")

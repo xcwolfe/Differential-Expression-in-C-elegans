@@ -1,0 +1,550 @@
+---
+title: "circRNA filtering and testing"
+output: html_document
+---
+
+#NINTH
+
+##Prior to running this R markdown, you must run DCC on your samples to test for circular RNA. See https://github.com/dieterich-lab/DCC for instructions on how to perform this using Unix.
+
+##I have also uploaded my own DCC log on the GitHub repository for this project.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+save.image("C:/Users/xcwol/Downloads/.RData")
+load("C:/Users/xcwol/Downloads/.RData")
+```
+
+
+```{r}
+#install.packages("devtools")
+library("devtools")
+require(devtools)
+#install.packages("remotes")
+library("CircTest")
+library("utils")
+library("dplyr")
+library("ggplot2")
+library("pheatmap")
+library("RColorBrewer")
+library("tidyverse")
+library("rstatix")
+library("stats")
+library("data.table")
+library("DEXSeq")
+library("ggpubr")
+#install_github("jdstorey/qvalue")
+library("qvalue")
+library("aod")
+library("rtracklayer")
+library("GenomicRanges")
+library("gdata")
+```
+
+# Make a list of your cell types and replicate numbers:
+```{r}
+singletypesprac <-  c("ASG","AVE","AVG","AWA","AWB","DD","PVD","VD","PANNEURON")
+
+singletypesprac_withreps <- c("ASG1", "ASG2", "ASG3", "ASG4", "AVE1", "AVE2", "AVE3", "AVG1", "AVG2", "AVG3", "AWA1", "AWA2", "AWA3", "AWA4", "AWB1", "AWB2", "AWB3", "AWB4", "AWB5", "DD1", "DD2", "DD3", "PVD1", "PVD2", "VD1", "VD2", "VD3", "VD4", "PAN1", "PAN2", "PAN3", "PAN4")
+```
+
+# Import of DCC output files into R:
+```{r, include=FALSE}
+setwd("D:/Zach Wolfe's CircRNA analysis") # set your working directory here
+
+circRNA_table <- matrix(nrow = 32, ncol = 2, dimnames = list(x = singletypesprac_withreps, y = c(paste("circRNA count"), paste("Most frequently circularized gene"))))
+circRNA_table[is.na(circRNA_table)] <- 0
+
+CircRNACount_filtered_combined <- data.frame(matrix(ncol = 3, nrow = 0))
+colnames <- c("Chr", "Start", "End")
+colnames(CircRNACount_filtered_combined) <- colnames
+CircRNACount_filtered_combined$Chr <- as.character()
+CircRNACount_filtered_combined$Start <- as.numeric()
+CircRNACount_filtered_combined$End <- as.numeric()
+
+LinearCount_filtered_combined <- data.frame(matrix(ncol = 3, nrow = 0))
+colnames <- c("Chr", "Start", "End")
+colnames(LinearCount_filtered_combined) <- colnames
+LinearCount_filtered_combined$Chr <- as.character()
+LinearCount_filtered_combined$Start <- as.numeric()
+LinearCount_filtered_combined$End <- as.numeric()
+
+CircCoordinates_filtered_combined <- data.frame(matrix(ncol = 8, nrow = 0))
+colnames <- c("Chr", "Start", "End", "Gene", "JunctionType", "Strand", "Start.End.Region", "OverallRegion")
+colnames(CircCoordinates_filtered_combined) <- colnames
+CircCoordinates_filtered_combined$Chr <- as.character()
+CircCoordinates_filtered_combined$Start <- as.numeric()
+CircCoordinates_filtered_combined$End <- as.numeric()
+CircCoordinates_filtered_combined$Gene <- as.character()
+CircCoordinates_filtered_combined$JunctionType <- as.numeric()
+CircCoordinates_filtered_combined$Strand <- as.character()
+CircCoordinates_filtered_combined$Start.End.Region <- as.character()
+CircCoordinates_filtered_combined$OverallRegion <- as.character()
+
+for (i in 1:length(singletypesprac_withreps)){
+CircRNACount <- read.delim(paste0(singletypesprac_withreps[i], 'CircRNACount'))
+LinearCount <- read.delim(paste0(singletypesprac_withreps[i], 'LinearCount'))
+CircCoordinates <- read.delim(paste0(singletypesprac_withreps[i], 'CircCoordinates'))
+
+CircRNACount_filtered <- Circ.filter(circ = CircRNACount,
+                                     linear = LinearCount,
+                                     Nreplicates = 1,
+                                     filter.sample = 1,
+                                     filter.count = 5, # default is 5
+                                     percentage = 0, # default is 0.1
+                                    )
+
+
+CircCoordinates_filtered <- CircCoordinates[rownames(CircRNACount_filtered),]
+LinearCount_filtered <- LinearCount[rownames(CircRNACount_filtered),]
+
+# We need to combine chimeric.out.junctions columns, then put them on one big table
+
+names(CircRNACount_filtered)[names(CircRNACount_filtered) == "Chimeric.out.junction"] <- paste0("Chimeric.out.junction", singletypesprac_withreps[i])
+CircRNACount_filtered_combined <- full_join(CircRNACount_filtered_combined, CircRNACount_filtered)
+
+names(LinearCount_filtered)[names(LinearCount_filtered) == "Chimeric.out.junction"] <- paste0("Chimeric.out.junction", singletypesprac_withreps[i])
+LinearCount_filtered_combined <- full_join(LinearCount_filtered_combined, LinearCount_filtered)
+
+CircCoordinates_filtered_combined <- full_join(CircCoordinates_filtered_combined, CircCoordinates_filtered)
+
+
+circRNA_table[i,1] <- nrow(CircRNACount_filtered)
+
+if (circRNA_table[i,1] != 0){
+gene_count <- as.data.frame(table(CircCoordinates_filtered$Gene))
+gene_count <- gene_count[rev(order(gene_count$Freq)),]
+circRNA_table[i,2] <- as.character(first(gene_count$Var1))
+ }
+if (circRNA_table[i,1] == 0){
+circRNA_table[i,2] <- as.character(paste("NA"))
+ }
+}
+
+#CircRNACount_filtered_combined[is.na(CircRNACount_filtered_combined)] <- 0
+#LinearCount_filtered_combined[is.na(LinearCount_filtered_combined)] <- 0
+#CircCoordinates_filtered_combined[is.na(CircCoordinates_filtered_combined)] <- 0
+```
+
+# Exclude any circRNA that is only expressed in 1 or fewer cells:
+```{r}
+CircRNACount_filtered_combined <- CircRNACount_filtered_combined %>% mutate(num_NA = rowSums(!is.na(select(., -Chr)))) # this line counts the number of non-NA elements per row
+CircRNACount_filtered_combined_2 <- CircRNACount_filtered_combined[CircRNACount_filtered_combined$num_NA > 7,] # keep all rows with more than 5 non-NA values (> 7 because Start and End coordinates are both non-NA)
+LinearCount_filtered_combined <- LinearCount_filtered_combined %>% mutate(num_NA = rowSums(!is.na(select(., -Chr)))) # this line counts the number of non-NA elements per row
+LinearCount_filtered_combined_2 <- LinearCount_filtered_combined[LinearCount_filtered_combined$num_NA > 7,] # keep all rows with more than 5 non-NA values (> 7 because Start and End coordinates are both non-NA)
+
+# get rid of the num_NA column:
+CircRNACount_filtered_combined_2 <- CircRNACount_filtered_combined_2[,-36]
+LinearCount_filtered_combined_2 <- LinearCount_filtered_combined_2[,-36]
+```
+
+# Circular RNA test (Circ.test):
+```{r, message=FALSE}
+group <- c(rep(1, 4), rep(2, 3), rep(3, 3), rep(4, 4), rep(5, 5), rep(6, 3), rep(7, 2), rep(8, 4), rep(9, 4))
+
+test <- Circ.test(CircRNACount_filtered_combined,
+                 LinearCount_filtered_combined,
+                 CircCoordinates_filtered_combined,
+                 group=group, # I have 9 groups with variable numbers of replicates in each group
+                 alpha = 1 # p-value cutoff (default is 0.05)
+)
+```
+
+# Significant results are shown in a summary table:
+```{r}
+colnames(test$summary_table) <- c("Chr", "Start", "End", "Gene", "JunctionType", "Strand", "Start.End.Region", "OverallRegion", "sig_p", "ASG_ratio_mean", "AVE_ratio_mean", "AVG_ratio_mean", "AWA_ratio_mean", "AWB_ratio_mean", "DD_ratio_mean", "PVD_ratio_mean", "VD_ratio_mean", "PANNEURON_ratio_mean")
+
+test$summary_table[is.na(test$summary_table)] <- 0
+
+View(test$summary_table)
+
+for (j in rownames(test$summary_table)){
+ Circ.ratioplot(CircRNACount_filtered_combined_2,
+                LinearCount_filtered_combined_2,
+                CircCoordinates_filtered_combined,
+                plotrow = j,
+                size = 15,
+                groupindicator1 = c(rep("ASG",4), rep("AVE",3), rep("AVG",3), rep("AWA",4), rep("AWB",5), rep("DD",3), rep("PVD",2), rep("VD",4), rep("PAN",4)),
+                lab_legend = "groupindicator1",
+                x = "Cell type",
+                y = "Percentage of Circular RNA vs All RNA",
+                gene_column = 4
+                )
+}
+```
+
+
+# I do not trust the p-values in the DCC pipeline. For this reason, I want to perform an ANOVA (or wald test) on every circRNA found in the combined dataframe:
+```{r}
+#test$summary_table <- test$summary_table %>% mutate(q_value = "")
+#test$summary_table <- test$summary_table %>% select(test$summary_table[,1:9], test$summary_table[,19], test$summary_table[,10:18])
+
+for (i in 1:nrow(CircRNACount_filtered_combined_2)){
+ASG <- CircRNACount_filtered_combined_2[i,4:7]/(CircRNACount_filtered_combined_2[i,4:7] + LinearCount_filtered_combined_2[i,4:7])
+AVE <- CircRNACount_filtered_combined_2[i,8:10]/(CircRNACount_filtered_combined_2[i,8:10] + LinearCount_filtered_combined_2[i,8:10])
+AVG <- CircRNACount_filtered_combined_2[i,11:13]/(CircRNACount_filtered_combined_2[i,11:13] + LinearCount_filtered_combined_2[i,11:13])
+AWA <- CircRNACount_filtered_combined_2[i,14:17]/(CircRNACount_filtered_combined_2[i,14:17] + LinearCount_filtered_combined_2[i,14:17])
+AWB <- CircRNACount_filtered_combined_2[i,18:22]/(CircRNACount_filtered_combined_2[i,18:22] + LinearCount_filtered_combined_2[i,18:22])
+DD <- CircRNACount_filtered_combined_2[i,23:25]/(CircRNACount_filtered_combined_2[i,23:25] + LinearCount_filtered_combined_2[i,23:25])
+PVD <- CircRNACount_filtered_combined_2[i,26:27]/(CircRNACount_filtered_combined_2[i,26:27] + LinearCount_filtered_combined_2[i,26:27])
+VD <- CircRNACount_filtered_combined_2[i,28:31]/(CircRNACount_filtered_combined_2[i,28:31] + LinearCount_filtered_combined_2[i,28:31])
+PAN <- CircRNACount_filtered_combined_2[i,32:35]/(CircRNACount_filtered_combined_2[i,32:35] + LinearCount_filtered_combined[i,32:35])
+
+group = factor(rep(1:9, c(length(ASG), length(AVE), length(AVG), length(AWA), length(AWB), length(DD), length(PVD), length(VD), length(PAN))))
+
+# combine data into a data frame
+data <- data.frame(
+  value = c(ASG,AVE,AVG,AWA,AWB,DD,PVD,VD,PAN)
+)
+data[2,] <- group
+
+# perform ANOVA loop
+for (j in levels(data[2,])) {
+  group_data <- data[data[2,] == j]
+  cat(paste("Group", j, ":\n"))
+  cat("Sample size:", sum(!is.na(group_data)), "\n")
+  cat("Mean:", mean(group_data, na.rm = TRUE), "\n")
+  cat("Standard deviation:", sd(group_data, na.rm = TRUE), "\n")
+  cat("--------------------------------------------------\n")
+}
+
+# perform ANOVA
+## find a way to report q-value in addition to p-value (4-24-23)
+## find the statistical test that DEXSeq uses to calculate p-value, then repeat that instead of the ANOVA loop (4-28-23)
+#anova_result <- aov(unlist(data[1,]) ~ group, data = data, na.action = na.exclude)
+#summary(anova_result)
+#test$summary_table$sig_p[i] <- format(summary(anova_result)[[1]][["Pr(>F)"]][1], scientific = FALSE)
+#test$summary_table$q_value[i] <- format(q.values, scientific = FALSE)
+
+# the statistical test that DEXSeq uses is the Wald test (I think). Let's perform Wald test on a lm of each circ:
+# (the output P(> X2) is our p-value that we would ideally re-insert back into the test$summary_table)
+# lm_result <- lm(unlist(data[1,]) ~ group, data = data, na.action = na.exclude)
+# lm_wald <- wald.test(Sigma = vcov(lm_result), b = coef(lm_result), Terms = length(lm_result$coefficients))
+# test$summary_table$sig_p[i] <- format(lm_wald$result$chi2[[3]], scientific = F)
+}
+
+# re-insert q values back into test$summary_table?
+# q.values <- format(p.adjust(as.numeric(test$summary_table$sig_p), method = "bonferroni"), scientific = F)
+# test$summary_table <- cbind(test$summary_table, q.values)
+
+test$summary_table <- test$summary_table[order(test$summary_table$sig_p),]
+colnames(test$summary_table) <- c("Chr", "Start", "End", "Gene", "JunctionType", "Strand", "Start.End.Region", "OverallRegion", "sig_p", "ASG_ratio_mean", "AVE_ratio_mean", "AVG_ratio_mean", "AWA_ratio_mean", "AWB_ratio_mean", "DD_ratio_mean", "PVD_ratio_mean", "VD_ratio_mean", "PANNEURON_ratio_mean")
+View(test$summary_table)
+```
+
+# Save your work:
+```{r}
+write.csv(test, file = "CircRNA test results.csv")
+write.csv(test$summary_table, file = "CircRNA test results summary.csv")
+write.csv(circRNA_table, file = "circRNA table.csv")
+write.csv(CircRNACount_filtered_combined, file = "CircRNACount_filtered_combined.csv")
+write.csv(LinearCount_filtered_combined, file = "LinearCount_filtered_combined.csv")
+write.csv(CircCoordinates_filtered_combined, file = "CircCoordinates_filtered_combined.csv")
+```
+
+# Let's continue filtering independently to find the "most interesting" circular RNAs:
+```{r, message=FALSE}
+# consolidate test table:
+circ_test_consolidated <- test$summary_table[,c(2:4,9:18)]
+
+# add a p-value cutoff:
+# circ_test_consolidated <- circ_test_consolidated[circ_test_consolidated$sig_p < 0.05,]
+
+# consolidate the table by gene name:
+unique_circ_genes <- unique(circ_test_consolidated$Gene)
+  
+circ_gene_means <- data.frame()
+for(i in unique_circ_genes){
+circ_gene_means[i,1] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 5])
+circ_gene_means[i,2] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 6])
+circ_gene_means[i,3] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 7])
+circ_gene_means[i,4] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 8])
+circ_gene_means[i,5] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 9])
+circ_gene_means[i,6] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 10])
+circ_gene_means[i,7] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 11])
+circ_gene_means[i,8] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 12])
+circ_gene_means[i,9] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 13])
+}
+
+# add column names:
+names(circ_gene_means) <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD", "PANNEURON")
+
+circ_gene_count <- as.data.frame(table(circ_test_consolidated$Gene))
+circ_gene_count <- circ_gene_count[rev(order(circ_gene_count$Freq)),]
+names(circ_gene_count) <- c("Gene name", "Freq")
+
+circ_gene_means[is.na(circ_gene_means)] <- 0
+```
+
+# Instead of consolidating by gene, consolidate by start coordinate:
+```{r}
+unique_circ_coordinates <- unique(as.character(circ_test_consolidated$Start))
+
+circ_coordinates_means <- data.frame()
+for(i in unique_circ_coordinates){
+circ_coordinates_means[i,1] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 5])
+circ_coordinates_means[i,2] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 6])
+circ_coordinates_means[i,3] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 7])
+circ_coordinates_means[i,4] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 8])
+circ_coordinates_means[i,5] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 9])
+circ_coordinates_means[i,6] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 10])
+circ_coordinates_means[i,7] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 11])
+circ_coordinates_means[i,8] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 12])
+circ_coordinates_means[i,9] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 13])
+}
+
+# add column names:
+names(circ_coordinates_means) <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD", "PANNEURON")
+
+circ_coordinates_count <- as.data.frame(table(circ_test_consolidated$Start))
+circ_coordinates_count <- circ_coordinates_count[rev(order(circ_coordinates_count$Freq)),]
+names(circ_coordinates_count) <- c("Start coordinate", "Freq")
+
+circ_coordinates_means[is.na(circ_coordinates_means)] <- 0
+```
+
+# Heatmap plots:
+```{r}
+colors <- colorRampPalette(brewer.pal(6, "Oranges"))(250)
+pheatmap(circ_gene_means,
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         fontsize = 9,
+         fontsize_number = 16,
+         angle_col = 0,
+         col = colors,
+         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
+
+# Make a heatmap of the same gene data, but order it by PANNEURON:
+circ_gene_means_PAN <- circ_gene_means[rev(order(circ_gene_means$PANNEURON)),]
+pheatmap(circ_gene_means_PAN[1:50,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         fontsize = 8,
+         fontsize_number = 16,
+         angle_col = 0,
+         col = colors,
+         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
+
+
+colors <- colorRampPalette(brewer.pal(6, "PuRd"))(250)
+pheatmap(circ_coordinates_means,
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         fontsize = 9,
+         fontsize_number = 16,
+         angle_col = 0,
+         col = colors,
+         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
+
+# Make a heatmap of the same start coordinates data, but order it by PANNEURON:
+circ_coordinates_means_PAN <- circ_coordinates_means[rev(order(circ_coordinates_means$PANNEURON)),]
+pheatmap(circ_coordinates_means_PAN[1:50,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         fontsize = 8,
+         fontsize_number = 16,
+         angle_col = 0,
+         col = colors,
+         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
+```
+
+# Can we create a DEXSeq object out of our DCC outputs?
+```{r}
+countData <- interleave(CircRNACount_filtered_combined[,4:ncol(LinearCount_filtered_combined)],
+                 LinearCount_filtered_combined[,4:ncol(LinearCount_filtered_combined)])
+RNA_ID <- rep(1:1153, each = 2)
+Sub_ID = sprintf("%03d", rep(1:2, times = 1153))
+countData$Combined_ID <- paste(RNA_ID, Sub_ID, sep = ":")
+countData <- countData[, c(colnames(countData)[length(colnames(countData))], colnames(countData)[-length(colnames(countData))])]
+countData[is.na(countData)] <- 0 ## have to make NAs 0
+
+sampleData <- data.frame(sample = colnames(countData[,2:length(colnames(countData))]), condition = substr(singletypesprac_withreps, 1, nchar(singletypesprac_withreps) - 1))
+
+
+for (i in 1:(1153*3)) {   #1153 rows in CircRNACount_filtered_combined
+  if (i %% 3 == 1) {
+    values[i] <- paste0("gene_id ", ceiling(i/3))
+  } else {
+    values[i] <- paste0("exonic_part_number ", sprintf("%03d", (i-1) %% 3), "; gene_id ", ceiling(i/3))
+  }
+}
+
+values <- values[1:3459]   #1153*3 = 3459
+
+gff_content <- paste(
+ rep(CircRNACount_filtered_combined$Chr, each=3),
+ "splice_junction_refGene_mm10_and_merged_from_five_samples.gtf",
+ #rep(c("RNA_ID", "circular", "linear"), length.out = 1153*3),
+ rep(c("aggregate_gene", "exonic_part", "exonic_part"), length.out = 1153*3),
+ rep(CircRNACount_filtered_combined$Start, each=3),
+ rep(CircRNACount_filtered_combined$End, each=3),
+ ".",
+ rep(CircCoordinates_filtered_combined$Strand, each=3),
+ ".",
+ values,
+ sep = "\t")
+
+gff_content <- gff_content[1:3459]   #1153*3 = 3459
+
+# Write GFF content to file
+writeLines(gff_content, "output.gff")
+annotationFile <- fread("output.gff")
+
+
+countfiles <- character(length = ncol(countData)-1)
+for (i in colnames(countData)) {
+  temp_count_file <- paste0(i, "_combined_count.txt")
+  write.table(cbind(countData$Combined_ID, countData[,i]), file = temp_count_file, col.names = FALSE, row.names = FALSE, quote = FALSE)
+  countfiles[i] <- temp_count_file
+}
+
+source_folder <- "C:/Users/xcwol/Downloads"
+destination_folder <- "C:/Users/xcwol/Downloads/countfiles"
+filenames <- dir(pattern = "_combined_count")
+filenames <- filenames[-c(33)]
+file.copy(from = file.path(source_folder, filenames), to = destination_folder, recursive = TRUE)
+
+
+
+countfilesdir <- dir(pattern = "_combined_count")
+countfilesdir <- countfilesdir[-c(33)] # get rid of the one file that isn't a count file in my directory (corresponds to Combined_ID column)
+countfileslist <- list()
+
+singletypesprac <-  c("ASG","AVE","AVG","AWA","AWB","DD","PVD","VD","PAN")
+
+for (i in singletypesprac){
+ sub_countfiles <- grep(i, countfilesdir, value = TRUE)
+ countfileslist[[i]] <- sub_countfiles
+}
+
+# remove overlapping files from grep that aren't the correct cell type:
+countfileslist$VD <- countfileslist$VD[-c(1,2)] # PVD took up the first two values of the VD files
+
+#create megalist that will contain all DEXSeq objects:
+dxd_list <- list()
+
+for (i in singletypesprac){
+  for (j in singletypesprac){
+    if (i != j){
+    dxd <- DEXSeqDataSetFromHTSeq(c(countfileslist[[i]],countfileslist[[j]]),
+      sampleData = subset(sampleData, condition %in% c(i,j)),
+      design = ~ sample + exon + condition:exon,
+      flattenedfile = file.path("output.gff")
+    )
+    dxd_list[[paste0(i, "vs", j)]] <- dxd
+    }
+    if (i == j) next
+  }
+}
+
+
+
+# dxd <- DEXSeqDataSetFromHTSeq(countfilesdir,
+#   sampleData = sampleData,
+#   design = ~ sample + exon + condition:exon,
+#   flattenedfile = file.path("output.gff")
+# )
+```
+
+# Perform follow-up descriptor functions for DEXSeq object:
+```{r}
+for (i in singletypesprac){
+  for (j in singletypesprac){
+    if (i != j){
+    dxd_size <- estimateSizeFactors(dxd_list[[paste0(i, "vs", j)]])
+    sizeFactors(dxd_size)
+    dxd_size <- estimateDispersions(dxd_size)
+    # remove circRNAs with a high proportion of non-zero counts by filtering out NA values of mu:
+    dxd_size <- dxd_size[!is.na(rowSums(dxd_size@assays@data$mu)),]
+    dxd_list[[paste0(i, "vs", j)]] <- dxd_size
+    }
+    if (i == j) next
+  }
+}
+```
+
+# test for differential exon usage:
+```{r}
+for (i in singletypesprac){
+  for (j in singletypesprac){
+    if (i != j){
+    dxd_DEU <- testForDEU(dxd_list[[paste0(i, "vs", j)]])
+    dxd_DEU <- estimateExonFoldChanges(dxd_DEU, fitExpToVar="condition")
+    dxd_list[[paste0(i, "vs", j)]] <- dxd_DEU
+    }
+    if (i == j) next
+  }
+}
+```
+
+# store results in new dataframe:
+```{r}
+#create megalist that will contain all DEXSeq results:
+dxr_list <- list()
+
+for (i in singletypesprac){
+  for (j in singletypesprac){
+    if (i != j){
+    dxr <- DEXSeqResults(dxd_list[[paste0(i, "vs", j)]])
+    dxr_list[[paste0(i, "vs", j)]] <- dxr
+    }
+    if (i == j) next
+  }
+}
+
+# the comparisons that are not in alphabetical order are incorrect (as is with JUM). Let's remove all comparisons that are not alphabetical:
+alphabetical_dxr_list <- vector("list", length(dxr_list))
+counter <- 1
+
+for (i in seq_along(dxr_list)) {
+  comparison <- unlist(strsplit(names(dxr_list)[i], "vs"))
+  if (comparison[1] < comparison[2]) {
+    alphabetical_dxr_list[[counter]] <- dxr_list[[i]]
+    names(alphabetical_dxr_list)[counter] <- names(dxr_list)[i]
+    counter <- counter + 1
+  }
+}
+
+alphabetical_dxr_list <- alphabetical_dxr_list[!sapply(alphabetical_dxr_list, is.null)]
+
+# add start coordinate, end coordinate, and gene name columns to the count table in each dxr object:
+for (i in names(alphabetical_dxr_list)) {
+  counts <- alphabetical_dxr_list[[i]]@listData$countData
+  row_values <- matrix(nrow = nrow(counts), ncol = 3)
+  counter <- 1
+  for (j in strsplit(rownames(counts), split = ":")){
+  start <- CircRNACount_filtered_combined[j[1], "Start"]
+  end <- CircRNACount_filtered_combined[j[1], "End"]
+  genes <- CircCoordinates_filtered_combined[which(CircCoordinates_filtered_combined$Start == start), "Gene"][1]
+  row_values[counter,] <- c(start, end, genes)
+  counter <- counter + 1
+  }
+  counts_with_genes <- cbind(counts, row_values)
+  colnames(counts_with_genes) <- c(singletypesprac_withreps[as.numeric(colnames(counts_with_genes)[1:(ncol(counts_with_genes) - 3)])], "Start", "End", "Gene")
+  alphabetical_dxr_list[[i]]@listData$countData <- counts_with_genes
+}
+
+# save results as an R object:
+saveRDS(alphabetical_dxr_list, file = "alphabetical_dxr_list_filtered_for_mu.rds")
+```

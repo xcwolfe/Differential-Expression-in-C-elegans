@@ -1,7 +1,6 @@
 ---
 title: "Total gene search"
 output: html_document
-date: "2023-02-08"
 ---
 
 #FIFTH
@@ -31,32 +30,7 @@ save.image("C:/Users/xcwol/Downloads/.RData")
 load("C:/Users/xcwol/Downloads/.RData")
 ```
 
-
-# Convert RBP names to WBGene:
-
-# First I would like to create a file with all the genes of interest:
-```{r}
-#RBP_test_genes_file <- read.csv(file = "HUGHESRBPgenenames.csv", header = T, row.names = 1)
-#RBP_test_genes <- rownames(RBP_test_genes_file)
-
-#mined_RBPs_file <- read.csv(file = "simplemine_results.csv", header = T) # Duplicates of nog-1: used the row that contained "public name" of nog-1
-#mined_RBPs <- mined_RBPs_file[,2:3]
-#RBP_list <- c(mined_RBPs[,1])
-```
-
-# Then, I would like to search the .csv files I made in type vs type 1 x 1 for these RBPs:
-```{r}
-setwd("D:/Zach Wolfe's DESeq analysis")
-
-# This works. The select() function is the problem.
-# select() function is for variables, not values (I think). We need to find a function for selecting values
-
-untrimmed_data <- fread(file = "resAWBvsVC.csv", header = TRUE)[,c(1,3,7)]
-#match(RBP_list, overlap_data$V1, nomatch = NA)
-#print(length(which(match(RBP_list, overlap_data$V1) < 486 ))) # We know our RNABP list is 484 genes long. I need to add 2 to 484 (row 1 is header (+1), less than function adds +1) I am searching the list of ALL genes and printing the number of RNABPs expressed in the top 484 entries of each comparison. Not statistically accurate but we are getting somewhere.
-```
-
-# Then, I want to display these differential expression measures in a new table:
+# I want to display differential expression measures in a new table:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -68,11 +42,10 @@ for(i in singletypes){
     if(i != j){
 
 untrimmed_data <- fread(file = paste("res", i, "vs", j, ".csv", sep=""))[,c(1,3,7)]
-#match(RBP_list, overlap_data$V1, nomatch = NA)
 
 untrimmed_results[i,j] <- print(length(untrimmed_data) < 312) # 312 is top 1% significant of all genes (31173)
 
-untrimmed_results[i,j] <- write.csv(untrimmed_data, file=paste("genes", i, "vs", j, ".csv", sep="")) # Write csv of results
+# untrimmed_results[i,j] <- write.csv(untrimmed_data, file=paste("genes", i, "vs", j, ".csv", sep="")) # Write csv of results
 
     }
     if(i == j) next
@@ -80,12 +53,6 @@ untrimmed_results[i,j] <- write.csv(untrimmed_data, file=paste("genes", i, "vs",
 }
 ```
 
-```{r}
-comparison <- print(paste(ADL, "vs", VD))
-# gene <- print(overlap_data$V1[which(match(RBP_list, overlap_data$V1) < 312)])
-# log2foldchange <- print(overlap_data$log2FoldChange[which(match(RBP_list, overlap_data$V1) < 312)])
-# pvalue <- print(overlap_data$padj[which(match(RBP_list, overlap_data$V1) < 312)])
-```
 
 # Print names of genes from chart above:
 # This will be a practice chunk to ensure everything works:
@@ -129,7 +96,7 @@ write.csv(cutoffgenes, file=paste("DiffExpGenes", i, "vs", j, ".csv", sep=""))
 untrimmed_cutoff_results[is.na(untrimmed_cutoff_results)] <- 0
 ```
 
-# Get rid of the first row in topDEgene (created in line 115):
+# Get rid of the first row in topDEgene (created in line 83):
 ```{r}
 topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
 ```
@@ -213,7 +180,7 @@ pheatmap(untrimmed_cutoff_results,
          main = "Number of Significantly Differentially Expressed Genes by Cell Type")
 ```
 
-## (12-19-22) Redo this chunk by including 0-row data frames, then make a chunk below to save/reload the correct log2foldchange_per_gene:
+# Calculate total log2foldchange for each gene:
 ```{r include=FALSE, results='hide'}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -306,7 +273,7 @@ log2foldchange_per_gene <- read.csv("sum of log2foldchange per gene.csv", row.na
 
 # Combine every excel file for each cell type:
 
-# Note: If there are 0 Diff. Exp. Genes in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunk. You may have to examine each Diff. Exp. Gene file and manually move them outside of your working directory if there are 0 rows:
+## Note: If there are 0 Diff. Exp. Genes in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunk. You may have to examine each Diff. Exp. Gene file and manually move them outside of your working directory if there are 0 rows:
 
 ## cell types with 0 Diff. Exp. Genes in my example can be found in D:\Zach Wolfe's DESeq analysis\Zero_Diff_Exp_Genes_comparisons 
 ```{r}
@@ -628,7 +595,6 @@ pheatmap(logSums_gene_table[,c("AFD", "ASEL", "ASER")],
 # Top Differentially Expressed ("topDE") genes for each cell type:
 ```{r}
 uniqueDEGenes <- c(unique(topDEgene$V1))
-# only2topDEgenes <- c("WBGene00000105", "WBGene00001094", "WBGene00001340", "WBGene00003026", "WBGene00003218", "WBGene00004418", "WBGene00004472", "WBGene00004704", "WBGene00004795", "WBGene00004945", "WBGene00006698", "WBGene00008224", "WBGene00008561", "WBGene00013307", "WBGene00016113", "WBGene00018612", "WBGene00019971", "WBGene00021901", "WBGene00021929", "WBGene00022029")
 
 cnt <- as.data.frame(table(topDEgene$V1)) # CRITICAL: counts of unique D.E. Genes
 cnt_ordered <- cnt[order(cnt$Freq),] # ordered counts of unique D.E. Genes
@@ -774,7 +740,7 @@ OLLplot <- barplot(table(OLLuniqueGenes$V1),
 text(x = OLLplot, y = as.numeric(table(OLLuniqueGenes$V1)), label = as.numeric(table(OLLuniqueGenes$V1)), cex = 1, pos = 1, col = "black")
 ```
 
-# Attempt at ggplot bubble plot:
+# ggplot bubble plot:
 ```{r}
 ggplot(AINuniqueGenes, aes(x=rev(padj), y=V1, size=log2FoldChange)) +
   geom_point(aes(col = "blue")) +

@@ -177,65 +177,6 @@ for (j in rownames(test$summary_table)){
 }
 ```
 
-
-# I do not trust the p-values in the DCC pipeline. For this reason, I want to perform an ANOVA (or wald test) on every circRNA found in the combined dataframe:
-```{r}
-#test$summary_table <- test$summary_table %>% mutate(q_value = "")
-#test$summary_table <- test$summary_table %>% select(test$summary_table[,1:9], test$summary_table[,19], test$summary_table[,10:18])
-
-for (i in 1:nrow(CircRNACount_filtered_combined_2)){
-ASG <- CircRNACount_filtered_combined_2[i,4:7]/(CircRNACount_filtered_combined_2[i,4:7] + LinearCount_filtered_combined_2[i,4:7])
-AVE <- CircRNACount_filtered_combined_2[i,8:10]/(CircRNACount_filtered_combined_2[i,8:10] + LinearCount_filtered_combined_2[i,8:10])
-AVG <- CircRNACount_filtered_combined_2[i,11:13]/(CircRNACount_filtered_combined_2[i,11:13] + LinearCount_filtered_combined_2[i,11:13])
-AWA <- CircRNACount_filtered_combined_2[i,14:17]/(CircRNACount_filtered_combined_2[i,14:17] + LinearCount_filtered_combined_2[i,14:17])
-AWB <- CircRNACount_filtered_combined_2[i,18:22]/(CircRNACount_filtered_combined_2[i,18:22] + LinearCount_filtered_combined_2[i,18:22])
-DD <- CircRNACount_filtered_combined_2[i,23:25]/(CircRNACount_filtered_combined_2[i,23:25] + LinearCount_filtered_combined_2[i,23:25])
-PVD <- CircRNACount_filtered_combined_2[i,26:27]/(CircRNACount_filtered_combined_2[i,26:27] + LinearCount_filtered_combined_2[i,26:27])
-VD <- CircRNACount_filtered_combined_2[i,28:31]/(CircRNACount_filtered_combined_2[i,28:31] + LinearCount_filtered_combined_2[i,28:31])
-PAN <- CircRNACount_filtered_combined_2[i,32:35]/(CircRNACount_filtered_combined_2[i,32:35] + LinearCount_filtered_combined[i,32:35])
-
-group = factor(rep(1:9, c(length(ASG), length(AVE), length(AVG), length(AWA), length(AWB), length(DD), length(PVD), length(VD), length(PAN))))
-
-# combine data into a data frame
-data <- data.frame(
-  value = c(ASG,AVE,AVG,AWA,AWB,DD,PVD,VD,PAN)
-)
-data[2,] <- group
-
-# perform ANOVA loop
-for (j in levels(data[2,])) {
-  group_data <- data[data[2,] == j]
-  cat(paste("Group", j, ":\n"))
-  cat("Sample size:", sum(!is.na(group_data)), "\n")
-  cat("Mean:", mean(group_data, na.rm = TRUE), "\n")
-  cat("Standard deviation:", sd(group_data, na.rm = TRUE), "\n")
-  cat("--------------------------------------------------\n")
-}
-
-# perform ANOVA
-## find a way to report q-value in addition to p-value (4-24-23)
-## find the statistical test that DEXSeq uses to calculate p-value, then repeat that instead of the ANOVA loop (4-28-23)
-#anova_result <- aov(unlist(data[1,]) ~ group, data = data, na.action = na.exclude)
-#summary(anova_result)
-#test$summary_table$sig_p[i] <- format(summary(anova_result)[[1]][["Pr(>F)"]][1], scientific = FALSE)
-#test$summary_table$q_value[i] <- format(q.values, scientific = FALSE)
-
-# the statistical test that DEXSeq uses is the Wald test (I think). Let's perform Wald test on a lm of each circ:
-# (the output P(> X2) is our p-value that we would ideally re-insert back into the test$summary_table)
-# lm_result <- lm(unlist(data[1,]) ~ group, data = data, na.action = na.exclude)
-# lm_wald <- wald.test(Sigma = vcov(lm_result), b = coef(lm_result), Terms = length(lm_result$coefficients))
-# test$summary_table$sig_p[i] <- format(lm_wald$result$chi2[[3]], scientific = F)
-}
-
-# re-insert q values back into test$summary_table?
-# q.values <- format(p.adjust(as.numeric(test$summary_table$sig_p), method = "bonferroni"), scientific = F)
-# test$summary_table <- cbind(test$summary_table, q.values)
-
-test$summary_table <- test$summary_table[order(test$summary_table$sig_p),]
-colnames(test$summary_table) <- c("Chr", "Start", "End", "Gene", "JunctionType", "Strand", "Start.End.Region", "OverallRegion", "sig_p", "ASG_ratio_mean", "AVE_ratio_mean", "AVG_ratio_mean", "AWA_ratio_mean", "AWB_ratio_mean", "DD_ratio_mean", "PVD_ratio_mean", "VD_ratio_mean", "PANNEURON_ratio_mean")
-View(test$summary_table)
-```
-
 # Save your work:
 ```{r}
 write.csv(test, file = "CircRNA test results.csv")
@@ -458,13 +399,6 @@ for (i in singletypesprac){
   }
 }
 
-
-
-# dxd <- DEXSeqDataSetFromHTSeq(countfilesdir,
-#   sampleData = sampleData,
-#   design = ~ sample + exon + condition:exon,
-#   flattenedfile = file.path("output.gff")
-# )
 ```
 
 # Perform follow-up descriptor functions for DEXSeq object:

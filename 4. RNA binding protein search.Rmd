@@ -26,6 +26,7 @@ library("purrr")
 ```
 
 ```{r}
+save.image("C:/Users/xcwol/Downloads/.RData")
 load("C:/Users/xcwol/Downloads/.RData")
 ```
 
@@ -117,7 +118,7 @@ write.csv(cutoffgenes, file=paste("DiffExpGenes", i, "vs", j, ".csv", sep=""))
 untrimmed_cutoff_results[is.na(untrimmed_cutoff_results)] <- 0
 ```
 
-# Get rid of the first row in topDEgene (created in line 104):
+# Get rid of the first row in topDEgene (created in line 105):
 ```{r}
 topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
 ```
@@ -174,7 +175,7 @@ RBP_cutoff_results[is.na(RBP_cutoff_results)] <- 0
 
 # Save as .csv:
 ```{r}
-write.csv(topDERBP[1641:6560,], file = "topDifferentiallyExpressedRBPsbyComparison.csv")
+write.csv(topDEgene[1641:6560,], file = "topDifferentiallyExpressedRBPsbyComparison.csv")
 write.csv(RBP_cutoff_results, file = "RBP_cutoff_results.csv")
 ```
 
@@ -328,12 +329,12 @@ pheatmap(log2foldchange_per_gene[,201:257],
 
 # write.csv for sum of log2foldchange per gene (in which abs(log2FoldChange) > 2 & padj < .01) in each cell type) - colSums(0) columns removed
 ```{r}
-write.csv(log2foldchange_per_gene, file = "sum of log2foldchange per gene.csv")
+write.csv(log2foldchange_per_gene, file = "sum of log2foldchange per RBP.csv")
 ```
 
 # Backup read.csv:
 ```{r}
-log2foldchange_per_gene <- read.csv("sum of log2foldchange per gene.csv", row.names = 1)
+log2foldchange_per_gene <- read.csv("sum of log2foldchange per RBP.csv", row.names = 1)
 ```
 
 
@@ -417,7 +418,6 @@ logMeans[i,1] <- mean(LargeRBPdf[LargeRBPdf$V1 == i, 2])
 write.csv(logSums, file = "logSumsAFD.csv")
 write.csv(logMeans, file = "logMeansAFD.csv") # change cell type here
 #write.csv(LargeRBPdf, file = "Most interesting RBPs in cell type AFD.csv")
-write.csv(as.character(rownames(logSums)), file = "RBP log2foldchange list (AFD).csv")
 ```
 
 # Make a heatmap for the logSums value in each gene for a given cell type:
@@ -653,7 +653,6 @@ pheatmap(logSums_table[,c("AFD", "ASEL", "ASER")],
 # Top Differentially Expressed ("topDE") genes for each cell type:
 ```{r}
 uniqueDERBPs <- c(unique(topDEgene$V1))
-# only2topDEgenes <- c("WBGene00000105", "WBGene00001094", "WBGene00001340", "WBGene00003026", "WBGene00003218", "WBGene00004418", "WBGene00004472", "WBGene00004704", "WBGene00004795", "WBGene00004945", "WBGene00006698", "WBGene00008224", "WBGene00008561", "WBGene00013307", "WBGene00016113", "WBGene00018612", "WBGene00019971", "WBGene00021901", "WBGene00021929", "WBGene00022029")
 
 cnt <- count(topDEgene$V1) # CRITICAL: counts of unique D.E. RBPs
 cnt_ordered <- cnt[order(cnt$freq),] # ordered counts of unique D.E. RBPs

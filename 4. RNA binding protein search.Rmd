@@ -174,7 +174,7 @@ RBP_cutoff_results[is.na(RBP_cutoff_results)] <- 0
 
 # Save as .csv:
 ```{r}
-write.csv(topDEgene[1641:6560,], file = "topDifferentiallyExpressedGenesbyComparison.csv")
+write.csv(topDERBP[1641:6560,], file = "topDifferentiallyExpressedRBPsbyComparison.csv")
 write.csv(RBP_cutoff_results, file = "RBP_cutoff_results.csv")
 ```
 
@@ -216,22 +216,22 @@ pheatmap(RBP_cutoff_results,
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-log2foldchange_per_gene <-  matrix(nrow = 41, ncol = 484, dimnames = list(singletypes, mined_RBPs$WormBase.Gene.ID))
-log2foldchange_per_gene[is.na(log2foldchange_per_gene)] <- 0
+log2foldchange_per_RBP <-  matrix(nrow = 41, ncol = 484, dimnames = list(singletypes, mined_RBPs$WormBase.Gene.ID))
+log2foldchange_per_RBP[is.na(log2foldchange_per_RBP)] <- 0
 
 for(j in singletypes){
  for(k in singletypes){
   if(j != k){
 
 DiffExpRBPs <- fread(file = paste("DiffExpRBPs", j, "vs", k, ".csv", sep = ""))[,2:3] %>% as.data.frame()
-log2foldchange_per_gene[j,DiffExpRBPs$V1] <- print(DiffExpRBPs$log2FoldChange) + log2foldchange_per_gene[j, DiffExpRBPs$V1]
+log2foldchange_per_RBP[j,DiffExpRBPs$V1] <- print(DiffExpRBPs$log2FoldChange) + log2foldchange_per_RBP[j, DiffExpRBPs$V1]
      }
       if (j == k) next
      }
    }
 
-log2foldchange_per_gene_zeroes <- (colSums(log2foldchange_per_gene) == 0)
-log2foldchange_per_gene <- log2foldchange_per_gene[, !log2foldchange_per_gene_zeroes]
+log2foldchange_per_RBP_zeroes <- (colSums(log2foldchange_per_RBP) == 0)
+log2foldchange_per_RBP <- log2foldchange_per_RBP[, !log2foldchange_per_RBP_zeroes]
 ```
 
 # Which cell types have the most upregulation and downregulation?
@@ -417,24 +417,25 @@ logMeans[i,1] <- mean(LargeRBPdf[LargeRBPdf$V1 == i, 2])
 write.csv(logSums, file = "logSumsAFD.csv")
 write.csv(logMeans, file = "logMeansAFD.csv") # change cell type here
 #write.csv(LargeRBPdf, file = "Most interesting RBPs in cell type AFD.csv")
+write.csv(as.character(rownames(logSums)), file = "RBP log2foldchange list (AFD).csv")
 ```
 
 # Make a heatmap for the logSums value in each gene for a given cell type:
 ```{r}
-logSums_table <- matrix(nrow = 484, ncol = 41, dimnames = list(RBP_list,singletypes))
-logSums_table[is.na(logSums_table)] <- 0
+logSums_RBP_table <- matrix(nrow = 484, ncol = 41, dimnames = list(RBP_list,singletypes))
+logSums_RBP_table[is.na(logSums_RBP_table)] <- 0
 
 for (i in singletypes){
 logSums_for_graph <- fread(file = paste0("logSums", i, ".csv", sep = "")) %>% as.data.frame()
 rownames(logSums_for_graph) <- logSums_for_graph[,1]
   for (j in RBP_list){
-logSums_table[j,i] <- print(logSums_for_graph[j,2])
-logSums_table[is.na(logSums_table)] <- 0
+logSums_RBP_table[j,i] <- print(logSums_for_graph[j,2])
+logSums_RBP_table[is.na(logSums_RBP_table)] <- 0
   }
 }
 
 colors <- colorRampPalette(brewer.pal(6, "PuRd"))(250)
-pheatmap(logSums_table,
+pheatmap(logSums_RBP_table,
          border_color = "black",
          clustering_distance_rows=sampleDists,
          clustering_distance_cols=sampleDists,
@@ -449,19 +450,37 @@ pheatmap(logSums_table,
          col = colors,
          main = "Sum of All log2FoldChange Values for Unique RBPs in One Cell Type vs All Other Cell Types")
 
-logSums_table <- logSums_table[rowSums(logSums_table) != 0,] # if you want to keep rows with 0 data, "#" this row out
-maxDEcelltypes <- count(colnames(logSums_table)[apply(logSums_table, 1, which.max)])
-maxDEcelltypes <- maxDEcelltypes[order(maxDEcelltypes$freq, decreasing = TRUE),]
-minDEcelltypes <- count(colnames(logSums_table)[apply(logSums_table, 1, which.min)])
-minDEcelltypes <- minDEcelltypes[order(minDEcelltypes$freq, decreasing = TRUE),]
-maxDERBPs <- count(colnames(t(logSums_table))[apply(t(logSums_table), 1, which.max)])
+logSums_RBP_table <- logSums_RBP_table[rowSums(logSums_RBP_table) != 0,] # if you want to keep rows with 0 data, "#" this row out
+maxDEcelltypes <- as.data.frame(table(colnames(logSums_RBP_table))[apply(logSums_RBP_table, 1, which.max)])
+maxDEcelltypes <- maxDEcelltypes[order(maxDEcelltypes$Freq, decreasing = TRUE),]
+minDEcelltypes <- as.data.frame(table(colnames(logSums_RBP_table))[apply(logSums_RBP_table, 1, which.min)])
+minDEcelltypes <- minDEcelltypes[order(minDEcelltypes$Freq, decreasing = TRUE),]
+maxDERBPs <- as.data.frame(table(colnames(t(logSums_RBP_table)))[apply(t(logSums_RBP_table), 1, which.max)])
+maxDERBPs <- count(maxDERBPs$Var1)
 maxDERBPs <- maxDERBPs[order(maxDERBPs$freq, decreasing = TRUE),]
-minDERBPs <- count(colnames(t(logSums_table))[apply(t(logSums_table), 1, which.min)])
+minDERBPs <- as.data.frame(table(colnames(t(logSums_RBP_table)))[apply(t(logSums_RBP_table), 1, which.min)])
+minDERBPs <- count(minDERBPs$Var1)
 minDERBPs <- minDERBPs[order(minDERBPs$freq, decreasing = TRUE),]
 ```
 
+# Make a log2foldchange list just for each cell type here (useful for gene ontology tools):
 ```{r}
-write.csv(logSums_table, file = "logSums_table.csv")
+for (i in 1:length(singletypes)){
+
+RBP_log2foldchange_list <- logSums_RBP_table
+RBP_log2foldchange_list <- rownames_to_column(data.frame(RBP_log2foldchange_list), "gene_names")
+RBP_log2foldchange_list <- RBP_log2foldchange_list[,c(1,i+1)] # column 1 contains the row_names, column i+1 contains my cell type's log2foldchange values
+rownames(RBP_log2foldchange_list) <- RBP_log2foldchange_list[,1]
+RBP_log2foldchange_list <- RBP_log2foldchange_list[rev(order(RBP_log2foldchange_list[,2])),] # reorder by cell type's log2foldchange value column
+RBP_log2foldchange_list <- as.data.frame(RBP_log2foldchange_list[which(RBP_log2foldchange_list[,2] > 2),]) # Change log2foldchange cutoffs if desired
+
+write.table(RBP_log2foldchange_list[,1], file = paste("RBP log2foldchange list", singletypes[i], ".tsv"), row.names = FALSE, quote = FALSE, col.names = FALSE) # this is the list we will input into a gene enrichment tool (FuncAssociate, g:Profiler, etc.)
+}
+```
+
+```{r}
+write.csv(logSums_RBP_table, file = "logSums_RBP_table.csv")
+write.csv(RBP_log2foldchange_list[,1], file = "RBP log2foldchange list (AFD).csv", row.names = FALSE) # this is the list we will input into a gene enrichment tool (WormCat, g:Profiler, etc.)
 write.csv(maxDEcelltypes, file = "maxDEcelltypes.csv")
 write.csv(minDEcelltypes, file = "minDEcelltypes.csv")
 write.csv(maxDERBPs, file = "maxDERBPs.csv")
@@ -473,16 +492,57 @@ write.csv(minDERBPs, file = "minDERBPs.csv")
 logSums_table <- read.csv("logSums_table.csv", row.names = 1)
 ```
 
+# max Diff. Exp. RBP heatmap:
+```{r}
+maxs <- rowMaxs(as.matrix(logSums_RBP_table[,1:41]))
+logSums_RBP_table <- cbind(logSums_RBP_table, maxs)
+logSums_RBP_table <- logSums_RBP_table[order(unlist(logSums_RBP_table[,42]), decreasing = TRUE),]
+logSums_RBP_table <- logSums_RBP_table[,-42]
+
+# Now may be a good time to change gene names from WBGeneXXXXXXXX to common gene names using WormBase's simple mine tool:
+RBP_common_names <- read.csv("RBP_common_names.csv") # see "RBP_common_names.csv" for a list of the 265 RBPs used in this portion of the analysis
+
+rownames(logSums_RBP_table) <- RBP_common_names$Public.Name
+
+col_pallete <- colorRampPalette(c("white", "white", "white", "gold", "darkgoldenrod1", "darkorange1"))
+colors <- col_pallete(250)
+pheatmap(logSums_RBP_table[1:30,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 7,
+         fontsize_number = 6,
+         angle_col = 45,
+         col = colors,
+         main = "Sum of All log2FoldChange Values for Most Dysregulated RBPs in One Cell Type vs All Other Cell Types")
+```
+
+# Check relative expression of AFD compared to other cell types:
+```{r}
+colSums(logSums_RBP_table)["AFD"]/nrow(logSums_RBP_table)
+expression_value_RBP <- matrix(nrow = ncol(logSums_RBP_table), ncol = 2)
+colnames(expression_value_RBP) <- c("Cell_type", "Normalized_logSums_value")
+expression_value_RBP[,1] <- colnames(logSums_RBP_table)
+
+for (i in 1:ncol(logSums_RBP_table)){
+  expression_value_RBP[i,2] <- format(colSums(logSums_RBP_table)[i]/nrow(logSums_RBP_table), scientific = F)
+}
+
+ggplot(data = data.frame(expression_value_RBP), aes(x = expression_value_RBP[,1], y = as.numeric(expression_value_RBP[,2]))) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = "Normalized logSums value of RBPs per cell type", x = "Cell type", y = "Normalized logSums value") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
 # Which RBPs have the highest value overall in a single cell?
 # Report: which RBP, what is the value, and which cell?
 ```{r}
 log2foldchange_summary_df <- data.frame()
-
-#for (i in singletypes){
-#log2foldchange_summary_df[i,1] <- print(rownames(logSums_table)[which.max(logSums_table[,i])])
-#log2foldchange_summary_df[i,2] <- print(max(logSums_table[,i]))
-#}
 
 for (i in singletypes){
 cell_type <- print(paste(i))

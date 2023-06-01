@@ -19,7 +19,7 @@ library(DESeq2)
 library(RColorBrewer)
 ```
 
-# In this script, we will be looping a data frame that looks something like the following:
+# In this script, we will be looping a data frame that contains DESeq results:
 ```{r}
 # By type, ADL vs ASG:
 
@@ -63,7 +63,7 @@ for(i in singletypes){
   contrast = c("type",i, j)
 res <- results(dds, contrast = contrast)
 
-res <- res[order(abs(res$log2FoldChange), decreasing = TRUE),]
+res <- res[order(abs(res$log2FoldChange), decreasing = TRUE),]   # I ordered my results by log2foldchange. You can reorder them however you want.
 sum <- summary(res)
 write.csv(res, file=paste("res", i, "vs", j, ".csv", sep=""))
 
@@ -83,29 +83,6 @@ new_results[i,j] <- print(length(which(abs(res$log2FoldChange)>2 & res$padj < .0
 ```{r}
 #write.csv(new_results, file = "new_results_all_41_cell_types.csv")
 #new_results <- read.csv("new_results_all_41_cell_types.csv")
-```
-
-
-# Here we will make another matrix differentiating the number of significant genes between each treatment type:
-```{r}
-# Number of genes with abs(log2foldchange) values greater than x (change at bottom of chunk)
-
-# new_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
-# new_results[is.na(new_results)] <- 0
-
-# for(i in singletypes){
-  # for(j in singletypes){
-    # if(i != j){
-  # contrast = c("type",i, j)
-# res <- results(dds, contrast = contrast)
-
-# res <- res[order(res$padj),]
-# sum <- summary(res)
-    # }
-    # if(i == j) next
-    
-  # }
-# }
 ```
 
 # Heatmap plots:

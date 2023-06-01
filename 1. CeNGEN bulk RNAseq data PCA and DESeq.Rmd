@@ -5,14 +5,7 @@ output: html_document
 
 #FIRST
 
-# DESeq:
-# Step 1: DESeq
-# Step 2: results(DESeq object)
-# Step 3: contrast(s) between cell types
-# Step 4: LOOP
-# Step 5: make write.csv summaries
-
-# See 'type vs type 1x1' for statistical summaries and outputs
+# See 'Type vs type DESeq comparisons.Rmd' for statistical summaries and outputs
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -26,7 +19,6 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
  
 BiocManager::install("DESeq2")
-install.packages("tidyverse")
 library(DESeq2)
 library(ggplot2)
 library(stringr)

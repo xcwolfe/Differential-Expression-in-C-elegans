@@ -23,12 +23,13 @@ library(tidyverse)
 
 ## https://umap-learn.readthedocs.io/en/latest/
 
-
+# Load new_results (if you haven't kept them from the second .Rmd):
 ```{r}
 new_results <- read.csv(file = "log2foldchange_2_p-value_05.csv", header = T, row.names = 1)
 results.labels <- row.names(new_results)
 ```
 
+# Set seed and UMAP parameters:
 ```{r}
 set.seed(1111)
 umap.defaults

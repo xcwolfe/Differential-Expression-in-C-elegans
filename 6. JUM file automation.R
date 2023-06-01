@@ -25,7 +25,7 @@ combinedtype = as.data.frame(list(Type = oldtypesprac, Count = oldtypespraccount
 rownames(combinedtype) = combinedtype$Type
 ```
 
-# Unix runs files:
+# .txt files that contain all runs for each step of JUM:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
@@ -101,20 +101,10 @@ setwd("D:/Zach Wolfe's DESeq analysis")
 for(i in singletypesprac){
   for(j in singletypesprac){
     if(i != j){   
-     
-# z <- matrix(combinedtype$TrueCount, ncol = 2, nrow = 1)
-# colnames(z) <- c(i, j)
-# rownames(z) <- c("Replicates")
-# imult <- z[1,i]
-# jmult <- z[1,j]
-# combinedmults <- as.numeric(c(imult, jmult))
 x <- as.character(c(paste0(i, 1:3, "   ", i), paste0(j, 1:3, "   ", j)))
-# y <- as.character(c(i,i,i,i,j,j,j,j))
 
 # experiment_design file:
 sink(file=paste("experimental_design", i, "vs", j, ".txt", sep = ""))
-     # cat(cbind(x,y))   
-     # cat(t(rbind(x,y))) # Fix this. Get it into a table!
      cat(paste("condition",
                x[1], x[2], x[3], x[4], x[5], x[6], sep = "\n"))
      sink()

@@ -41,7 +41,7 @@ sink()
 
 # Start by saving your cell types below:
 ```{r}
-singletypes <- c("ADL","AFD","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","AVA","AVE","AVG","AVH","AVK","AVM","AWA","AWB","AWC","BAG","CAN","DA","DD","I5","IL1","IL2","NSM","OLL","OLQ","PHA","PVC","PVD","PVM","RIA","RIC","RIM","RIS","RMD","SMD","VB","VC","VD")
+singletypes <- c("ADL","AFD","AIM","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","AVA","AVE","AVG","AVH","AVK","AVL","AVM","AWA","AWB","AWC","BAG","CAN","DA","DD","DVC","I5","IL1","IL2","LUA","NSM","OLL","OLQ","PHA","PVC","PVD","PVM","RIA","RIC","RIM","RIS","RMD","SMB","SMD","VB","VC","VD")
 ```
 
 # Now load the individual replicates, i.e. the cell types followed by their respective replicate number:

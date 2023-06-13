@@ -66,11 +66,20 @@ for(i in singletypes){
 
 # JUM_A:
 ```{r}
-setwd("D:/Zach Wolfe's DESeq analysis")
+setwd("D:/Zach Wolfe's JUM analysis")
 
 for(i in singletypes){
   for(j in singletypes){
     if(i != j){   
+      
+    type1 <- i
+    count1 <- combinedtype$Count[combinedtype$Type == i]
+        
+    type2 <- j
+    count2 <- combinedtype$Count[combinedtype$Type == j]
+        
+        sample_numbers_condition1 <- paste0(type1, 1:count1)
+        sample_numbers_condition2 <- paste0(type2, 1:count2)
       
 sink(file=paste("JUM_A_", i, "vs", j, ".txt", sep=""))
       cat(paste("#!/bin/bash",
@@ -87,7 +96,7 @@ sink(file=paste("JUM_A_", i, "vs", j, ".txt", sep=""))
 "module load perl",
 "",
 "", sep = "\n"),
-paste0(" /scratch/group/norrislab/JUM/JUM_2.02/JUM_A.sh --Folder /scratch/group/norrislab/JUM/JUM_2.02 --JuncThreshold 5 --Condition1_fileNum_threshold ", combinedtype[i,2], " --Condition2_fileNum_threshold ", combinedtype[j,2], " --IRthreshold 5 --Readlength 100 --Thread ", combinedtype[i,3], " --Condition1SampleName ", i, "1,", i, "2,", i, "3 --Condition2SampleName ", j, "1,", j, "2,", j, "3"))
+paste0(" /lustre/work/client/group/norrislab/JUM/JUM_2.02/JUM_A.sh --Folder /lustre/work/client/group/norrislab/JUM/JUM_2.02 --JuncThreshold 5 --Condition1_fileNum_threshold ", combinedtype[i,2], " --Condition2_fileNum_threshold ", combinedtype[j,2], " --IRthreshold 5 --Readlength 100 --Thread ", combinedtype[i,3], paste("--Condition1SampleName", paste(sample_numbers_condition1, collapse = ","), "--Condition2SampleName", paste(sample_numbers_condition2, collapse = ","), sep = " ")))
 sink()
     }
     if (i == j) next

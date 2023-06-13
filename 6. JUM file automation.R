@@ -211,7 +211,7 @@ sink(file=paste("JUM_C_", i, "vs", j, ".txt", sep=""))
 "module load perl",
 "",
 "", sep = "\n"),
-paste(" /scratch/group/norrislab/JUM/JUM_2.02/JUM_C.sh --Folder /scratch/group/norrislab/JUM/JUM_2.02 --Test pvalue --Cutoff 1 --TotalCondition1FileNum", combinedtype[i,3], "--TotalCondition2FileNum",   combinedtype[j,3], " --REF refFlat.txt"))
+paste(" /lustre/work/client/group/norrislab/JUM/JUM_2.02/JUM_C.sh --Folder /lustre/work/client/group/norrislab/JUM/JUM_2.02 --Test pvalue --Cutoff 1 --TotalCondition1FileNum", combinedtype[i,3], "--TotalCondition2FileNum",   combinedtype[j,3], " --REF refFlat.txt"))
 sink()
     }
     if (i == j) next

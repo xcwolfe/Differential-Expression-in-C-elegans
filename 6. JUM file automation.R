@@ -150,26 +150,37 @@ cat(file = paste0("Rscript", i, "vs", j, ".txt"),
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-for(i in singletypes){
-  for(j in singletypes){
-    if(i != j){   
+for (i in singletypes) {
+  for (j in singletypes) {
+    if (i != j) {   
       
-sink(file=paste("JUM_B_", i, "vs", j, ".txt", sep=""))
-      cat(paste("#!/bin/bash",
+      type1 <- i
+      count1 <- combinedtype$Count[combinedtype$Type == i]
+      
+      type2 <- j
+      count2 <- combinedtype$Count[combinedtype$Type == j]
+      
+      sample_numbers_condition1 <- paste0(type1, 1:count1)
+      sample_numbers_condition2 <- paste0(type2, 1:count2)
+      
+sink(file = paste("JUM_B_", i, "vs", j, ".txt", sep = ""))
+cat(
+paste(
+"#!/bin/bash",
 "",
 "",
 "#SBATCH -N 1",
 "#SBATCH -o output.out",
 "#SBATCH -e output.err",
 "#SBATCH -p standard-s",
-"",
+ "",
 "module load gcc",
 "module load bedtools2",
 "module load samtools",
 "module load perl",
 "",
 "", sep = "\n"),
-paste0(" /scratch/group/norrislab/JUM/JUM_2.02/JUM_B.sh --Folder /scratch/group/norrislab/JUM/JUM_2.02 --Test pvalue --Cutoff 1 --TotalFileNum ", combinedtype[i,3]+combinedtype[j,3], " --Condition1_fileNum_threshold ", combinedtype[i,2], " --Condition2_fileNum_threshold ", combinedtype[j,2], " --Condition1SampleName ", i, "1,", i, "2,", i, "3 --Condition2SampleName ", j, "1,", j, "2,", j, "3")) # Change pvalue cutoff as needed
+paste0(" /lustre/work/client/group/norrislab/JUM/JUM_2.02/JUM_B.sh --Folder /lustre/work/client/group/norrislab/JUM/JUM_2.02 --Test pvalue --Cutoff 1 --TotalFileNum ", combinedtype[i, 3] + combinedtype[j, 3], " --Condition1_fileNum_threshold ", combinedtype[i, 2], " --Condition2_fileNum_threshold ", combinedtype[j, 2], " --Condition1SampleName ", paste(sample_numbers_condition1, collapse = ","), " --Condition2SampleName ", paste(sample_numbers_condition2, collapse = ",")))
 sink()
     }
     if (i == j) next

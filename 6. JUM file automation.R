@@ -105,34 +105,42 @@ sink()
 ```
 
 # Run R script step:
+# This is the experiment_design .txt file:
 ```{r}
-setwd("D:/Zach Wolfe's DESeq analysis")
+setwd("D:/Zach Wolfe's JUM analysis")
 
-for(i in singletypes){
-  for(j in singletypes){
-    if(i != j){   
-x <- as.character(c(paste0(i, 1:3, "   ", i), paste0(j, 1:3, "   ", j)))
-
-# experiment_design file:
-sink(file=paste("experimental_design", i, "vs", j, ".txt", sep = ""))
-     cat(paste("condition",
-               x[1], x[2], x[3], x[4], x[5], x[6], sep = "\n"))
-     sink()
+for (i in 1:length(singletypes)) {
+  type1 <- singletypes[i]
+  
+  for (j in 1:length(singletypes)) {
+    type2 <- singletypes[j]
+    
+    if (i != j) {
+      count1 <- combinedtype$TrueCount[combinedtype$Type == type1]
+      count2 <- combinedtype$TrueCount[combinedtype$Type == type2]
+      
+      table_data <- data.frame(condition = c(paste0(type1, 1:count1), paste0(type2, 1:count2)), type = rep(c(type1, type2), c(count1, count2)))
+      table_name <- paste0("experiment_design", type1, "vs", type2)
+      colnames(table_data) <- c("", "condition")
+      
+      #print(table_data)
+      assign(table_name, table_data)
+      write.table(table_data, file = paste(table_name, ".txt", sep = ""), quote = FALSE, row.names = FALSE)
     }
-    if (i == j) next
   }
 }
 ```
 
+# This is the actual R script .txt file:
 ```{r}
-setwd("D:/Zach Wolfe's DESeq analysis")
+setwd("D:/Zach Wolfe's JUM analysis")
 
 for(i in singletypes){
   for(j in singletypes){
     if(i != j){   
 
 cat(file = paste0("Rscript", i, "vs", j, ".txt"),
-      paste0("Rscript /scratch/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experimental_design", i, "vs", j, ".txt >outputFile.Rout 2> errorFile.Rout"))
+      paste0("Rscript /lustre/work/client/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experiment_design", i, "vs", j, ".txt >outputFile.Rout 2> errorFile.Rout"))
     }
     if (i == j) next}
 }

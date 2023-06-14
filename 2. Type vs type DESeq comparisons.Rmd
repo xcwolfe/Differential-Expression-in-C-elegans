@@ -51,7 +51,7 @@ singletypes <- c("ADL","AFD","AIM","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis") # setwd() change to external hard drive
 
-new_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
+new_results <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 new_results[is.na(new_results)] <- 0
 
 for(i in singletypes){
@@ -78,8 +78,8 @@ new_results[i,j] <- print(length(which(abs(res$log2FoldChange)>2 & res$padj < .0
 
 # write/read.csv backup:
 ```{r}
-#write.csv(new_results, file = "new_results_all_41_cell_types.csv")
-#new_results <- read.csv("new_results_all_41_cell_types.csv")
+#write.csv(new_results, file = "new_results_all_46_cell_types.csv")
+#new_results <- read.csv("new_results_all_46_cell_types.csv")
 ```
 
 # Heatmap plots:

@@ -32,18 +32,56 @@ library(ggfortify)
 ```
 
 ```{r}
-save.image("C:/Users/xcwol/Downloads/.RData")
-load("C:/Users/xcwol/Downloads/.RData")
+save.image("C:/Your/Directory/.RData")
+load("C:/Your/Directory/.RData")
 ```
 
-# Read your bulk RNA-seq data:
+# Create a count matrix using HTSeq results:
 ```{r}
-bulkData <- read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
+# Identify the directory containing the .txt files
+directory_path <- "C:/Your/Directory"
+
+# Load the file paths
+file_paths <- list.files(directory_path, pattern = "\\_counts.txt$", full.names = TRUE)
+
+# Initialize variables
+count_matrix <- NULL
+sample_names <- NULL
+
+# Iterate through the files and extract the counts
+for (i in file_paths) {
+  sample_name <- tools::file_path_sans_ext(basename(i))  # Extract sample name
+  sample_names <- c(sample_names, sample_name)
+  
+  counts <- read_delim(i, delim = "\t", col_names = FALSE, col_types = cols_only(col_character(), col_integer()))
+  count_matrix <- cbind(count_matrix, counts[[2]])
+}
+
+# Convert count matrix to matrix format, then add replicate names and gene names:
+count_matrix <- as.matrix(count_matrix)
+count_matrix <- count_matrix[1:(nrow(count_matrix)-5),]
+colnames(count_matrix) <- str_remove(sample_names, "_counts")
+genenames <- read.csv("genenames.csv")
+rownames(count_matrix) <- genenames[,1]
+
+# Save count matrix as a .csv file
+write.csv(count_matrix, file = "count_matrix.csv", row.names = TRUE)
+
+# Print the count matrix and sample names
+print(count_matrix)
+print(sample_names)
+```
+
+# If you already have a count matrix from another source as a .csv, load it here:
+```{r}
+#bulkData <- read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
+```
 ```
 
 # Transform your bulk RNA-seq data:
 ```{r}
-t_PCA <- prcomp(t(bulkData[,2:161])) # I had 160 total samples, so I am  using columns 2:161 for my principal component analysis
+#t_PCA <- prcomp(t(bulkData[,2:161])) # I had 160 total samples, so I am  using columns 2:161 for my principal component analysis
+t_PCA <- prcomp(t(count_matrix))
 ```
 
 # Unweighted for read depth or STDev (will do in DESeq later):
@@ -55,9 +93,8 @@ plot(t_PCA$x, type = "p", cex = 1, pch = 16)
 title(main = "PCA Plot of Transposed Gene Data PCs 1-2")
 ```
 
-# Import your gene names and add them to the PCA:
+# Add your gene names to the PCA:
 ```{r}
-genenames <- read.csv("genenames.csv")
 rownames(t_PCA$rotation) <- make.names(1:nrow(genenames))
 
 list(sort(t_PCA$rotation[,1], decreasing = TRUE)[1:10])
@@ -70,41 +107,13 @@ list(sort(t_PCA$rotation[,3], decreasing = TRUE)[1:10])
 list(sort(t_PCA$rotation[,3], decreasing = FALSE)[1:10])
 ```
 
-# Old countData and metaData setup:
-```{r}
-# Neuron = read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
-# countData <- Neuron
-# str(countData)
-
-## attempt to make Neurons.clean, without gene column:
-# countData <- Neuron[,2:161]
-
-### MetaData:
-
-oldcondition = as.factor(c(rep("Sensory",9),rep("Interneuron",9),rep("Sensory",19),rep("Interneuron",20),rep("Sensory",20),rep("Unknown",3),rep("Motor",8),rep("Interneuron",4),rep("Polymodal",3),rep("Sensory",4),rep("Motor",3),rep("Sensory",2),rep("Polymodal",3),rep("Sensory",4),rep("Interneuron",5),rep("Sensory",4),rep("Interneuron",17),rep("Motor",23)))
-
-oldtype = as.factor(c(rep("ADL",4),rep("AFD",5),rep("AIN",6),rep("AIY",3),rep("ASEL",3),rep("ASER",4),rep("ASG",4),rep("ASI",4),rep("ASK",4),rep("AVA",6),rep("AVE",3),rep("AVG",3),rep("AVH",4),rep("AVK",4),rep("AVM",3),rep("AWA",4),rep("AWB",5),rep("AWC",4),rep("BAG",4),rep("CAN",3),rep("DA",4),rep("DD",4),rep("I5",4),rep("IL1",3),rep("IL2",4),rep("NSM",3),rep("OLL",2),rep("OLQ",3),rep("PHA",4),rep("PVC",5),rep("PVD",2),rep("PVM",2),rep("RIA",6),rep("RIC",4),rep("RIM",4),rep("RIS",3),rep("RMD",5),rep("SMD",4),rep("VB",4),rep("VC",6),rep("VD",4)))
-
-## We can change "type" and/or "condition" later to adjust which variable we will look at
-
-# metaData = read.csv("metadata rownames.csv") #This file  is a list of all neuron replicates
-
-# metaData = data.frame(row.names = row.names(metaData), type, condition)
-
-## ADLr171	ADLr172	ADLr173	ADLr174	AFDr35	AFDr36	AFDr37	AFDr38	AFDr39	AINr184	AINr185	AINr186	AINr187	AINr188	AINr189	AIYr65	AIYr66	AIYr67	ASELr149	ASELr150	ASELr151	ASERr144	ASERr145	ASERr146	ASERr147	ASGr13	ASGr14	ASGr15	ASGr16	ASIr152	ASIr153	ASIr154	ASIr155	ASKr46	ASKr47	ASKr48	ASKr49	AVAr21	AVAr22	AVAr23	AVAr24	AVAr25	AVAr26	AVEr40	AVEr41	AVEr42	AVGr43	AVGr44	AVGr45	AVHr175	AVHr176	AVHr177	AVHr178	AVKr109	AVKr110	AVKr111	AVKr112	AVMr226	AVMr227	AVMr228	AWAr17	AWAr18	AWAr19	AWAr20	AWBr50	AWBr51	AWBr52	AWBr53	AWBr54	AWCr156	AWCr157	AWCr158	AWCr159	BAGr118	BAGr119	BAGr120	BAGr121	CANr104	CANr91	CANr93	DAr87	DAr88	DAr89	DAr90	DDr83	DDr84	DDr85	DDr86	I5r208	I5r209	I5r210	I5r211	IL1r105	IL1r106	IL1r108	IL2r94	IL2r95	IL2r96	IL2r97	NSMr59	NSMr68	NSMr69	OLLr212	OLLr213	OLQr219	OLQr220	OLQr221	PHAr204	PHAr205	PHAr206	PHAr207	PVCr214	PVCr215	PVCr216	PVCr217	PVCr218	PVDr62	PVDr63	PVMr123	PVMr126	RIAr71	RIAr72	RIAr73	RIAr74	RIAr75	RIAr76	RICr134	RICr135	RICr136	RICr137	RIMr222	RIMr223	RIMr224	RIMr225	RISr129	RISr131	RISr132	RMDr179	RMDr180	RMDr181	RMDr182	RMDr183	SMDr200	SMDr201	SMDr202	SMDr203	VBr31	VBr32	VBr33	VBr34	VCr138	VCr139	VCr140	VCr141	VCr142	VCr143	VDr77	VDr78	VDr79	VDr81
-
-# metaData = read.csv("experimental_conditions.csv", header = TRUE, row.names = 1) # New metadata excel file
-
-# print(countData)
-
-# print(metaData)
-```
 
 # Make your cts object and run DESeq:
 ```{r}
-cts <- read.table("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
-#make a condition table.csv
-condition = read.table("experimental_conditions.csv", header = TRUE, sep=",", row.names=1)
+#cts <- read.table("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
+cts <- count_matrix
+# make a condition table
+condition = read.table("experimental_conditions_46_neurons.csv", header = TRUE, sep=",", row.names=1)
 
 dds <- DESeqDataSetFromMatrix(countData = cts, colData = condition, design= ~ type)
 dds <- DESeq(dds)
@@ -113,12 +122,13 @@ resultsNames(dds)
 dds <- estimateSizeFactors(dds)
 sizeFactors(dds)
 normalized_counts <- counts(dds, normalized=TRUE)
-normalized_countsdata <- write.csv(normalized_counts, file="normalized_counts.csv", sep="\t", quote=F, col.names = NA) # Use for UMAP later
+#normalized_countsdata <- write.csv(normalized_counts, file="normalized_counts.csv", sep="\t", quote = F, col.names = NA) # Use for UMAP later
 ```
 
 ```{r}
 write.csv(normalized_counts, file = "normalized_counts.csv")
 ```
+
 
 # Re-order results
 ```{r}

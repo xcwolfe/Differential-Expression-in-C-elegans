@@ -21,7 +21,6 @@ library("grid")
 library("gridBase")
 library("stringi")
 library("RColorBrewer")
-library("ggplot2")
 library("purrr")
 ```
 
@@ -30,22 +29,24 @@ save.image("C:/Users/xcwol/Downloads/.RData")
 load("C:/Users/xcwol/Downloads/.RData")
 ```
 
-# I want to display differential expression measures in a new table:
+
+# Then, I want to display these differential expression measures in a new table:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-untrimmed_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
+untrimmed_results <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 untrimmed_results[is.na(untrimmed_results)] <- 0
 
 for(i in singletypes){
   for(j in singletypes){
     if(i != j){
 
-untrimmed_data <- fread(file = paste("res", i, "vs", j, ".csv", sep=""))[,c(1,3,7)]
+untrimmed_data <- fread(file = paste("res_", i, "_vs_", j, "_.csv", sep=""))[,c(1,3,7)]
+#match(RBP_list, overlap_data$V1, nomatch = NA)
 
 untrimmed_results[i,j] <- print(length(untrimmed_data) < 312) # 312 is top 1% significant of all genes (31173)
 
-# untrimmed_results[i,j] <- write.csv(untrimmed_data, file=paste("genes", i, "vs", j, ".csv", sep="")) # Write csv of results
+untrimmed_results[i,j] <- write.csv(untrimmed_data, file=paste("genes", i, "vs", j, ".csv", sep="")) # Write csv of results
 
     }
     if(i == j) next
@@ -53,23 +54,28 @@ untrimmed_results[i,j] <- print(length(untrimmed_data) < 312) # 312 is top 1% si
 }
 ```
 
+```{r}
+comparison <- print(paste(ADL, "vs", VD))
+# gene <- print(overlap_data$V1[which(match(RBP_list, overlap_data$V1) < 312)])
+# log2foldchange <- print(overlap_data$log2FoldChange[which(match(RBP_list, overlap_data$V1) < 312)])
+# pvalue <- print(overlap_data$padj[which(match(RBP_list, overlap_data$V1) < 312)])
+```
 
 # Print names of genes from chart above:
 # This will be a practice chunk to ensure everything works:
 ```{r, include=FALSE}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-untrimmed_cutoff_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
+untrimmed_cutoff_results <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 untrimmed_cutoff_results[is.na(untrimmed_cutoff_results)] <- 0
 
 for(i in c("ADL")){
    for(j in c("AFD")){
     if(i != j){
 
-overlap_data <- fread(file = paste("res", i, "vs", j, ".csv", sep = ""))[,c(1,3,7)] %>% as.data.frame()
+overlap_data <- fread(file = paste("res_", i, "_vs_", j, "_.csv", sep = ""))[,c(1,3,7)] %>% as.data.frame()
 
 rownames(overlap_data) <- overlap_data$V1
-# RBP_list %in% rownames(overlap_data)
 intersection <- rownames(overlap_data)
 # print(overlap_data[intersection,])
 
@@ -96,7 +102,7 @@ write.csv(cutoffgenes, file=paste("DiffExpGenes", i, "vs", j, ".csv", sep=""))
 untrimmed_cutoff_results[is.na(untrimmed_cutoff_results)] <- 0
 ```
 
-# Get rid of the first row in topDEgene (created in line 83):
+# Get rid of the first row in topDEgene (created in line 115):
 ```{r}
 topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#" out this row
 ```
@@ -105,14 +111,14 @@ topDEgene <- topDEgene[-1,] # run this AFTER the chunk above JUST ONCE, then "#"
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-untrimmed_cutoff_results <- matrix(nrow = 41, ncol = 41, dimnames = list(singletypes,singletypes))
+untrimmed_cutoff_results <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 untrimmed_cutoff_results[is.na(untrimmed_cutoff_results)] <- 0
 
 for(i in singletypes){
    for(j in singletypes){
     if(i != j){
 
-overlap_data <- fread(file = paste("res", i, "vs", j, ".csv", sep = ""))[,c(1,3,7)] %>% as.data.frame()
+overlap_data <- fread(file = paste("res_", i, "_vs_", j, "_.csv", sep = ""))[,c(1,3,7)] %>% as.data.frame()
 
 rownames(overlap_data) <- overlap_data$V1
 intersection <- rownames(overlap_data)
@@ -131,7 +137,7 @@ topDEgene[new_row3,] <- rbind(totaldata[3,], new_row3)
 cutoffgenes <- as.data.frame(totaldata[which(abs(totaldata$log2FoldChange)>2 & totaldata$padj < .01),]) # Change cutoffs and abs() if desired
 untrimmed_cutoff_results[i,j] <- print(nrow(cutoffgenes))
 
-#write.csv(cutoffgenes, file=paste("DiffExpGenes", i, "vs", j, ".csv", sep=""))
+write.csv(cutoffgenes, file=paste("DiffExpGenes", i, "vs", j, ".csv", sep=""))
 
      }
     if (i == j) next
@@ -155,6 +161,7 @@ write.csv(untrimmed_cutoff_results, file = "DE_genes_results.csv")
 ```
 
 ```{r}
+colors <- colorRampPalette(brewer.pal(6, "Reds"))(250)
 plot.new()
 pheatmap(untrimmed_cutoff_results,
          clustering_distance_rows=sampleDists,
@@ -180,11 +187,11 @@ pheatmap(untrimmed_cutoff_results,
          main = "Number of Significantly Differentially Expressed Genes by Cell Type")
 ```
 
-# Calculate total log2foldchange for each gene:
+## log2foldchange per gene:
 ```{r include=FALSE, results='hide'}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-log2foldchange_per_gene <-  matrix(nrow = 41, ncol = 31173, dimnames = list(singletypes, genenames$Gene)) # genenames object is made in "CenGen bulk RNAseq Data PCA and DESeq"
+log2foldchange_per_gene <-  matrix(nrow = 46, ncol = 46934, dimnames = list(singletypes, genenames$Gene)) # genenames object is made in "CenGen bulk RNAseq Data PCA and DESeq"
 log2foldchange_per_gene[is.na(log2foldchange_per_gene)] <- 0
 
 for(j in singletypes){
@@ -273,7 +280,7 @@ log2foldchange_per_gene <- read.csv("sum of log2foldchange per gene.csv", row.na
 
 # Combine every excel file for each cell type:
 
-## Note: If there are 0 Diff. Exp. Genes in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunk. You may have to examine each Diff. Exp. Gene file and manually move them outside of your working directory if there are 0 rows:
+# Note: If there are 0 Diff. Exp. Genes in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunk. You may have to examine each Diff. Exp. Gene file and manually move them outside of your working directory if there are 0 rows:
 
 ## cell types with 0 Diff. Exp. Genes in my example can be found in D:\Zach Wolfe's DESeq analysis\Zero_Diff_Exp_Genes_comparisons 
 ```{r}
@@ -281,6 +288,7 @@ setwd("D:/Zach Wolfe's DESeq analysis")
 
 ADLDiffExpGenefiles <- list.files(pattern = "DiffExpGenesADLvs*")
 AFDDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAFDvs*")
+AIMDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAIMvs*")
 AINDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAINvs*")
 AIYDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAIYvs*")
 AINDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAINvs*")
@@ -294,6 +302,7 @@ AVEDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAVEvs*")
 AVGDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAVGvs*")
 AVHDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAVHvs*")
 AVKDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAVKvs*")
+AVLDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAVLvs*")
 AVMDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAVMvs*")
 AWADiffExpGenefiles <- list.files(pattern = "DiffExpGenesAWAvs*")
 AWBDiffExpGenefiles <- list.files(pattern = "DiffExpGenesAWBvs*")
@@ -302,9 +311,11 @@ BAGDiffExpGenefiles <- list.files(pattern = "DiffExpGenesBAGvs*")
 CANDiffExpGenefiles <- list.files(pattern = "DiffExpGenesCANvs*")
 DADiffExpGenefiles <- list.files(pattern = "DiffExpGenesDAvs*")
 DDDiffExpGenefiles <- list.files(pattern = "DiffExpGenesDDvs*")
+DVCDiffExpGenefiles <- list.files(pattern = "DiffExpGenesDVCvs*")
 I5DiffExpGenefiles <- list.files(pattern = "DiffExpGenesI5vs*")
 IL1DiffExpGenefiles <- list.files(pattern = "DiffExpGenesIL1vs*")
 IL2DiffExpGenefiles <- list.files(pattern = "DiffExpGenesIL2vs*")
+LUADiffExpGenefiles <- list.files(pattern = "DiffExpGenesLUAvs*")
 NSMDiffExpGenefiles <- list.files(pattern = "DiffExpGenesNSMvs*")
 OLLDiffExpGenefiles <- list.files(pattern = "DiffExpGenesOLLvs*")
 OLQDiffExpGenefiles <- list.files(pattern = "DiffExpGenesOLQvs*")
@@ -317,6 +328,7 @@ RICDiffExpGenefiles <- list.files(pattern = "DiffExpGenesRICvs*")
 RIMDiffExpGenefiles <- list.files(pattern = "DiffExpGenesRIMvs*")
 RISDiffExpGenefiles <- list.files(pattern = "DiffExpGenesRISvs*")
 RMDDiffExpGenefiles <- list.files(pattern = "DiffExpGenesRMDvs*")
+SMBDiffExpGenefiles <- list.files(pattern = "DiffExpGenesSMBvs*")
 SMDDiffExpGenefiles <- list.files(pattern = "DiffExpGenesSMDvs*")
 VBDiffExpGenefiles <- list.files(pattern = "DiffExpGenesVBvs*")
 VCDiffExpGenefiles <- list.files(pattern = "DiffExpGenesVCvs*")
@@ -325,21 +337,21 @@ VDDiffExpGenefiles <- list.files(pattern = "DiffExpGenesVDvs*")
 
 # Make a list of all DiffExpGenefiles for each cell type:
 ```{r}
-DiffExpGenefileList <- rep(paste0(singletypes, "DiffExpGenefiles"), len = 41)
+DiffExpGenefileList <- rep(paste0(singletypes, "DiffExpGenefiles"), len = 46)
 ```
 
 # Log2FoldChange values for unique Gene names in individual "cell type vs" files:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 
-LargeGenedf <- AIYDiffExpGenefiles %>% map_dfr(read.csv) # change cell type here
+LargeGenedf <- ADLDiffExpGenefiles %>% map_dfr(read.csv) # change cell type here
 LargeGenedf <- LargeGenedf[,-c(1)]
 uniqueGenes <- unique(LargeGenedf$V1)
 
-logSums <- matrix(nrow = length(uniqueGenes), ncol = 1, dimnames = list(uniqueGenes), log2foldchange)
+logSums <- matrix(nrow = length(uniqueGenes), ncol = 1, dimnames = list(uniqueGenes, "log2foldchange"))
 logSums[is.na(logSums)] <- 0
 
-logMeans <- matrix(nrow = length(uniqueGenes), ncol = 1, dimnames = list(uniqueGenes), log2foldchange)
+logMeans <- matrix(nrow = length(uniqueGenes), ncol = 1, dimnames = list(uniqueGenes, "log2foldchange"))
 logMeans[is.na(logMeans)] <- 0
 
 for(i in uniqueGenes){
@@ -350,14 +362,16 @@ logMeans[i,1] <- mean(LargeGenedf[LargeGenedf$V1 == i, 2])
 
 # Save/change cell type here:
 ```{r}
-write.csv(logSums, file = "logSumsAIY_all_genes.csv")
-write.csv(logMeans, file = "logMeansAIY_all_genes.csv") # change cell type here
+write.csv(logSums, file = "logSumsADL_all_genes.csv")
+write.csv(logMeans, file = "logMeansADL_all_genes.csv") # change cell type here
 #write.csv(LargeGenedf, file = "Most interesting Genes in cell type AIY.csv")
 ```
 
 # Make a heatmap for the logSums value in each gene for a given cell type:
 ```{r}
-logSums_gene_table <- matrix(nrow = 31173, ncol = 41, dimnames = list(genenames$Gene,singletypes))
+setwd("D:/Zach Wolfe's DESeq analysis")
+
+logSums_gene_table <- matrix(nrow = 46934, ncol = 46, dimnames = list(genenames$Gene,singletypes))
 logSums_gene_table[is.na(logSums_gene_table)] <- 0
 
 for (i in singletypes){
@@ -430,18 +444,27 @@ logSums_gene_table <- read.csv("logSums_gene_table_all_genes.csv", row.names = 1
 
 # max Diff. Exp. Gene heatmap:
 ```{r}
+maxs <- rowMaxs(as.matrix(logSums_gene_table))
+logSums_gene_table <- cbind(logSums_gene_table, maxs)
+logSums_gene_table <- logSums_gene_table[order(unlist(logSums_gene_table[,47]), decreasing = TRUE),]
+logSums_gene_table <- logSums_gene_table[,-47]
+
+write.csv(logSums_gene_table, file = "logSums_gene_table_all_genes.csv")
+
 # Now may be a good time to change gene names from WBGeneXXXXXXXX to common gene names using WormBase's simple mine tool:
-gene_common_names <- read.csv("gene_common_names.csv") # see "gene_common_names.csv" for a list of the genes used in this portion of the analysis
+gene_common_names <- read.table("simplemine_results_all_genes.txt", sep = "\t", header = T) # see "gene_common_names.csv" for a list of the genes used in this portion of the analysis
+
+# We also have some duplicate gene names - they are all called "not found". It is easier to call these by their WBGeneID, so we will correct this using this loop:
+duplicates <- gene_common_names$Public.Name[duplicated(gene_common_names$Public.Name)]
+
+for (i in duplicates) {
+  indices <- which(gene_common_names$Public.Name == i)
+  gene_common_names$Public.Name[indices] <- gene_common_names$Your.Input[indices]
+}
 
 rownames(logSums_gene_table) <- gene_common_names$Public.Name
 
-maxs <- rowMaxs(as.matrix(logSums_gene_table[,1:41]))
-logSums_gene_table <- cbind(logSums_gene_table, maxs)
-logSums_gene_table <- logSums_gene_table[order(unlist(logSums_gene_table[,42]), decreasing = TRUE),]
-logSums_gene_table <- logSums_gene_table[,-42]
-
-
-col_pallete <- colorRampPalette(c("white", "white", "white", "gold", "darkgoldenrod1", "darkorange1"))
+col_pallete <- colorRampPalette(c("white", "white", "white", "white", "gold", "darkgoldenrod1", "darkorange1"))
 colors <- col_pallete(250)
 pheatmap(logSums_gene_table[1:30,],
          border_color = "black",
@@ -481,11 +504,6 @@ ggplot(data = data.frame(expression_value_gene), aes(x = expression_value_gene[,
 # Report: which Gene, what is the value, and which cell?
 ```{r}
 log2foldchange_summary_df <- data.frame()
-
-#for (i in singletypes){
-#log2foldchange_summary_df[i,1] <- print(rownames(logSums_gene_table)[which.max(logSums_gene_table[,i])])
-#log2foldchange_summary_df[i,2] <- print(max(logSums_gene_table[,i]))
-#}
 
 for (i in singletypes){
 cell_type <- print(paste(i))
@@ -545,7 +563,7 @@ write.csv(log2foldchange_per_gene_colsums, file = "log2foldchange of all Genes.c
 # Looks like WBGene00010046 and WBGene00016260 are the "most intersting" for now. Let's examine them each more closely:
 ```{r}
 colors <- colorRampPalette(brewer.pal(9, "PuRd"))(250)
-interesting_Gene_table <- logSums_gene_table[c("WBGene00010046", "WBGene00016260"),]
+interesting_Gene_table <- logSums_gene_table[c("F54D1.1", "rege-1"),]
 
 pheatmap(interesting_Gene_table,
          border_color = "black",
@@ -561,7 +579,7 @@ pheatmap(interesting_Gene_table,
          col = colors,
          main = "Sum of All log2FoldChange Values for Interesting Genes in One Cell Type vs All Other Cell Types")
 
-interesting_Gene_table <- logSums_gene_table[c("WBGene00010046", "WBGene00016260", "WBGene00022771", "WBGene00019347", "WBGene00006321", "WBGene00022250"),]
+interesting_Gene_table <- logSums_gene_table[c("F54D1.1", "rege-1", "ZK616.1", "mbl-1", "sup-12", "Y73B6BL.29"),]
 
 pheatmap(interesting_Gene_table,
          border_color = "black",
@@ -592,157 +610,16 @@ pheatmap(logSums_gene_table[,c("AFD", "ASEL", "ASER")],
          main = "Sum of All log2FoldChange Values for AFD, ASEL, and ASER vs All Other Cell Types")
 ```
 
-# Top Differentially Expressed ("topDE") genes for each cell type:
-```{r}
-uniqueDEGenes <- c(unique(topDEgene$V1))
-
-cnt <- as.data.frame(table(topDEgene$V1)) # CRITICAL: counts of unique D.E. Genes
-cnt_ordered <- cnt[order(cnt$Freq),] # ordered counts of unique D.E. Genes
-twotopDEgenes <- cnt[which(cnt$Freq == 2),] # CRITICAL: all unique D.E. Genes that only show as max in 1 comparison
-cnt[which.max(cnt$Freq),] # max top D.E. gene across all comparisons
-
-ADLuniqueGenes <- topDEgene[1:40, 1:3]
-ADLs <- sapply(ADLuniqueGenes, function(c){
-  sapply(ADLuniqueGenes$V1, function(y){
-    sum(grepl(y, c))
-  })
-})
-unique(rownames(ADLs[ADLs[,1] == max(ADLs[,1]),])) # gives the gene that most frequently occurs in comparisons
-
-AFDuniqueGenes <- topDEgene[41:80, 1:3]
-AFDs <- sapply(AFDuniqueGenes, function(c){
-  sapply(AFDuniqueGenes$V1, function(y){
-    sum(grepl(y, c))
-  })
-})
-unique(rownames(AFDs[AFDs[,1] == max(AFDs[,1]),])) # gives the gene that most frequently occurs in comparisons
-
-AINuniqueGenes <- topDEgene[81:120, 1:3]
-AINs <- sapply(AINuniqueGenes, function(c){
-  sapply(AINuniqueGenes$V1, function(y){
-    sum(grepl(y, c))
-  })
-})
-unique(rownames(AINs[AINs[,1] == max(AINs[,1]),])) # gives the gene that most frequently occurs in comparisons
-
-AIYuniqueGenes <- topDEgene[121:160, 1:3]
-AIYs <- sapply(AIYuniqueGenes, function(c){
-  sapply(AIYuniqueGenes$V1, function(y){
-    sum(grepl(y, c))
-  })
-})
-unique(rownames(AIYs[AIYs[,1] == max(AIYs[,1]),])) # gives the gene that most frequently occurs in comparisons
-
-ASELuniqueGenes <- topDEgene[161:200, 1:3]
-ASELs <- sapply(ASELuniqueGenes, function(c){
-  sapply(ASELuniqueGenes$V1, function(y){
-    sum(grepl(y, c))
-  })
-})
-unique(rownames(ASELs[ASELs[,1] == max(ASELs[,1]),])) # gives the gene that most frequently occurs in comparisons
-
-ASERuniqueGenes <- topDEgene[201:240,1:3]
-ASERs <- sapply(ASERuniqueGenes, function(c){
-  sapply(ASERuniqueGenes$V1, function(y){
-    sum(grepl(y, c))
-  })
-})
-unique(rownames(ASERs[ASERs[,1] == max(ASERs[,1]),])) # gives the gene that most frequently occurs in comparisons
-
-OLLuniqueGenes <- topDEgene[1041:1080,1:3]
-OLLs <- sapply(OLLuniqueGenes, function(c){
-  sapply(OLLuniqueGenes$V1, function(y){
-    sum(grepl(y, c))
-  })
-})
-unique(rownames(OLLs[OLLs[,1] == max(OLLs[,1]),])) # gives the gene that most frequently occurs in comparisons
-```
-
-# Loop the previous chunk:
-```{r}
-typesplusuniqueGenes <- c("ADLuniqueGenes","AFDuniqueGenes","AINuniqueGenes","AIYuniqueGenes","ASELuniqueGenes","ASERuniqueGenes","ASGuniqueGenes","ASIuniqueGenes","ASKuniqueGenes","AVAuniqueGenes","AVEuniqueGenes","AVGuniqueGenes","AVHuniqueGenes","AVKuniqueGenes","AVMuniqueGenes","AWAuniqueGenes","AWBuniqueGenes","AWCuniqueGenes","BAGuniqueGenes","CANuniqueGenes","DAuniqueGenes","DDuniqueGenes","I5uniqueGenes","IL1uniqueGenes","IL2uniqueGenes","NSMuniqueGenes","OLLuniqueGenes","OLQuniqueGenes","PHAuniqueGenes","PVCuniqueGenes","PVDuniqueGenes","PVMuniqueGenes","RIAuniqueGenes","RICuniqueGenes","RIMuniqueGenes","RISuniqueGenes","RMDuniqueGenes","SMDuniqueGenes","VBuniqueGenes","VCuniqueGenes","VDuniqueGenes")
-
-for (i in typesplusuniqueGenes){
-  for (j in singletypes){
-
-i <- topDEgene[grep(paste("^", j, sep = ""), rownames(topDEgene)),]
-japply <- sapply(i, function(c){
-  sapply(i[,1], function(y){
-    sum(grepl(y, c))
-  })
-})
-print(j)
-print(unique(rownames(japply[japply[,1] == max(japply[,1]),]))) # gives gene that most frequently occurs as #1 most diff. expressed in comparisons
-print(nrow(japply[japply[,1] == max(japply[,1]),])) # gives the number of times that the gene above is #1 most diff. expressed in comparisons
-  }
-}
-```
 
 # Plots:
 ```{r}
 plot.new()
-pheatmap(Gene_cutoff_results,
+pheatmap(untrimmed_cutoff_results,
          clustering_distance_rows=sampleDists,
          clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
-         fontsize = 7.5,
+         fontsize = 7,
          col = colorRampPalette(brewer.pal(9, "Blues"))(250), # Can we color this differenly by motor vs sensory vs inter?
          main = "Number of Differentially Expressed Genes by Cell Type (log2FoldChange > 2 and adj. p-value < 0.01)")
-```
-
-```{r}
-plot.new()
-cnt_barplot <- barplot((as.numeric(cnt_ordered[111:130,2])/2), beside = TRUE, names.arg = "", angle = 85, col = rainbow(35), main = "Top 20 Differentially Expressed Genes (WormBase ID) among All Cell Types", xlab = "", ylab = "Count", plot = TRUE) # need to divide by 2: XXX is compared to YYY and also YYY is compared to XXX - these will yield the same result
-vps <- baseViewports()
-pushViewport(vps$inner, vps$figure, vps$plot)
-grid.text(stri_sub(cnt_ordered[111:130,1], 9, 14),
-           x = unit(cnt_barplot, "native"), y=unit(-1.5, "lines"),
-    just="bottom", rot=80)
-popViewport(3)
-
-barplot(as.numeric((cnt_ordered[31:130,2])/2) ~ stri_sub(cnt_ordered[31:130,1], 9, 14), # need to divide by 2: XXX is compared to YYY and also YYY is compared to XXX - these will yield the same result
-        main = "How Often is a Gene in the Top 3 D.E. for a Cell Type?",
-        xlab = "", ylab = "Count",
-        col = rainbow(40),
-        las=2,
-        cex.names=0.65,
-        plot = TRUE)
-```
-
-```{r}
-ggplot(cnt_ordered, aes(x = x, y = as.numeric(freq/2), show.legend = TRUE)) +
-  geom_bar(stat = "identity", color = rainbow(130), fill = rainbow(130)) +
-  labs(title= "How Often is an Gene in the Top 3 D.E. for a Cell Type?", 
-         x = "", y = "Count")
-  theme_minimal()
-```
-
-```{r}
-AINplot <- barplot(table(AINuniqueGenes$V1),
-        beside = TRUE,
-        main = "How Often is an Gene the Most Differentially Expressed in a Comparison with AIN?",
-        ylab = "Count",
-        col = rainbow(25),
-        las=2,
-        cex.names = 0.65,
-        plot = TRUE)
-text(x = AINplot, y = as.numeric(table(AINuniqueGenes$V1)), label = as.numeric(table(AINuniqueGenes$V1)), cex = 1, pos = 1, col = "black")
-
-OLLplot <- barplot(table(OLLuniqueGenes$V1),
-        beside = TRUE,
-        main = "How Often is an Gene the Most Differentially Expressed in a Comparison with OLL?",
-        ylab = "Count",
-        col = rainbow(25),
-        las=2,
-        cex.names = 0.5,
-        plot = TRUE)
-text(x = OLLplot, y = as.numeric(table(OLLuniqueGenes$V1)), label = as.numeric(table(OLLuniqueGenes$V1)), cex = 1, pos = 1, col = "black")
-```
-
-# ggplot bubble plot:
-```{r}
-ggplot(AINuniqueGenes, aes(x=rev(padj), y=V1, size=log2FoldChange)) +
-  geom_point(aes(col = "blue")) +
-  theme(axis.text.x = element_blank())
 ```

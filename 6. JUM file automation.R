@@ -96,7 +96,7 @@ sink(file=paste("JUM_A_", i, "vs", j, ".txt", sep=""))
 "module load perl",
 "",
 "", sep = "\n"),
-paste0(" /lustre/work/client/group/norrislab/JUM/JUM_2.02/JUM_A.sh --Folder /lustre/work/client/group/norrislab/JUM/JUM_2.02 --JuncThreshold 5 --Condition1_fileNum_threshold ", combinedtype[i,2], " --Condition2_fileNum_threshold ", combinedtype[j,2], " --IRthreshold 5 --Readlength 100 --Thread ", combinedtype[i,3], paste("--Condition1SampleName", paste(sample_numbers_condition1, collapse = ","), "--Condition2SampleName", paste(sample_numbers_condition2, collapse = ","), sep = " ")))
+paste0(" /lustre/work/client/group/norrislab/JUM/JUM_2.02/JUM_A.sh --Folder /lustre/work/client/group/norrislab/JUM/JUM_2.02 --JuncThreshold 5 --Condition1_fileNum_threshold ", combinedtype[i,2], " --Condition2_fileNum_threshold ", combinedtype[j,2], " --IRthreshold 5 --Readlength 100 --Thread ", combinedtype[i,3], paste(" --Condition1SampleName", paste(sample_numbers_condition1, collapse = ","), "--Condition2SampleName", paste(sample_numbers_condition2, collapse = ","), sep = " ")))
 sink()
     }
     if (i == j) next

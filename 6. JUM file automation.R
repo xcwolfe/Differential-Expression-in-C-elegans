@@ -136,14 +136,39 @@ for (i in 1:length(singletypes)) {
 ```{r}
 setwd("D:/Zach Wolfe's JUM analysis")
 
-for(i in singletypes){
-  for(j in singletypes){
-    if(i != j){   
-
-cat(file = paste0("Rscript", i, "vs", j, ".txt"),
-      paste0("Rscript /lustre/work/client/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experiment_design", i, "vs", j, ".txt >outputFile.Rout 2> errorFile.Rout"))
+for (i in singletypes) {
+  for (j in singletypes) {
+    if (i != j) {
+      script <- paste0(
+        "#!/bin/bash",
+        "\n",
+        "\n",
+        "#SBATCH -N 1",
+        "\n",
+        "#SBATCH -o output.out",
+        "\n",
+        "#SBATCH -e output.err",
+        "\n",
+        "#SBATCH -p standard-s",
+        "\n",
+        "#SBATCH --mem=50G",
+        "\n",
+        "\n",
+        "",
+        "module load gcc",
+        "\n",
+        "module load R",
+        "\n",
+        "\n",
+        "",
+        "",
+        "Rscript /lustre/work/client/group/norrislab/JUM/JUM_2.02/R_script_JUM.R experiment_design", i, "vs", j, ".txt >outputFile.Rout 2> errorFile.Rout"
+      )
+      
+      cat(script, file = paste0("Rscript", i, "vs", j, ".txt"))
     }
-    if (i == j) next}
+    if (i == j) next
+  }
 }
 ```
 

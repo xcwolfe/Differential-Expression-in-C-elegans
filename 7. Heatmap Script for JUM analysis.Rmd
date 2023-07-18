@@ -15,7 +15,7 @@ library("RColorBrewer")
 library("stringr")
 library("stringi")
 library("data.table")
-library("dplyr")
+library("tidyverse")
 library("tidyr")
 library("splitstackshape")
 library("MatrixGenerics")
@@ -43,7 +43,9 @@ load("C:/Users/xcwol/Downloads/.RData")
 
 # List your cell types/conditions:
 ```{r}
-singletypesprac <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD")
+singletypes <- c("ADL","AFD","AIM","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","AVA","AVE","AVG","AVH","AVK","AVL","AVM","AWA","AWB","AWC","BAG","CAN","DA","DD","DVC","I5","IL1","IL2","LUA","NSM","OLL","OLQ","PHA","PVC","PVD","PVM","RIA","RIC","RIM","RIS","RMD","SMB","SMD","VB","VC","VD")
+
+singletypes_withreps <- c("ADL1", "ADL2", "ADL3", "ADL4", "AFD1", "AFD2", "AFD3", "AFD4", "AFD5", "AIM1", "AIM2", "AIM3", "AIM4", "AIN1", "AIN2", "AIN3", "AIN4", "AIN5", "AIN6", "AIY1", "AIY2", "AIY3", "ASEL1", "ASEL2", "ASEL3", "ASER1", "ASER2", "ASER3", "ASER4", "ASG1", "ASG2", "ASG3", "ASG4", "ASI1", "ASI2", "ASI3", "ASI4", "ASK1", "ASK2", "ASK3", "ASK4", "AVA1", "AVA2", "AVA3", "AVA4", "AVA5", "AVA6", "AVE1", "AVE2", "AVE3", "AVG1", "AVG2", "AVG3", "AVH1", "AVH2", "AVH3", "AVH4", "AVK1", "AVK2", "AVK3", "AVK4", "AVL1", "AVL2", "AVL3", "AVM1", "AVM2", "AVM3", "AWA1", "AWA2", "AWA3", "AWA4", "AWB1", "AWB2", "AWB3", "AWB4", "AWB5", "AWC1", "AWC2", "AWC3", "AWC4", "BAG1", "BAG2", "BAG3", "BAG4", "CAN1", "CAN2", "CAN3", "DA1", "DA2", "DA3", "DA4", "DD1", "DD2", "DD3", "DD4", "DVC1", "DVC2", "DVC3", "DVC4", "I51", "I52", "I53", "I54", "IL11", "IL12", "IL13", "IL21", "IL22", "IL23", "IL24", "LUA1", "LUA2", "LUA3", "LUA4", "NSM1", "NSM2", "NSM3", "OLL1", "OLL2", "OLQ1", "OLQ2", "OLQ3", "PHA1", "PHA2", "PHA3", "PHA4", "PVC1", "PVC2", "PVC3", "PVC4", "PVC5", "PVD1", "PVD2", "PVM1", "PVM2", "RIA1", "RIA2", "RIA3", "RIA4", "RIA5", "RIA6", "RIC1", "RIC2", "RIC3", "RIC4", "RIM1", "RIM2", "RIM3", "RIM4", "RIS1", "RIS2", "RIS3", "RMD1", "RMD2", "RMD3", "RMD4", "RMD5", "SMB1", "SMB2", "SMB3", "SMB4", "SMB5", "SMD1", "SMD2", "SMD3", "SMD4", "VB1", "VB2", "VB3", "VB4", "VC1", "VC2", "VC3", "VC4", "VC5", "VC6", "VD1", "VD2", "VD3", "VD4")
 ```
 
 
@@ -51,13 +53,13 @@ singletypesprac <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD")
 
 # A3S events:
 ```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
 
-JUM_table_A3S <- matrix(nrow = 8, ncol = 8, dimnames = list(singletypesprac,singletypesprac))
+JUM_table_A3S <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 JUM_table_A3S[is.na(JUM_table_A3S)] <- 0
 
-for (i in singletypesprac){
- for (j in singletypesprac){
+for (i in singletypes){
+ for (j in singletypes){
    if (i != j){
 A3S <- fread(paste0("FINAL_JUM_OUTPUT_pvalue_1", i, "vs", j, "/AS_differential_JUM_output_A3SS_events_pvalue_1_final_simplified.txt"))
 
@@ -70,36 +72,15 @@ A3S_q <- A3S_p[A3S_p$qvalue < 0.05]
 
 A3S_maxPSI <- A3S_q[,9:ncol(A3S_q)]
 A3S_maxPSI[is.na(A3S_maxPSI[,1:ncol(A3S_maxPSI)])] <- 0
-# A3S_colnumber <- 1:ncol(A3S_maxPSI)
 A3S_colcount <- as.numeric(ncol(A3S_maxPSI))
-# A3S_colnames <- colnames(A3S_maxPSI)
-# A3S_rownumber <- 1:nrow(A3S_maxPSI)
 A3S_rowcount <- as.numeric(nrow(A3S_maxPSI))
 A3S_maxPSI[A3S_maxPSI == -Inf] <- 0
 A3S_maxPSI[A3S_maxPSI == Inf] <- 0
 A3S_maxPSI$max <- rowMaxs(abs(as.numeric(unlist(A3S_maxPSI))), dim. = as.integer(c(A3S_rowcount, A3S_colcount)))
-# A3S_maxPSI$max <- pmax(abs(as.numeric(unlist(
-  # for (k in A3S_colcount){
-    # for (l in A3S_colnumber){
-   # for (q in A3S_colnames){
-    #  for (r in A3S_rownumber){
-# rep(paste0("A3S_maxPSI[,", l, "]"), times = l)}})))) #[r,l,k,q] none of these combinations are correct
-# yields either NA or 0 or the max of the whole df. Can't get unique row maximums!
-#A3S_maxPSI$max <- pmax(abs(as.numeric(unlist(A3S_maxPSI[,1], A3S_maxPSI[,2], A3S_maxPSI[,3])))) # this works but does not scan every single column
-#A3S_maxPSI$max <- pmax(abs(as.numeric(unlist(1:ncol(A3S_maxPSI))))) # doesn't work, you have to specify which columns to look for
 A3S_sig <- A3S_maxPSI[A3S_maxPSI$max > 0.1,]
-#A3S_sig <- A3S_maxPSI_1[,1] > 0.1
-#A3S_maxPSI_2 <- abs(as.numeric(unlist(A3S_maxPSI_1 > 0.1)))
-#max(abs(as.numeric(unlist(A3S_maxPSI_1 > 0.1))
-                          
-##A3S_split <- as.numeric(unlist(strsplit(as.character(A3S_q[,9]), ";")))
-
-##A3S_join <- A3S_q
-##A3S_join$delta_PSI <- max(abs(A3S_split))
-##A3S_sig <- A3S_join[A3S_join$delta_PSI > 0.1,]
 
 JUM_table_A3S[i,j] <- print(nrow(A3S_sig))
-write.csv(A3S_q, file=paste("JUM_A3S", i, "vs", j, ".csv", sep="")) # We save as A3S_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
+write.csv(A3S_q, file=paste("JUM_A3S", i, "vs", j, ".csv", sep=""), row.names = FALSE, quote = FALSE) # We save as A3S_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
    }
    if (i == j) next
  }
@@ -108,13 +89,13 @@ write.csv(A3S_q, file=paste("JUM_A3S", i, "vs", j, ".csv", sep="")) # We save as
 
 # A5S events:
 ```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
 
-JUM_table_A5S <- matrix(nrow = 8, ncol = 8, dimnames = list(singletypesprac,singletypesprac))
+JUM_table_A5S <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 JUM_table_A5S[is.na(JUM_table_A5S)] <- 0
 
-for (i in singletypesprac){
- for (j in singletypesprac){
+for (i in singletypes){
+ for (j in singletypes){
    if (i != j){
 A5S <- fread(paste0("FINAL_JUM_OUTPUT_pvalue_1", i, "vs", j, "/AS_differential_JUM_output_A5SS_events_pvalue_1_final_simplified.txt"))
 
@@ -132,19 +113,10 @@ A5S_rowcount <- as.numeric(nrow(A5S_maxPSI))
 A5S_maxPSI[A5S_maxPSI == -Inf] <- 0
 A5S_maxPSI[A5S_maxPSI == Inf] <- 0
 A5S_maxPSI$max <- rowMaxs(abs(as.numeric(unlist(A5S_maxPSI))), dim. = as.integer(c(A5S_rowcount, A5S_colcount)))
-
-# A5S_maxPSI$max <- pmax(abs(as.numeric(unlist(A5S_maxPSI[,1], A5S_maxPSI[,2], A5S_maxPSI[,3]))))
 A5S_sig <- A5S_maxPSI[A5S_maxPSI$max > 0.1,]
-#A5S_p <- A5S[A5S$pvalue < 0.05]
-#A5S_q <- A5S_p[A5S_p$qvalue < 0.05]
-#A5S_split <- as.character(A5S_q[,9])
-#A5S_split <- as.numeric(unlist(strsplit(A5S_split, ";")))
-#A5S_join <- A5S_q
-#A5S_join$delta_PSI <- max(abs(A5S_split))
-#A5S_sig <- A5S_join[A5S_join$delta_PSI > 0.1,]
 
 JUM_table_A5S[i,j] <- print(nrow(A5S_sig))
-write.csv(A5S_q, file=paste("JUM_A5S", i, "vs", j, ".csv", sep=""))  # We save as A5S_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
+write.csv(A5S_q, file=paste("JUM_A5S", i, "vs", j, ".csv", sep=""), row.names = FALSE, quote = FALSE)  # We save as A5S_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
    }
    if (i == j) next
  }
@@ -153,13 +125,13 @@ write.csv(A5S_q, file=paste("JUM_A5S", i, "vs", j, ".csv", sep=""))  # We save a
 
 # Cassette exon events:
 ```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
 
-JUM_table_cassette <- matrix(nrow = 8, ncol = 8, dimnames = list(singletypesprac,singletypesprac))
+JUM_table_cassette <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 JUM_table_cassette[is.na(JUM_table_cassette)] <- 0
 
-for (i in singletypesprac){
- for (j in singletypesprac){
+for (i in singletypes){
+ for (j in singletypes){
    if (i != j){
 cassette <- fread(paste0("FINAL_JUM_OUTPUT_pvalue_1", i, "vs", j, "/AS_differential_JUM_output_cassette_exon_events_pvalue_1_final_simplified.txt"))
  
@@ -171,7 +143,7 @@ cassette_q <- cassette_p[cassette_p$qvalue < 0.05,]
 cassette_sig <- cassette_q[abs(as.numeric(unlist(cassette_q[,11]))) > 0.1,]
 
 JUM_table_cassette[i,j] <- print(nrow(cassette_sig))
-write.csv(cassette_q, file=paste("JUM_cassette", i, "vs", j, ".csv", sep=""))  # We save as cassette_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
+write.csv(cassette_q, file=paste("JUM_cassette", i, "vs", j, ".csv", sep=""), row.names = FALSE, quote = FALSE)  # We save as cassette_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
    }
    if (i == j) next
  }
@@ -180,13 +152,13 @@ write.csv(cassette_q, file=paste("JUM_cassette", i, "vs", j, ".csv", sep=""))  #
 
 # Composite events:
 ```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
 
-JUM_table_composite <- matrix(nrow = 8, ncol = 8, dimnames = list(singletypesprac,singletypesprac))
+JUM_table_composite <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 JUM_table_composite[is.na(JUM_table_composite)] <- 0
 
-for (i in singletypesprac){
- for (j in singletypesprac){
+for (i in singletypes){
+ for (j in singletypes){
    if (i != j){
 composite <- fread(paste0("FINAL_JUM_OUTPUT_pvalue_1", i, "vs", j, "/AS_differential_JUM_output_composite_events_pvalue_1_final_simplified.txt"))
 
@@ -197,30 +169,20 @@ composite_split[is.nan(as.character(unlist(composite_split[,8]))),] <- 0
 composite_split <- composite_split[composite_split$Gene != 0]
 composite_p <- composite_split[composite_split$pvalue < 0.05]
 composite_q <- composite_p[composite_p$qvalue < 0.05]
+composite_q[composite_q == -Inf] <- 0
+composite_q[composite_q == Inf] <- 0
 
 composite_maxPSI <- composite_q[,8:ncol(composite_q)]
 composite_maxPSI[is.na(composite_maxPSI[,1:ncol(composite_maxPSI)])] <- 0
-#composite_maxPSI[] <- lapply(as.numeric(unlist(composite_maxPSI)), function(x) replace(x, !is.finite(x), 0)) # works for 1 row
-
-#composite_maxPSI[which(!is.finite(unlist(composite_maxPSI)))] <- 0
 composite_colcount <- as.numeric(ncol(composite_maxPSI))
 composite_rowcount <- as.numeric(nrow(composite_maxPSI))
 composite_maxPSI[composite_maxPSI == -Inf] <- 0
 composite_maxPSI[composite_maxPSI == Inf] <- 0
-composite_maxPSI$max <- rowMaxs(abs(as.numeric(unlist(composite_maxPSI))), dim. = as.integer(c(composite_rowcount, composite_colcount))) 
-#composite_maxPSI$max <- pmax(abs(as.numeric(unlist(composite_maxPSI[,1], composite_maxPSI[,2], composite_maxPSI[,3]))))
+composite_maxPSI$max <- rowMaxs(abs(as.numeric(unlist(composite_maxPSI))), dim. = as.integer(c(composite_rowcount, composite_colcount)))
 composite_sig <- composite_maxPSI[composite_maxPSI$max > 0.1,]
 
-#composite_p <- composite[composite$pvalue < 0.05] 
-#composite_q <- composite_p[composite_p$qvalue < 0.05]
-#composite_split <- as.character(composite_q[,8])
-#composite_split <- as.numeric(unlist(strsplit(composite_split, ";")))
-#composite_join <- composite_q
-#composite_join$delta_PSI <- max(abs(composite_split))
-#composite_sig <- composite_join[composite_join$delta_PSI > 0.1,]
-
 JUM_table_composite[i,j] <- print(nrow(composite_sig))
-write.csv(composite_q, file=paste("JUM_composite", i, "vs", j, ".csv", sep=""))  # We save as composite_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
+write.csv(composite_q, file=paste("JUM_composite", i, "vs", j, ".csv", sep=""), row.names = FALSE, quote = FALSE)  # We save as composite_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
    }
    if (i == j) next
  }
@@ -229,13 +191,13 @@ write.csv(composite_q, file=paste("JUM_composite", i, "vs", j, ".csv", sep="")) 
 
 # Intron retention:
 ```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
 
-JUM_table_intron <- matrix(nrow = 8, ncol = 8, dimnames = list(singletypesprac,singletypesprac))
+JUM_table_intron <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 JUM_table_intron[is.na(JUM_table_intron)] <- 0
 
-for (i in singletypesprac){
- for (j in singletypesprac){
+for (i in singletypes){
+ for (j in singletypes){
    if (i != j){
 intron <- fread(paste0("FINAL_JUM_OUTPUT_pvalue_1", i, "vs", j, "/AS_differential_JUM_output_intron_retention_pvalue_1_final_simplified.txt"))
 
@@ -248,7 +210,7 @@ intron_q <- intron_p[as.numeric(intron_p$qvalue) < 0.05,]
 intron_sig <- intron_q[abs(as.numeric(unlist(intron_q[,9]))) > 0.1,]
 
 JUM_table_intron[i,j] <- print(nrow(intron_sig))
-write.csv(intron_q, file=paste("JUM_intron", i, "vs", j, ".csv", sep="")) # We save as intron_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
+write.csv(intron_q, file=paste("JUM_intron", i, "vs", j, ".csv", sep=""), row.names = FALSE, quote = FALSE) # We save as intron_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
    }
    if (i == j) next
  }
@@ -257,13 +219,13 @@ write.csv(intron_q, file=paste("JUM_intron", i, "vs", j, ".csv", sep="")) # We s
 
 # MXE events:
 ```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
 
-JUM_table_MXE <- matrix(nrow = 8, ncol = 8, dimnames = list(singletypesprac,singletypesprac))
+JUM_table_MXE <- matrix(nrow = 46, ncol = 46, dimnames = list(singletypes,singletypes))
 JUM_table_MXE[is.na(JUM_table_MXE)] <- 0
 
-for (i in singletypesprac){
- for (j in singletypesprac){
+for (i in singletypes){
+ for (j in singletypes){
    if (i != j){
 MXE <- fread(paste0("FINAL_JUM_OUTPUT_pvalue_1", i, "vs", j, "/AS_differential_JUM_output_MXE_events_pvalue_1_final_simplified.txt"), fill = TRUE)
 
@@ -276,889 +238,1681 @@ MXE_q <- MXE_p[MXE_p$qvalue < 0.05]
 
 MXE_maxPSI <- MXE_q[,10:ncol(MXE_q)]
 MXE_maxPSI[is.na(MXE_maxPSI[,1:ncol(MXE_maxPSI)])] <- 0
-# MXE_maxPSI[!is.finite(as.numeric(MXE_maxPSI[,1:ncol(MXE_maxPSI)]))] <- 0 # fix inf values
 MXE_colcount <- as.numeric(ncol(MXE_maxPSI))
 MXE_rowcount <- as.numeric(nrow(MXE_maxPSI))
 MXE_maxPSI[MXE_maxPSI == -Inf] <- 0
 MXE_maxPSI[MXE_maxPSI == Inf] <- 0
 MXE_maxPSI$max <- rowMaxs(abs(as.numeric(unlist(MXE_maxPSI))), dim. = as.integer(c(MXE_rowcount, MXE_colcount)))
-#MXE_maxPSI$max <- pmax(abs(as.numeric(unlist(MXE_maxPSI[,1], MXE_maxPSI[,2], MXE_maxPSI[,3]))))
 MXE_sig <- MXE_maxPSI[MXE_maxPSI$max > 0.1,]
-#MXE_p <- MXE[MXE$pvalue < 0.05]
-#MXE_q <- MXE_p[MXE_p$qvalue < 0.05]
-#MXE_split <- as.character(MXE_q[,10])
-#MXE_split <- as.numeric(unlist(strsplit(MXE_split, ";")))
-#MXE_join <- MXE_q
-#MXE_join$delta_PSI <- max(abs(MXE_split))
-#MXE_sig <- MXE_join[MXE_join$delta_PSI > 0.1]
 
 JUM_table_MXE[i,j] <- print(nrow(MXE_sig))
-write.csv(MXE_q, file=paste("JUM_MXE", i, "vs", j, ".csv", sep="")) # We save as MXE_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
+write.csv(MXE_q, file=paste("JUM_MXE", i, "vs", j, ".csv", sep=""), row.names = FALSE, quote = FALSE) # We save as MXE_q for now because it is easier to save in a spreadsheet. We will re-eliminate deltaPSI values below 0.1 in the "combination" chunk(s) later
    }
    if (i == j) next
  }
 }
 ```
 
+# Everything that is not in alphabetical order will be marked as "NA":
+```{r}
+JUM_table_A3S_as_NA <- JUM_table_A3S
+# Mark values as "NA" based on alphabetical order
+for (i in 1:nrow(JUM_table_A3S)) {
+  for (j in 1:ncol(JUM_table_A3S)) {
+    if (rownames(JUM_table_A3S)[i] > colnames(JUM_table_A3S)[j]) {
+      JUM_table_A3S_as_NA[i, j] <- NA
+    }
+  }
+}
+
+JUM_table_A5S_as_NA <- JUM_table_A5S
+# Mark values as "NA" based on alphabetical order
+for (i in 1:nrow(JUM_table_A5S)) {
+  for (j in 1:ncol(JUM_table_A5S)) {
+    if (rownames(JUM_table_A5S)[i] > colnames(JUM_table_A5S)[j]) {
+      JUM_table_A5S_as_NA[i, j] <- NA
+    }
+  }
+}
+
+JUM_table_cassette_as_NA <- JUM_table_cassette
+# Mark values as "NA" based on alphabetical order
+for (i in 1:nrow(JUM_table_cassette)) {
+  for (j in 1:ncol(JUM_table_cassette)) {
+    if (rownames(JUM_table_cassette)[i] > colnames(JUM_table_cassette)[j]) {
+      JUM_table_cassette_as_NA[i, j] <- NA
+    }
+  }
+}
+
+JUM_table_composite_as_NA <- JUM_table_composite
+# Mark values as "NA" based on alphabetical order
+for (i in 1:nrow(JUM_table_composite)) {
+  for (j in 1:ncol(JUM_table_composite)) {
+    if (rownames(JUM_table_composite)[i] > colnames(JUM_table_composite)[j]) {
+      JUM_table_composite_as_NA[i, j] <- NA
+    }
+  }
+}
+
+JUM_table_intron_as_NA <- JUM_table_intron
+# Mark values as "NA" based on alphabetical order
+for (i in 1:nrow(JUM_table_intron)) {
+  for (j in 1:ncol(JUM_table_intron)) {
+    if (rownames(JUM_table_intron)[i] > colnames(JUM_table_intron)[j]) {
+      JUM_table_intron_as_NA[i, j] <- NA
+    }
+  }
+}
+
+JUM_table_MXE_as_NA <- JUM_table_MXE
+# Mark values as "NA" based on alphabetical order
+for (i in 1:nrow(JUM_table_MXE)) {
+  for (j in 1:ncol(JUM_table_MXE)) {
+    if (rownames(JUM_table_MXE)[i] > colnames(JUM_table_MXE)[j]) {
+      JUM_table_MXE_as_NA[i, j] <- NA
+    }
+  }
+}
+```
+
+
 # Heatmaps:
 
 ### Note: when running many conditions, JUM may output incorrect data for cell types not in alphabetical order (i.e. ASG vs AVE will output correct data, but AVE vs ASG would not). You may need to hide boxes in heatmaps in order to plot the correct 50% (upper-right half in the heatmap) of data.
 ```{r}
 colors <- colorRampPalette(brewer.pal(6, "Blues"))(250)
-pheatmap(JUM_table_A3S,
+pheatmap(JUM_table_A3S_as_NA,
+         #na_col = "#FFFFFF",   # Make NA values white (if desired)
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
-         display_numbers = T,
+         display_numbers = F,
          number_format = "%.0f",
          number_color = "black",
-         fontsize = 11,
-         fontsize_number = 16,
-         angle_col = 0,
+         fontsize = 7.5,
+         fontsize_number = 6.5,
+         angle_col = 90,
          col = colors,
          main = "Number of A3S Events between Cell Types")
 
 colors <- colorRampPalette(brewer.pal(6, "Reds"))(250)
-pheatmap(JUM_table_A5S,
+pheatmap(JUM_table_A5S_as_NA,
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
-         display_numbers = T,
+         display_numbers = F,
          number_format = "%.0f",
          number_color = "black",
-         fontsize = 11,
-         fontsize_number = 16,
-         angle_col = 0,
+         fontsize = 7.5,
+         fontsize_number = 6.5,
+         angle_col = 90,
          col = colors,
          main = "Number of A5S Events between Cell Types")
 
 colors <- colorRampPalette(brewer.pal(6, "Greens"))(250)
-pheatmap(JUM_table_cassette,
+pheatmap(JUM_table_cassette_as_NA,
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
-         display_numbers = T,
+         display_numbers = F,
          number_format = "%.0f",
          number_color = "black",
-         fontsize = 11,
-         fontsize_number = 16,
-         angle_col = 0,
+         fontsize = 7.5,
+         fontsize_number = 6.5,
+         angle_col = 90,
          col = colors,
          main = "Number of Cassette Exon Events between Cell Types")
 
 colors <- colorRampPalette(brewer.pal(6, "BuPu"))(250)
-pheatmap(JUM_table_composite,
+pheatmap(JUM_table_composite_as_NA,
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
-         display_numbers = T,
+         display_numbers = F,
          number_format = "%.0f",
          number_color = "black",
-         fontsize = 11,
-         fontsize_number = 16,
-         angle_col = 0,
+         fontsize = 7.5,
+         fontsize_number = 6.5,
+         angle_col = 90,
          col = colors,
          main = "Number of Composite Events between Cell Types")
 
 colors <- colorRampPalette(brewer.pal(6, "YlOrBr"))(250)
-pheatmap(JUM_table_intron,
+pheatmap(JUM_table_intron_as_NA,
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
-         display_numbers = T,
+         display_numbers = F,
          number_format = "%.0f",
          number_color = "black",
-         fontsize = 11,
-         fontsize_number = 16,
-         angle_col = 0,
+         fontsize = 7.5,
+         fontsize_number = 6.5,
+         angle_col = 90,
          col = colors,
          main = "Number of Intron Retention Events between Cell Types")
 
 colors <- colorRampPalette(brewer.pal(6, "PuRd"))(250)
-pheatmap(JUM_table_MXE,
+pheatmap(JUM_table_MXE_as_NA,
+         border_color = "black",
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         number_format = "%.0f",
+         number_color = "black",
+         fontsize = 7.5,
+         fontsize_number = 6.5,
+         angle_col = 90,
+         col = colors,
+         main = "Number of MXE Splicing Events between Cell Types")
+```
+# Combine every excel file for each cell type:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+  A3S_files <- list.files(pattern = "JUM_A3S*")
+  A5S_files <- list.files(pattern = "JUM_A5S*")
+  cassette_files <- list.files(pattern = "JUM_cassette*")
+  composite_files <- list.files(pattern = "JUM_composite*")
+  intron_files <- list.files(pattern = "JUM_intron*")   
+  MXE_files <- list.files(pattern = "JUM_MXE*")
+  
+  
+# Create empty lists to store the filtered files
+filtered_files_A3S <- vector("list", length(singletypes))
+names(filtered_files_A3S) <- singletypes
+
+filtered_files_A5S <- vector("list", length(singletypes))
+names(filtered_files_A5S) <- singletypes
+
+filtered_files_cassette <- vector("list", length(singletypes))
+names(filtered_files_cassette) <- singletypes
+
+filtered_files_composite <- vector("list", length(singletypes))
+names(filtered_files_composite) <- singletypes
+
+filtered_files_intron <- vector("list", length(singletypes))
+names(filtered_files_intron) <- singletypes
+
+filtered_files_MXE <- vector("list", length(singletypes))
+names(filtered_files_MXE) <- singletypes
+
+# Loop over the patterns
+for (i in seq_along(singletypes)) {
+  # Filter elements containing the current pattern
+  filtered_files_A3S[[i]] <- A3S_files[grepl(singletypes[i], A3S_files)]
+  filtered_files_A5S[[i]] <- A5S_files[grepl(singletypes[i], A5S_files)]
+  filtered_files_cassette[[i]] <- cassette_files[grepl(singletypes[i], cassette_files)]
+  filtered_files_composite[[i]] <- composite_files[grepl(singletypes[i], composite_files)]
+  filtered_files_intron[[i]] <- intron_files[grepl(singletypes[i], intron_files)]
+  filtered_files_MXE[[i]] <- MXE_files[grepl(singletypes[i], MXE_files)]
+}
+
+# Print the filtered files for each pattern
+for (i in seq_along(singletypes)) {
+  singletype <- singletypes[i]
+  print(singletype)
+  print(filtered_files_A3S[[i]])
+  print(filtered_files_A5S[[i]])
+  print(filtered_files_cassette[[i]])
+  print(filtered_files_composite[[i]])
+  print(filtered_files_intron[[i]])
+  print(filtered_files_MXE[[i]])
+}
+
+# Remove files containing "PVD" from filtered_files$VD
+filtered_files_A3S[["VD"]] <- filtered_files_A3S[["VD"]][!grepl("PVD", filtered_files_A3S[["VD"]])]
+filtered_files_A3S[["VD"]] <- c(filtered_files_A3S$VD, "JUM_A3SPVDvsVD.csv", "JUM_A3SVDvsPVD.csv")
+
+# Remove files containing "DVC" and "PVC" from filtered_files$VC
+filtered_files_A3S[["VC"]] <- filtered_files_A3S[["VC"]][!grepl("PVC", filtered_files_A3S[["VC"]])]
+filtered_files_A3S[["VC"]] <- filtered_files_A3S[["VC"]][!grepl("DVC", filtered_files_A3S[["VC"]])]
+filtered_files_A3S[["VC"]] <- c(filtered_files_A3S$VC, "JUM_A3SDVCvsVC.csv", "JUM_A3SVCvsDVC.csv", "JUM_A3SPVCvsVC.csv", "JUM_A3SVCvsPVC.csv")
+
+# Remove files containing "PVD" from filtered_files$VD
+filtered_files_A5S[["VD"]] <- filtered_files_A5S[["VD"]][!grepl("PVD", filtered_files_A5S[["VD"]])]
+filtered_files_A5S[["VD"]] <- c(filtered_files_A5S$VD, "JUM_A5SPVDvsVD.csv", "JUM_A5SVDvsPVD.csv")
+
+# Remove files containing "DVC" and "PVC" from filtered_files$VC
+filtered_files_A5S[["VC"]] <- filtered_files_A5S[["VC"]][!grepl("PVC", filtered_files_A5S[["VC"]])]
+filtered_files_A5S[["VC"]] <- filtered_files_A5S[["VC"]][!grepl("DVC", filtered_files_A5S[["VC"]])]
+filtered_files_A5S[["VC"]] <- c(filtered_files_A5S$VC, "JUM_A5SDVCvsVC.csv", "JUM_A5SVCvsDVC.csv", "JUM_A5SPVCvsVC.csv", "JUM_A5SVCvsPVC.csv")
+
+# Remove files containing "PVD" from filtered_files$VD
+filtered_files_cassette[["VD"]] <- filtered_files_cassette[["VD"]][!grepl("PVD", filtered_files_cassette[["VD"]])]
+filtered_files_cassette[["VD"]] <- c(filtered_files_cassette$VD, "JUM_cassettePVDvsVD.csv", "JUM_cassetteVDvsPVD.csv")
+
+# Remove files containing "DVC" and "PVC" from filtered_files$VC
+filtered_files_cassette[["VC"]] <- filtered_files_cassette[["VC"]][!grepl("PVC", filtered_files_cassette[["VC"]])]
+filtered_files_cassette[["VC"]] <- filtered_files_cassette[["VC"]][!grepl("DVC", filtered_files_cassette[["VC"]])]
+filtered_files_cassette[["VC"]] <- c(filtered_files_cassette$VC, "JUM_cassetteDVCvsVC.csv", "JUM_cassetteVCvsDVC.csv", "JUM_cassettePVCvsVC.csv", "JUM_cassetteVCvsPVC.csv")
+
+# Remove files containing "PVD" from filtered_files$VD
+filtered_files_composite[["VD"]] <- filtered_files_composite[["VD"]][!grepl("PVD", filtered_files_composite[["VD"]])]
+filtered_files_composite[["VD"]] <- c(filtered_files_composite$VD, "JUM_compositePVDvsVD.csv", "JUM_compositeVDvsPVD.csv")
+
+# Remove files containing "DVC" and "PVC" from filtered_files$VC
+filtered_files_composite[["VC"]] <- filtered_files_composite[["VC"]][!grepl("PVC", filtered_files_composite[["VC"]])]
+filtered_files_composite[["VC"]] <- filtered_files_composite[["VC"]][!grepl("DVC", filtered_files_composite[["VC"]])]
+filtered_files_composite[["VC"]] <- c(filtered_files_composite$VC, "JUM_compositeDVCvsVC.csv", "JUM_compositeVCvsDVC.csv", "JUM_compositePVCvsVC.csv", "JUM_compositeVCvsPVC.csv")
+
+# Remove files containing "PVD" from filtered_files$VD
+filtered_files_intron[["VD"]] <- filtered_files_intron[["VD"]][!grepl("PVD", filtered_files_intron[["VD"]])]
+filtered_files_intron[["VD"]] <- c(filtered_files_intron$VD, "JUM_intronPVDvsVD.csv", "JUM_intronVDvsPVD.csv")
+
+# Remove files containing "DVC" and "PVC" from filtered_files$VC
+filtered_files_intron[["VC"]] <- filtered_files_intron[["VC"]][!grepl("PVC", filtered_files_intron[["VC"]])]
+filtered_files_intron[["VC"]] <- filtered_files_intron[["VC"]][!grepl("DVC", filtered_files_intron[["VC"]])]
+filtered_files_intron[["VC"]] <- c(filtered_files_intron$VC, "JUM_intronDVCvsVC.csv", "JUM_intronVCvsDVC.csv", "JUM_intronPVCvsVC.csv", "JUM_intronVCvsPVC.csv")
+
+# Remove files containing "PVD" from filtered_files$VD
+filtered_files_MXE[["VD"]] <- filtered_files_MXE[["VD"]][!grepl("PVD", filtered_files_MXE[["VD"]])]
+filtered_files_MXE[["VD"]] <- c(filtered_files_MXE$VD, "JUM_MXEPVDvsVD.csv", "JUM_MXEVDvsPVD.csv")
+
+# Remove files containing "DVC" and "PVC" from filtered_files$VC
+filtered_files_MXE[["VC"]] <- filtered_files_MXE[["VC"]][!grepl("PVC", filtered_files_MXE[["VC"]])]
+filtered_files_MXE[["VC"]] <- filtered_files_MXE[["VC"]][!grepl("DVC", filtered_files_MXE[["VC"]])]
+filtered_files_MXE[["VC"]] <- c(filtered_files_MXE$VC, "JUM_MXEDVCvsVC.csv", "JUM_MXEVCvsDVC.csv", "JUM_MXEPVCvsVC.csv", "JUM_MXEVCvsPVC.csv")
+```
+
+# Write a function that returns the numeric position of an element in a vector:
+```{r}
+get_position <- function(vector, element) {
+  position <- match(element, vector)
+  if (is.na(position)) {
+    return("Element not found in the vector.")
+  } else {
+    return(as.numeric(position))
+  }
+}
+```
+
+# Write a set of functions that return the elements in filtered_files in the correct alphabetical order:
+```{r}
+for (i in singletypes){
+  if (i == "ADL"){    # ADL is first in our list of singletypes and does not require complex reordering
+    ordered_files <- filtered_files_A3S[[i]][1:45]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VC"){  # We have to arrange VC separately because we previously removed and re-added DVCs and PVCs in a unique fashion
+    ordered_files <- filtered_files_A3S[[i]][c(1:42, 85, 87, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VD"){  # We have to arrange VD separately because we previously removed and re-added PVDs in a unique fashion
+    ordered_files <- filtered_files_A3S[[i]][c(1:44, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i != "ADL" & i != "VC" & i != "VD") {
+  ordered_files <- filtered_files_A3S[[i]][order(filtered_files_A3S[[i]])]
+  first_bad_file <- get_position(singletypes, i)
+  last_bad_file <- get_position(singletypes, i) + get_position(singletypes, i) - 2
+  ordered_files <- ordered_files[-c(first_bad_file:last_bad_file)]
+  ordered_files <- ordered_files[-c(46:length(ordered_files))]
+  }
+  filtered_files_A3S[i] <- list(ordered_files)
+}
+
+for (i in singletypes){
+  if (i == "ADL"){    # ADL is first in our list of singletypes and does not require complex reordering
+    ordered_files <- filtered_files_A5S[[i]][1:45]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VC"){  # We have to arrange VC separately because we previously removed and re-added DVCs and PVCs in a unique fashion
+    ordered_files <- filtered_files_A5S[[i]][c(1:42, 85, 87, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VD"){  # We have to arrange VD separately because we previously removed and re-added PVDs in a unique fashion
+    ordered_files <- filtered_files_A5S[[i]][c(1:44, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i != "ADL" & i != "VC" & i != "VD") {
+  ordered_files <- filtered_files_A5S[[i]][order(filtered_files_A5S[[i]])]
+  first_bad_file <- get_position(singletypes, i)
+  last_bad_file <- get_position(singletypes, i) + get_position(singletypes, i) - 2
+  ordered_files <- ordered_files[-c(first_bad_file:last_bad_file)]
+  ordered_files <- ordered_files[-c(46:length(ordered_files))]
+  }
+  filtered_files_A5S[i] <- list(ordered_files)
+}
+
+for (i in singletypes){
+  if (i == "ADL"){    # ADL is first in our list of singletypes and does not require complex reordering
+    ordered_files <- filtered_files_cassette[[i]][1:45]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VC"){  # We have to arrange VC separately because we previously removed and re-added DVCs and PVCs in a unique fashion
+    ordered_files <- filtered_files_cassette[[i]][c(1:42, 85, 87, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VD"){  # We have to arrange VD separately because we previously removed and re-added PVDs in a unique fashion
+    ordered_files <- filtered_files_cassette[[i]][c(1:44, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i != "ADL" & i != "VC" & i != "VD") {
+  ordered_files <- filtered_files_cassette[[i]][order(filtered_files_cassette[[i]])]
+  first_bad_file <- get_position(singletypes, i)
+  last_bad_file <- get_position(singletypes, i) + get_position(singletypes, i) - 2
+  ordered_files <- ordered_files[-c(first_bad_file:last_bad_file)]
+  ordered_files <- ordered_files[-c(46:length(ordered_files))]
+  }
+  filtered_files_cassette[i] <- list(ordered_files)
+}
+
+for (i in singletypes){
+  if (i == "ADL"){    # ADL is first in our list of singletypes and does not require complex reordering
+    ordered_files <- filtered_files_composite[[i]][1:45]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VC"){  # We have to arrange VC separately because we previously removed and re-added DVCs and PVCs in a unique fashion
+    ordered_files <- filtered_files_composite[[i]][c(1:42, 85, 87, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VD"){  # We have to arrange VD separately because we previously removed and re-added PVDs in a unique fashion
+    ordered_files <- filtered_files_composite[[i]][c(1:44, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i != "ADL" & i != "VC" & i != "VD") {
+  ordered_files <- filtered_files_composite[[i]][order(filtered_files_composite[[i]])]
+  first_bad_file <- get_position(singletypes, i)
+  last_bad_file <- get_position(singletypes, i) + get_position(singletypes, i) - 2
+  ordered_files <- ordered_files[-c(first_bad_file:last_bad_file)]
+  ordered_files <- ordered_files[-c(46:length(ordered_files))]
+  }
+  filtered_files_composite[i] <- list(ordered_files)
+}
+
+for (i in singletypes){
+  if (i == "ADL"){    # ADL is first in our list of singletypes and does not require complex reordering
+    ordered_files <- filtered_files_intron[[i]][1:45]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VC"){  # We have to arrange VC separately because we previously removed and re-added DVCs and PVCs in a unique fashion
+    ordered_files <- filtered_files_intron[[i]][c(1:42, 85, 87, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VD"){  # We have to arrange VD separately because we previously removed and re-added PVDs in a unique fashion
+    ordered_files <- filtered_files_intron[[i]][c(1:44, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i != "ADL" & i != "VC" & i != "VD") {
+  ordered_files <- filtered_files_intron[[i]][order(filtered_files_intron[[i]])]
+  first_bad_file <- get_position(singletypes, i)
+  last_bad_file <- get_position(singletypes, i) + get_position(singletypes, i) - 2
+  ordered_files <- ordered_files[-c(first_bad_file:last_bad_file)]
+  ordered_files <- ordered_files[-c(46:length(ordered_files))]
+  }
+  filtered_files_intron[i] <- list(ordered_files)
+}
+
+for (i in singletypes){
+  if (i == "ADL"){    # ADL is first in our list of singletypes and does not require complex reordering
+    ordered_files <- filtered_files_MXE[[i]][1:45]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VC"){  # We have to arrange VC separately because we previously removed and re-added DVCs and PVCs in a unique fashion
+    ordered_files <- filtered_files_MXE[[i]][c(1:42, 85, 87, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i == "VD"){  # We have to arrange VD separately because we previously removed and re-added PVDs in a unique fashion
+    ordered_files <- filtered_files_MXE[[i]][c(1:44, 89)]
+    ordered_files <- ordered_files[order(ordered_files)]
+  }
+  if (i != "ADL" & i != "VC" & i != "VD") {
+  ordered_files <- filtered_files_MXE[[i]][order(filtered_files_MXE[[i]])]
+  first_bad_file <- get_position(singletypes, i)
+  last_bad_file <- get_position(singletypes, i) + get_position(singletypes, i) - 2
+  ordered_files <- ordered_files[-c(first_bad_file:last_bad_file)]
+  ordered_files <- ordered_files[-c(46:length(ordered_files))]
+  }
+  filtered_files_MXE[i] <- list(ordered_files)
+}
+```
+
+# Make a function to reverse the signs of specified columns
+```{r}
+# Here, num_columns represents the number of columns that WILL NOT BE reversed, starting at the beginning of the data frame:
+## For example, to reverse all columns EXCEPT the first two columns, num_columns should = 2
+reverse_columns <- function(data, num_columns) {
+  if (nrow(data) != 0) {
+    reversed_columns <- colnames(data)[-c(1:num_columns)]
+    data[, (reversed_columns) := lapply(.SD, function(x) if (is.numeric(x)) -x else x), .SDcols = reversed_columns]
+  }
+  data
+}
+```
+
+# Now we need to retain the files that are in the correct alphabetical order AND reverse the deltaPSIs for the other half of the files that are not in alphabetical order:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# A3S:
+for (i in singletypes){
+  if (i != "ADL"){   # Since ADL is first in singletypes, we won't have to reverse any files for ADL
+    if (i != "VD"){
+  n <- get_position(singletypes, i)
+  files_to_change <- filtered_files_A3S[[i]][0-n:length(filtered_files_A3S[[i]])]
+    }
+      if (i == "VD"){
+      files_to_change <- filtered_files_A3S[[i]]
+      }
+  for (j in 1:length(files_to_change)){
+    file <- fread(files_to_change[j])
+    if (nrow(file) != 0){
+    # Organize file name:
+     string <- files_to_change[j]
+     result <- strsplit(string, "\\.")
+     before_dot <- result[[1]][1]
+     after_dot <- result[[1]][2]
+
+    file_rev <- reverse_columns(file, 8)
+    write.csv(file_rev, paste0(before_dot, "_rev.", after_dot), row.names = F)
+    files_to_change[j] <- basename(paste0(before_dot, "_rev.", after_dot))
+    }
+    if (nrow(file) == 0) next
+    }
+  filtered_files_A3S[[i]] <- c(files_to_change, filtered_files_A3S[[i]][n:length(filtered_files_A3S[[i]])])
+  if (i == "ADL") next
+    }
+}
+
+# A5S:
+for (i in singletypes){
+  if (i != "ADL"){   # Since ADL is first in singletypes, we won't have to reverse any files for ADL
+    if (i != "VD"){
+  n <- get_position(singletypes, i)
+  files_to_change <- filtered_files_A5S[[i]][0-n:length(filtered_files_A5S[[i]])]
+    }
+      if (i == "VD"){
+      files_to_change <- filtered_files_A5S[[i]]
+      }
+  for (j in 1:length(files_to_change)){
+    file <- fread(files_to_change[j])
+    if (nrow(file) != 0){
+    # Organize file name:
+     string <- files_to_change[j]
+     result <- strsplit(string, "\\.")
+     before_dot <- result[[1]][1]
+     after_dot <- result[[1]][2]
+
+    file_rev <- reverse_columns(file, 8)
+    write.csv(file_rev, paste0(before_dot, "_rev.", after_dot), row.names = F, quote = F)
+    files_to_change[j] <- basename(paste0(before_dot, "_rev.", after_dot))
+    }
+    if (nrow(file) == 0) next
+    }
+  filtered_files_A5S[[i]] <- c(files_to_change, filtered_files_A5S[[i]][n:length(filtered_files_A5S[[i]])])
+  if (i == "ADL") next
+    }
+}
+
+# cassette exons:
+for (i in singletypes){
+  if (i != "ADL"){   # Since ADL is first in singletypes, we won't have to reverse any files for ADL
+    if (i != "VD"){
+  n <- get_position(singletypes, i)
+  files_to_change <- filtered_files_cassette[[i]][0-n:length(filtered_files_cassette[[i]])]
+    }
+      if (i == "VD"){
+      files_to_change <- filtered_files_cassette[[i]]
+      }
+  for (j in 1:length(files_to_change)){
+    file <- fread(files_to_change[j])
+    if (nrow(file) != 0){
+    # Organize file name:
+     string <- files_to_change[j]
+     result <- strsplit(string, "\\.")
+     before_dot <- result[[1]][1]
+     after_dot <- result[[1]][2]
+
+    file_rev <- reverse_columns(file, 10)
+    write.csv(file_rev, paste0(before_dot, "_rev.", after_dot), row.names = F)
+    files_to_change[j] <- basename(paste0(before_dot, "_rev.", after_dot))
+    }
+    if (nrow(file) == 0) next
+    }
+  filtered_files_cassette[[i]] <- c(files_to_change, filtered_files_cassette[[i]][n:length(filtered_files_cassette[[i]])])
+  if (i == "ADL") next
+    }
+}
+
+# composite:
+for (i in singletypes){
+  if (i != "ADL"){   # Since ADL is first in singletypes, we won't have to reverse any files for ADL
+    if (i != "VD"){
+  n <- get_position(singletypes, i)
+  files_to_change <- filtered_files_composite[[i]][0-n:length(filtered_files_composite[[i]])]
+    }
+      if (i == "VD"){
+      files_to_change <- filtered_files_composite[[i]]
+      }
+  for (j in 1:length(files_to_change)){
+    file <- fread(files_to_change[j])
+    if (nrow(file) != 0){
+    # Organize file name:
+     string <- files_to_change[j]
+     result <- strsplit(string, "\\.")
+     before_dot <- result[[1]][1]
+     after_dot <- result[[1]][2]
+
+    file_rev <- reverse_columns(file, 7)
+    write.csv(file_rev, paste0(before_dot, "_rev.", after_dot), row.names = F)
+    files_to_change[j] <- basename(paste0(before_dot, "_rev.", after_dot))
+    }
+    if (nrow(file) == 0) next
+    }
+  filtered_files_composite[[i]] <- c(files_to_change, filtered_files_composite[[i]][n:length(filtered_files_composite[[i]])])
+  if (i == "ADL") next
+    }
+}
+
+# intron retention:
+for (i in singletypes){
+  if (i != "ADL"){   # Since ADL is first in singletypes, we won't have to reverse any files for ADL
+    if (i != "VD"){
+  n <- get_position(singletypes, i)
+  files_to_change <- filtered_files_intron[[i]][0-n:length(filtered_files_intron[[i]])]
+    }
+      if (i == "VD"){
+      files_to_change <- filtered_files_intron[[i]]
+      }
+  for (j in 1:length(files_to_change)){
+    file <- fread(files_to_change[j])
+    if (nrow(file) != 0){
+    # Organize file name:
+     string <- files_to_change[j]
+     result <- strsplit(string, "\\.")
+     before_dot <- result[[1]][1]
+     after_dot <- result[[1]][2]
+
+    file_rev <- reverse_columns(file, 8)
+    write.csv(file_rev, paste0(before_dot, "_rev.", after_dot), row.names = F)
+    files_to_change[j] <- basename(paste0(before_dot, "_rev.", after_dot))
+    }
+    if (nrow(file) == 0) next
+    }
+  filtered_files_intron[[i]] <- c(files_to_change, filtered_files_intron[[i]][n:length(filtered_files_intron[[i]])])
+  if (i == "ADL") next
+    }
+}
+
+# MXE:
+for (i in singletypes){
+  if (i != "ADL"){   # Since ADL is first in singletypes, we won't have to reverse any files for ADL
+    if (i != "VD"){
+  n <- get_position(singletypes, i)
+  files_to_change <- filtered_files_MXE[[i]][0-n:length(filtered_files_MXE[[i]])]
+    }
+      if (i == "VD"){
+      files_to_change <- filtered_files_MXE[[i]]
+      }
+  for (j in 1:length(files_to_change)){
+    file <- fread(files_to_change[j])
+    if (nrow(file) != 0){
+    # Organize file name:
+     string <- files_to_change[j]
+     result <- strsplit(string, "\\.")
+     before_dot <- result[[1]][1]
+     after_dot <- result[[1]][2]
+
+    file_rev <- reverse_columns(file, 9)
+    write.csv(file_rev, paste0(before_dot, "_rev.", after_dot), row.names = F)
+    files_to_change[j] <- basename(paste0(before_dot, "_rev.", after_dot))
+    }
+    if (nrow(file) == 0) next
+    }
+  filtered_files_MXE[[i]] <- c(files_to_change, filtered_files_MXE[[i]][n:length(filtered_files_MXE[[i]])])
+  if (i == "ADL") next
+    }
+}
+
+# Lastly, get rid of the final element in all the "VD" lists:
+filtered_files_A3S$VD <- filtered_files_A3S$VD[-c(46)]
+filtered_files_A5S$VD <- filtered_files_A5S$VD[-c(46)]
+filtered_files_cassette$VD <- filtered_files_cassette$VD[-c(46)]
+filtered_files_composite$VD <- filtered_files_composite$VD[-c(46)]
+filtered_files_intron$VD <- filtered_files_intron$VD[-c(46)]
+filtered_files_MXE$VD <- filtered_files_MXE$VD[-c(46)]
+```
+
+
+# Note: If there are 0 AS events in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunks. Run this chunk to eliminate .csv files from our file list if there are 0 rows:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# Loop over cell types and comparisons
+for (cell_type in singletypes) {
+   for (comparison in comparisons) {
+    # Create the variable name
+    list_name <- paste0("filtered_files_", comparison, "$", cell_type)
+    
+    # Get the list of file paths
+    file_list <- eval(parse(text = list_name))
+    
+    # Filter out files with zero rows
+    file_list_with_rows <- file_list[sapply(file_list, function(file) {
+      nrows <- tryCatch(nrow(read.csv(file)), error = function(e) 0)
+      nrows > 0
+    })]
+    
+    # Assign the updated file list back to the list_name
+    assign(list_name, file_list_with_rows)
+  }
+}
+```
+
+# deltaPSI values for unique AS events in individual "cell type vs" files:
+
+# A3S events:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# Loop over cell types
+for (cell_type in singletypes) {
+  # Create file names based on cell type and comparison
+  file_name <- paste0("LargeA3Sdf_", cell_type)
+  count_file_name <- paste0("A3S_event_ID_", cell_type, "_count")
+  
+  # Read the CSV file
+  df <- get(paste0("filtered_files_A3S$", cell_type)) %>% map_dfr(read.csv)
+  
+  # Rename columns
+  colnames_df <- colnames(df)
+  deltaPSI_names <- rep(paste0("deltaPSI_", 1:(ncol(df) - 8)))
+  df <- df %>% setnames(old = colnames_df[9:ncol(df)], new = deltaPSI_names)
+  
+  # Sort by AS_event_ID
+  df <- df[order(df$AS_event_ID), ]
+  
+  # Calculate count
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  names(count_df) <- c("A3S_event_ID", "Freq")
+  
+  df[is.na(df)] <- 0
+  
+  df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
+  df$MinPSIs <- rowMins(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
+  
+  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  
+  df$first_PSI <- apply(df[, 9:ncol(df)], 1, function(x) x[x != 0][1])
+  
+  df <- df[which(df$MaxPSIs == (-1) * df$MinPSIs), ]
+  
+  unique_A3S_events <- unique(df$AS_event_ID)
+  unique_A3S_genes <- unique(df$Gene)
+  
+  deltaPSI_sums <- df[,c("AS_event_ID", "Gene", "first_PSI", "MaxPSIs", "MinPSIs")]
+  names(deltaPSI_sums) <- c("A3S_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
+  deltaPSI_sums$`max delta PSI plus min delta PSI` <- deltaPSI_sums[, 4] + deltaPSI_sums[, 5]
+  
+  first_PSI_sums <- data.frame()
+  for (i in unique_A3S_events) {
+    first_PSI_sums[i, 1] <- sum(deltaPSI_sums[deltaPSI_sums$A3S_event_ID == i, 3])
+  }
+  
+  for (i in rownames(first_PSI_sums)) {
+    first_PSI_sums[i, 2] <- first(deltaPSI_sums$Gene[deltaPSI_sums$A3S_event_ID == i])
+  }
+  names(first_PSI_sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
+  
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  rownames(count_df) <- count_df[, 1]
+  for (i in rownames(count_df)) {
+    count_df[i, 3] <- first_PSI_sums$Gene[count_df$Var1 == i]
+    count_df[i, 4] <- first_PSI_sums$`sum of all first deltaPSIs for AS_event_ID`[count_df$Var1 == i]
+  }
+  names(count_df) <- c("A3S_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
+  
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  
+  # Save the dataframes to CSV files
+  write.csv(df, file = paste0(file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(count_df, file = paste0(count_file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(first_PSI_sums, file = paste0("A3S_", cell_type, "_first_PSI_sums.csv"))
+  write.csv(deltaPSI_sums, file = paste0("A3S_", cell_type, "_deltaPSI_sums.csv"), row.names = FALSE, quote = FALSE)  
+}
+```
+
+# A5S events:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# Loop over cell types
+for (cell_type in singletypes) {
+  # Create file names based on cell type and comparison
+  file_name <- paste0("LargeA5Sdf_", cell_type)
+  count_file_name <- paste0("A5S_event_ID_", cell_type, "_count")
+  
+  # Read the CSV file
+  df <- get(paste0("filtered_files_A5S$", cell_type)) %>% map_dfr(read.csv)
+  
+  # Rename columns
+  colnames_df <- colnames(df)
+  deltaPSI_names <- rep(paste0("deltaPSI_", 1:(ncol(df) - 8)))
+  df <- df %>% setnames(old = colnames_df[9:ncol(df)], new = deltaPSI_names)
+  
+  # Sort by AS_event_ID
+  df <- df[order(df$AS_event_ID), ]
+  
+  # Calculate count
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  names(count_df) <- c("A5S_event_ID", "Freq")
+  
+  df[is.na(df)] <- 0
+  
+  df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
+  df$MinPSIs <- rowMins(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
+  
+  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  
+  df$first_PSI <- apply(df[, 9:ncol(df)], 1, function(x) x[x != 0][1])
+  
+  df <- df[which(df$MaxPSIs == (-1) * df$MinPSIs), ]
+  
+  unique_A5S_events <- unique(df$AS_event_ID)
+  unique_A5S_genes <- unique(df$Gene)
+  
+  deltaPSI_sums <- df[,c("AS_event_ID", "Gene", "first_PSI", "MaxPSIs", "MinPSIs")]
+  names(deltaPSI_sums) <- c("A5S_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
+  deltaPSI_sums$`max delta PSI plus min delta PSI` <- deltaPSI_sums[, 4] + deltaPSI_sums[, 5]
+  
+  first_PSI_sums <- data.frame()
+  for (i in unique_A5S_events) {
+    first_PSI_sums[i, 1] <- sum(deltaPSI_sums[deltaPSI_sums$A5S_event_ID == i, 3])
+  }
+  
+  for (i in rownames(first_PSI_sums)) {
+    first_PSI_sums[i, 2] <- first(deltaPSI_sums$Gene[deltaPSI_sums$A5S_event_ID == i])
+  }
+  names(first_PSI_sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
+  
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  rownames(count_df) <- count_df[, 1]
+  for (i in rownames(count_df)) {
+    count_df[i, 3] <- first_PSI_sums$Gene[count_df$Var1 == i]
+    count_df[i, 4] <- first_PSI_sums$`sum of all first deltaPSIs for AS_event_ID`[count_df$Var1 == i]
+  }
+  names(count_df) <- c("A5S_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
+  
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  
+  # Save the dataframes to CSV files
+  write.csv(df, file = paste0(file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(count_df, file = paste0(count_file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(first_PSI_sums, file = paste0("A5S_", cell_type, "_first_PSI_sums.csv"))
+  write.csv(deltaPSI_sums, file = paste0("A5S_", cell_type, "_deltaPSI_sums.csv"), row.names = FALSE, quote = FALSE)  
+}
+```
+
+# Cassette exons:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# Loop over cell types
+for (cell_type in singletypes) {
+  # Create file names based on cell type and comparison
+  file_name <- paste0("Largecassettedf_", cell_type)
+  count_file_name <- paste0("cassette_event_ID_", cell_type, "_count")
+  
+  # Read the CSV file
+  df <- get(paste0("filtered_files_cassette$", cell_type)) %>% map_dfr(read.csv)
+  
+  # Rename columns
+  colnames_df <- colnames(df)
+  deltaPSI_names <- rep(paste0("deltaPSI_", 1:(ncol(df) - 10)))
+  df <- df %>% setnames(old = colnames_df[11:ncol(df)], new = deltaPSI_names)
+  
+  # Sort by AS_event_ID
+  df <- df[order(df$AS_event_ID), ]
+  
+  # Calculate count
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  names(count_df) <- c("cassette_event_ID", "Freq")
+  
+  df[is.na(df)] <- 0
+     
+  df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 11:ncol(df)])), dim. = dim(df[, 11:ncol(df)]))
+  df$MinPSIs <- rowMins(as.numeric(unlist(df[, 11:ncol(df)])), dim. = dim(df[, 11:ncol(df)]))
+  
+  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+
+  df$first_PSI <- apply(df[, 11:ncol(df)], 1, function(x) x[x != 0][1])
+    
+  unique_cassette_events <- unique(df$AS_event_ID)
+  unique_cassette_events <- na.omit(unique_cassette_events)
+  unique_cassette_genes <- unique(df$Gene)
+  
+  deltaPSI_sums <-  df[,c("AS_event_ID", "Gene", "first_PSI", "MaxPSIs", "MinPSIs")]
+  names(deltaPSI_sums) <- c("cassette_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
+  deltaPSI_sums$`max delta PSI plus min delta PSI` <- deltaPSI_sums[, 4] + deltaPSI_sums[, 5]
+  
+  first_PSI_sums <- data.frame()
+  for (i in unique_cassette_events) {
+    first_PSI_sums[i, 1] <- sum(deltaPSI_sums[deltaPSI_sums$cassette_event_ID == i, 3])
+  }
+  
+  for (i in rownames(first_PSI_sums)) {
+    first_PSI_sums[i, 2] <- first(deltaPSI_sums$Gene[deltaPSI_sums$cassette_event_ID == i])
+  }
+  names(first_PSI_sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
+  
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  rownames(count_df) <- count_df[, 1]
+  for (i in rownames(count_df)) {
+    count_df[i, 3] <- first_PSI_sums$Gene[count_df$Var1 == i]
+    count_df[i, 4] <- first_PSI_sums$`sum of all first deltaPSIs for AS_event_ID`[count_df$Var1 == i]
+  }
+  names(count_df) <- c("cassette_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
+  
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  
+  # Save the dataframes to CSV files
+  write.csv(df, file = paste0(file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(count_df, file = paste0(count_file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(first_PSI_sums, file = paste0("cassette_", cell_type, "_first_PSI_sums.csv"))
+  write.csv(deltaPSI_sums, file = paste0("cassette_", cell_type, "_deltaPSI_sums.csv"), row.names = FALSE, quote = FALSE)  
+}
+```
+
+# Composite events:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# Loop over cell types
+for (cell_type in singletypes) {
+  # Create file names based on cell type and comparison
+  file_name <- paste0("Largecompositedf_", cell_type)
+  count_file_name <- paste0("composite_event_ID_", cell_type, "_count")
+  
+  # Read the CSV file
+  df <- get(paste0("filtered_files_composite$", cell_type)) %>% map_dfr(read.csv)
+  
+  # Rename columns
+  colnames_df <- colnames(df)
+  deltaPSI_names <- rep(paste0("deltaPSI_", 1:(ncol(df) - 7)))
+  df <- df %>% setnames(old = colnames_df[8:ncol(df)], new = deltaPSI_names)
+  
+  # Sort by AS_event_ID
+  df <- df[order(df$AS_event_ID), ]
+  
+  # Calculate count
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  names(count_df) <- c("composite_event_ID", "Freq")
+  
+  df[is.na(df)] <- 0
+  
+  df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 8:ncol(df)])), dim. = dim(df[, 8:ncol(df)]))
+  df$MinPSIs <- rowMins(as.numeric(unlist(df[, 8:ncol(df)])), dim. = dim(df[, 8:ncol(df)]))
+  
+  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  
+  df$first_PSI <- apply(df[, 8:ncol(df)], 1, function(x) x[x != 0][1])
+  
+  df <- df[which(df$MaxPSIs == (-1) * df$MinPSIs), ]
+  
+  unique_composite_events <- unique(df$AS_event_ID)
+  unique_composite_genes <- unique(df$Gene)
+  
+  deltaPSI_sums <- df[,c("AS_event_ID", "Gene", "first_PSI", "MaxPSIs", "MinPSIs")]
+  names(deltaPSI_sums) <- c("composite_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
+  deltaPSI_sums$`max delta PSI plus min delta PSI` <- deltaPSI_sums[, 4] + deltaPSI_sums[, 5]
+  
+  first_PSI_sums <- data.frame()
+  for (i in unique_composite_events) {
+    first_PSI_sums[i, 1] <- sum(deltaPSI_sums[deltaPSI_sums$composite_event_ID == i, 3])
+  }
+  
+  for (i in rownames(first_PSI_sums)) {
+    first_PSI_sums[i, 2] <- first(deltaPSI_sums$Gene[deltaPSI_sums$composite_event_ID == i])
+  }
+  names(first_PSI_sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
+  
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  rownames(count_df) <- count_df[, 1]
+  for (i in rownames(count_df)) {
+    count_df[i, 3] <- first_PSI_sums$Gene[count_df$Var1 == i]
+    count_df[i, 4] <- first_PSI_sums$`sum of all first deltaPSIs for AS_event_ID`[count_df$Var1 == i]
+  }
+  names(count_df) <- c("composite_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
+  
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  
+  # Save the dataframes to CSV files
+  write.csv(df, file = paste0(file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(count_df, file = paste0(count_file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(first_PSI_sums, file = paste0("composite_", cell_type, "_first_PSI_sums.csv"))
+  write.csv(deltaPSI_sums, file = paste0("composite_", cell_type, "_deltaPSI_sums.csv"), row.names = FALSE, quote = FALSE)  
+}
+```
+
+# Intron Retention events:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# Loop over cell types
+for (cell_type in singletypes) {
+  # Create file names based on cell type and comparison
+  file_name <- paste0("Largeintrondf_", cell_type)
+  count_file_name <- paste0("intron_event_ID_", cell_type, "_count")
+  
+  # Read the CSV file
+  df <- get(paste0("filtered_files_intron$", cell_type)) %>% map_dfr(read.csv)
+  
+  # Rename columns
+  colnames_df <- colnames(df)
+  deltaPSI_names <- rep(paste0("deltaPSI_", 1:(ncol(df) - 8)))
+  df <- df %>% setnames(old = colnames_df[9:ncol(df)], new = deltaPSI_names)
+  
+  # Sort by AS_event_ID
+  df <- df[order(df$AS_event_ID), ]
+  
+  # Calculate count
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  names(count_df) <- c("intron_event_ID", "Freq")
+  
+  df[is.na(df)] <- 0
+
+  df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
+  df$MinPSIs <- rowMins(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
+  
+  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+
+  df$first_PSI <- apply(df[, 9:ncol(df)], 1, function(x) x[x != 0][1])
+    
+  unique_intron_events <- unique(df$AS_event_ID)
+  unique_intron_events <- na.omit(unique_intron_events)
+  unique_intron_genes <- unique(df$Gene)
+  
+  deltaPSI_sums <- df[,c("AS_event_ID", "Gene", "first_PSI", "MaxPSIs", "MinPSIs")]
+  names(deltaPSI_sums) <- c("intron_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
+  deltaPSI_sums$`max delta PSI plus min delta PSI` <- deltaPSI_sums[, 4] + deltaPSI_sums[, 5]
+  
+  first_PSI_sums <- data.frame()
+  for (i in unique_intron_events) {
+    first_PSI_sums[i, 1] <- sum(deltaPSI_sums[deltaPSI_sums$intron_event_ID == i, 3])
+  }
+  
+  for (i in rownames(first_PSI_sums)) {
+    first_PSI_sums[i, 2] <- first(deltaPSI_sums$Gene[deltaPSI_sums$intron_event_ID == i])
+  }
+  names(first_PSI_sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
+  
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  rownames(count_df) <- count_df[, 1]
+  for (i in rownames(count_df)) {
+    count_df[i, 3] <- first_PSI_sums$Gene[count_df$Var1 == i]
+    count_df[i, 4] <- first_PSI_sums$`sum of all first deltaPSIs for AS_event_ID`[count_df$Var1 == i]
+  }
+  names(count_df) <- c("intron_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
+  
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  
+  # Save the dataframes to CSV files
+  write.csv(df, file = paste0(file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(count_df, file = paste0(count_file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(first_PSI_sums, file = paste0("intron_", cell_type, "_first_PSI_sums.csv"))
+  write.csv(deltaPSI_sums, file = paste0("intron_", cell_type, "_deltaPSI_sums.csv"), row.names = FALSE, quote = FALSE)  
+}
+```
+
+# Mutually exclusive exons:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+# Loop over cell types
+for (cell_type in singletypes) {
+  # Create file names based on cell type and comparison
+  file_name <- paste0("LargeMXEdf_", cell_type)
+  count_file_name <- paste0("MXE_event_ID_", cell_type, "_count")
+  
+  # Read the CSV file
+  df <- get(paste0("filtered_files_MXE$", cell_type)) %>% map_dfr(read.csv)
+  
+  # Rename columns
+  colnames_df <- colnames(df)
+  deltaPSI_names <- rep(paste0("deltaPSI_", 1:(ncol(df) - 9)))
+  df <- df %>% setnames(old = colnames_df[10:ncol(df)], new = deltaPSI_names)
+  
+  # Sort by AS_event_ID
+  df <- df[order(df$AS_event_ID), ]
+  
+  # Calculate count
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  names(count_df) <- c("MXE_event_ID", "Freq")
+  
+  df[is.na(df)] <- 0
+  
+  df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 10:ncol(df)])), dim. = dim(df[, 10:ncol(df)]))
+  df$MinPSIs <- rowMins(as.numeric(unlist(df[, 10:ncol(df)])), dim. = dim(df[, 10:ncol(df)]))
+  
+  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  
+  df$first_PSI <- apply(df[, 10:ncol(df)], 1, function(x) x[x != 0][1])
+  
+  df <- df[which(df$MaxPSIs == (-1) * df$MinPSIs), ]
+  
+  unique_MXE_events <- unique(df$AS_event_ID)
+  unique_MXE_genes <- unique(df$Gene)
+  
+  deltaPSI_sums <- df[,c("AS_event_ID", "Gene", "first_PSI", "MaxPSIs", "MinPSIs")]
+  names(deltaPSI_sums) <- c("MXE_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
+  deltaPSI_sums$`max delta PSI plus min delta PSI` <- deltaPSI_sums[, 4] + deltaPSI_sums[, 5]
+  
+  first_PSI_sums <- data.frame()
+  for (i in unique_MXE_events) {
+    first_PSI_sums[i, 1] <- sum(deltaPSI_sums[deltaPSI_sums$MXE_event_ID == i, 3])
+  }
+  
+  for (i in rownames(first_PSI_sums)) {
+    first_PSI_sums[i, 2] <- first(deltaPSI_sums$Gene[deltaPSI_sums$MXE_event_ID == i])
+  }
+  names(first_PSI_sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
+  
+  count_df <- as.data.frame(table(df$AS_event_ID))
+  rownames(count_df) <- count_df[, 1]
+  for (i in rownames(count_df)) {
+    count_df[i, 3] <- first_PSI_sums$Gene[count_df$Var1 == i]
+    count_df[i, 4] <- first_PSI_sums$`sum of all first deltaPSIs for AS_event_ID`[count_df$Var1 == i]
+  }
+  names(count_df) <- c("MXE_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
+  
+  count_df <- count_df[rev(order(count_df$Freq)), ]
+  
+  # Save the dataframes to CSV files
+  write.csv(df, file = paste0(file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(count_df, file = paste0(count_file_name, ".csv"), row.names = FALSE, quote = FALSE)
+  write.csv(first_PSI_sums, file = paste0("MXE_", cell_type, "_first_PSI_sums.csv"))
+  write.csv(deltaPSI_sums, file = paste0("MXE_", cell_type, "_deltaPSI_sums.csv"), row.names = FALSE, quote = FALSE)  
+}
+```
+
+## Make a heatmap for the deltaPSIsums value in each A.S. event type for a given cell type:
+# First, create a list to store the data frames
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+deltaPSI_sums_list <- list()
+
+# read in the .csvs generated in the previous loop:
+
+for (i in c("A3S", "A5S", "cassette", "composite", "intron", "MXE")) {
+  for (j in singletypes) {
+    # Generate the file name
+    file_name <- paste0(i, "_event_ID_", j, "_count.csv")
+    
+    # Read the file using fread() and store it in the data_frames list
+    deltaPSI_sums_list[[file_name]] <- fread(file_name)
+  }
+}
+```
+
+# Now make heatmap dataframes for each A.S. event type:
+```{r}
+# A3S:
+A3S_events_list <- character()
+for (i in singletypes) {
+  A3S_events <- deltaPSI_sums_list[[paste0("A3S_event_ID_", i, "_count.csv")]]$A3S_event_ID
+  A3S_events_list <- c(A3S_events_list, A3S_events)
+}
+
+row_names <- unique(A3S_events_list)
+A3S_sums_heatmap <- matrix(nrow = length(row_names), ncol = 46, dimnames = list(row_names, singletypes))
+A3S_sums_heatmap[is.na(A3S_sums_heatmap)] <- 0
+
+for (i in seq_along(singletypes)) {
+  A3Ssums_for_graph <- deltaPSI_sums_list[[paste0("A3S_event_ID_", singletypes[i], "_count.csv")]] %>%
+    as.data.frame()
+  rownames(A3Ssums_for_graph) <- A3Ssums_for_graph[, 1]
+
+  for (j in rownames(A3Ssums_for_graph)) {
+    values <- as.numeric(A3Ssums_for_graph[j, 4])
+    if (!is.na(values)) {
+      consolidated_row_name <- sub("\\.\\d+$", "", j)
+      row_idx <- which(rownames(A3S_sums_heatmap) == consolidated_row_name)
+      A3S_sums_heatmap[row_idx, i] <- sum(values, na.rm = TRUE)
+    }
+  }
+}
+
+maxs <- rowMaxs(as.matrix(A3S_sums_heatmap))
+A3S_sums_heatmap <- cbind(A3S_sums_heatmap, maxs)
+A3S_sums_heatmap <- A3S_sums_heatmap[order(unlist(A3S_sums_heatmap[,47]), decreasing = TRUE),]
+A3S_sums_heatmap <- A3S_sums_heatmap[,-47]
+
+# A5S:
+A5S_events_list <- character()
+for (i in singletypes) {
+  A5S_events <- deltaPSI_sums_list[[paste0("A5S_event_ID_", i, "_count.csv")]]$A5S_event_ID
+  A5S_events_list <- c(A5S_events_list, A5S_events)
+}
+
+row_names <- unique(A5S_events_list)
+A5S_sums_heatmap <- matrix(nrow = length(row_names), ncol = 46, dimnames = list(row_names, singletypes))
+A5S_sums_heatmap[is.na(A5S_sums_heatmap)] <- 0
+
+for (i in seq_along(singletypes)) {
+  A5Ssums_for_graph <- deltaPSI_sums_list[[paste0("A5S_event_ID_", singletypes[i], "_count.csv")]] %>%
+    as.data.frame()
+  rownames(A5Ssums_for_graph) <- A5Ssums_for_graph[, 1]
+
+  for (j in rownames(A5Ssums_for_graph)) {
+    values <- as.numeric(A5Ssums_for_graph[j, 4])
+    if (!is.na(values)) {
+      consolidated_row_name <- sub("\\.\\d+$", "", j)
+      row_idx <- which(rownames(A5S_sums_heatmap) == consolidated_row_name)
+      A5S_sums_heatmap[row_idx, i] <- sum(values, na.rm = TRUE)
+    }
+  }
+}
+
+maxs <- rowMaxs(as.matrix(A5S_sums_heatmap))
+A5S_sums_heatmap <- cbind(A5S_sums_heatmap, maxs)
+A5S_sums_heatmap <- A5S_sums_heatmap[order(unlist(A5S_sums_heatmap[,47]), decreasing = TRUE),]
+A5S_sums_heatmap <- A5S_sums_heatmap[,-47]
+
+# cassette exons:
+cassette_events_list <- character()
+for (i in singletypes) {
+  cassette_events <- deltaPSI_sums_list[[paste0("cassette_event_ID_", i, "_count.csv")]]$cassette_event_ID
+  cassette_events_list <- c(cassette_events_list, cassette_events)
+}
+
+row_names <- unique(cassette_events_list)
+cassette_sums_heatmap <- matrix(nrow = length(row_names), ncol = 46, dimnames = list(row_names, singletypes))
+cassette_sums_heatmap[is.na(cassette_sums_heatmap)] <- 0
+
+for (i in seq_along(singletypes)) {
+  cassettesums_for_graph <- deltaPSI_sums_list[[paste0("cassette_event_ID_", singletypes[i], "_count.csv")]] %>%
+    as.data.frame()
+  rownames(cassettesums_for_graph) <- cassettesums_for_graph[, 1]
+
+  for (j in rownames(cassettesums_for_graph)) {
+    values <- as.numeric(cassettesums_for_graph[j, 4])
+    if (!is.na(values)) {
+      consolidated_row_name <- sub("\\.\\d+$", "", j)
+      row_idx <- which(rownames(cassette_sums_heatmap) == consolidated_row_name)
+      cassette_sums_heatmap[row_idx, i] <- sum(values, na.rm = TRUE)
+    }
+  }
+}
+
+maxs <- rowMaxs(as.matrix(cassette_sums_heatmap))
+cassette_sums_heatmap <- cbind(cassette_sums_heatmap, maxs)
+cassette_sums_heatmap <- cassette_sums_heatmap[order(unlist(cassette_sums_heatmap[,47]), decreasing = TRUE),]
+cassette_sums_heatmap <- cassette_sums_heatmap[,-47]
+
+# composite:
+composite_events_list <- character()
+for (i in singletypes) {
+  composite_events <- deltaPSI_sums_list[[paste0("composite_event_ID_", i, "_count.csv")]]$composite_event_ID
+  composite_events_list <- c(composite_events_list, composite_events)
+}
+
+row_names <- unique(composite_events_list)
+composite_sums_heatmap <- matrix(nrow = length(row_names), ncol = 46, dimnames = list(row_names, singletypes))
+composite_sums_heatmap[is.na(composite_sums_heatmap)] <- 0
+
+for (i in seq_along(singletypes)) {
+  compositesums_for_graph <- deltaPSI_sums_list[[paste0("composite_event_ID_", singletypes[i], "_count.csv")]] %>%
+    as.data.frame()
+  rownames(compositesums_for_graph) <- compositesums_for_graph[, 1]
+
+  for (j in rownames(compositesums_for_graph)) {
+    values <- as.numeric(compositesums_for_graph[j, 4])
+    if (!is.na(values)) {
+      consolidated_row_name <- sub("\\.\\d+$", "", j)
+      row_idx <- which(rownames(composite_sums_heatmap) == consolidated_row_name)
+      composite_sums_heatmap[row_idx, i] <- sum(values, na.rm = TRUE)
+    }
+  }
+}
+
+maxs <- rowMaxs(as.matrix(composite_sums_heatmap))
+composite_sums_heatmap <- cbind(composite_sums_heatmap, maxs)
+composite_sums_heatmap <- composite_sums_heatmap[order(unlist(composite_sums_heatmap[,47]), decreasing = TRUE),]
+composite_sums_heatmap <- composite_sums_heatmap[,-47]
+
+# intron retention:
+intron_events_list <- character()
+for (i in singletypes) {
+  intron_events <- deltaPSI_sums_list[[paste0("intron_event_ID_", i, "_count.csv")]]$intron_event_ID
+  intron_events_list <- c(intron_events_list, intron_events)
+}
+
+row_names <- unique(intron_events_list)
+intron_sums_heatmap <- matrix(nrow = length(row_names), ncol = 46, dimnames = list(row_names, singletypes))
+intron_sums_heatmap[is.na(intron_sums_heatmap)] <- 0
+
+for (i in seq_along(singletypes)) {
+  intronsums_for_graph <- deltaPSI_sums_list[[paste0("intron_event_ID_", singletypes[i], "_count.csv")]] %>%
+    as.data.frame()
+  rownames(intronsums_for_graph) <- intronsums_for_graph[, 1]
+
+  for (j in rownames(intronsums_for_graph)) {
+    values <- as.numeric(intronsums_for_graph[j, 4])
+    if (!is.na(values)) {
+      consolidated_row_name <- sub("\\.\\d+$", "", j)
+      row_idx <- which(rownames(intron_sums_heatmap) == consolidated_row_name)
+      intron_sums_heatmap[row_idx, i] <- sum(values, na.rm = TRUE)
+    }
+  }
+}
+
+maxs <- rowMaxs(as.matrix(intron_sums_heatmap))
+intron_sums_heatmap <- cbind(intron_sums_heatmap, maxs)
+intron_sums_heatmap <- intron_sums_heatmap[order(unlist(intron_sums_heatmap[,47]), decreasing = TRUE),]
+intron_sums_heatmap <- intron_sums_heatmap[,-47]
+
+# MXE:
+MXE_events_list <- character()
+for (i in singletypes) {
+  MXE_events <- deltaPSI_sums_list[[paste0("MXE_event_ID_", i, "_count.csv")]]$MXE_event_ID
+  MXE_events_list <- c(MXE_events_list, MXE_events)
+}
+
+row_names <- unique(MXE_events_list)
+MXE_sums_heatmap <- matrix(nrow = length(row_names), ncol = 46, dimnames = list(row_names, singletypes))
+MXE_sums_heatmap[is.na(MXE_sums_heatmap)] <- 0
+
+for (i in seq_along(singletypes)) {
+  MXEsums_for_graph <- deltaPSI_sums_list[[paste0("MXE_event_ID_", singletypes[i], "_count.csv")]] %>%
+    as.data.frame()
+  rownames(MXEsums_for_graph) <- MXEsums_for_graph[, 1]
+
+  for (j in rownames(MXEsums_for_graph)) {
+    values <- as.numeric(MXEsums_for_graph[j, 4])
+    if (!is.na(values)) {
+      consolidated_row_name <- sub("\\.\\d+$", "", j)
+      row_idx <- which(rownames(MXE_sums_heatmap) == consolidated_row_name)
+      MXE_sums_heatmap[row_idx, i] <- sum(values, na.rm = TRUE)
+    }
+  }
+}
+
+maxs <- rowMaxs(as.matrix(MXE_sums_heatmap))
+MXE_sums_heatmap <- cbind(MXE_sums_heatmap, maxs)
+MXE_sums_heatmap <- MXE_sums_heatmap[order(unlist(MXE_sums_heatmap[,47]), decreasing = TRUE),]
+MXE_sums_heatmap <- MXE_sums_heatmap[,-47]
+```
+
+# Optional: add gene names to each A.S. event ID:
+```{r}
+for (i in 1:46) {
+  A3Ssums_for_graph <- deltaPSI_sums_list[[i]] %>%
+    as.data.frame()
+  rownames(A3Ssums_for_graph) <- A3Ssums_for_graph[, 1]
+  
+  for (j in 1:nrow(A3S_sums_heatmap)) {
+    rowname <- rownames(A3S_sums_heatmap)[j]
+    index <- match(rowname, A3Ssums_for_graph$A3S_event_ID)
+    if (!is.na(index)) {
+      A3S_event_ID <- A3Ssums_for_graph$A3S_event_ID[index]
+      Gene <- A3Ssums_for_graph$Gene[index]
+      combined_name <- paste(Gene, A3S_event_ID)
+      rownames(A3S_sums_heatmap)[j] <- combined_name
+    }
+  }
+}
+
+for (i in 1:46) {
+  A5Ssums_for_graph <- deltaPSI_sums_list[[i+46]] %>%
+    as.data.frame()
+  rownames(A5Ssums_for_graph) <- A5Ssums_for_graph[, 1]
+  
+  for (j in 1:nrow(A5S_sums_heatmap)) {
+    rowname <- rownames(A5S_sums_heatmap)[j]
+    index <- match(rowname, A5Ssums_for_graph$A5S_event_ID)
+    if (!is.na(index)) {
+      A5S_event_ID <- A5Ssums_for_graph$A5S_event_ID[index]
+      Gene <- A5Ssums_for_graph$Gene[index]
+      combined_name <- paste(Gene, A5S_event_ID)
+      rownames(A5S_sums_heatmap)[j] <- combined_name
+    }
+  }
+}
+
+for (i in 1:46) {
+  cassettesums_for_graph <- deltaPSI_sums_list[[i+92]] %>%
+    as.data.frame()
+  rownames(cassettesums_for_graph) <- cassettesums_for_graph[, 1]
+  
+  for (j in 1:nrow(cassette_sums_heatmap)) {
+    rowname <- rownames(cassette_sums_heatmap)[j]
+    index <- match(rowname, cassettesums_for_graph$cassette_event_ID)
+    if (!is.na(index)) {
+      cassette_event_ID <- cassettesums_for_graph$cassette_event_ID[index]
+      Gene <- cassettesums_for_graph$Gene[index]
+      combined_name <- paste(Gene, cassette_event_ID)
+      rownames(cassette_sums_heatmap)[j] <- combined_name
+    }
+  }
+}
+
+for (i in 1:46) {
+  compositesums_for_graph <- deltaPSI_sums_list[[i+138]] %>%
+    as.data.frame()
+  rownames(compositesums_for_graph) <- compositesums_for_graph[, 1]
+  
+  for (j in 1:nrow(composite_sums_heatmap)) {
+    rowname <- rownames(composite_sums_heatmap)[j]
+    index <- match(rowname, compositesums_for_graph$composite_event_ID)
+    if (!is.na(index)) {
+      composite_event_ID <- compositesums_for_graph$composite_event_ID[index]
+      Gene <- compositesums_for_graph$Gene[index]
+      combined_name <- paste(Gene, composite_event_ID)
+      rownames(composite_sums_heatmap)[j] <- combined_name
+    }
+  }
+}
+
+for (i in 1:46) {
+  intronsums_for_graph <- deltaPSI_sums_list[[i+184]] %>%
+    as.data.frame()
+  rownames(intronsums_for_graph) <- intronsums_for_graph[, 1]
+  
+  for (j in 1:nrow(intron_sums_heatmap)) {
+    rowname <- rownames(intron_sums_heatmap)[j]
+    index <- match(rowname, intronsums_for_graph$intron_event_ID)
+    if (!is.na(index)) {
+      intron_event_ID <- intronsums_for_graph$intron_event_ID[index]
+      Gene <- intronsums_for_graph$Gene[index]
+      combined_name <- paste(Gene, intron_event_ID)
+      rownames(intron_sums_heatmap)[j] <- combined_name
+    }
+  }
+}
+
+for (i in 1:46) {
+  MXEsums_for_graph <- deltaPSI_sums_list[[i+230]] %>%
+    as.data.frame()
+  rownames(MXEsums_for_graph) <- MXEsums_for_graph[, 1]
+  
+  for (j in 1:nrow(MXE_sums_heatmap)) {
+    rowname <- rownames(MXE_sums_heatmap)[j]
+    index <- match(rowname, MXEsums_for_graph$MXE_event_ID)
+    if (!is.na(index)) {
+      MXE_event_ID <- MXEsums_for_graph$MXE_event_ID[index]
+      Gene <- MXEsums_for_graph$Gene[index]
+      combined_name <- paste(Gene, MXE_event_ID)
+      rownames(MXE_sums_heatmap)[j] <- combined_name
+    }
+  }
+}
+```
+
+# Plot the heatmaps:
+```{r}
+col_pallete <- colorRampPalette(c("white", "white", "white", "gold", "gold", "darkgoldenrod1", "darkorange1"))
+colors <- col_pallete(250)
+pheatmap(A3S_sums_heatmap[1:30,],
          border_color = "black",
          clustering_distance_rows=sampleDists,
          clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
-         display_numbers = T,
-         number_format = "%.0f",
+         display_numbers = F,
+         number_format = "%.2f",
          number_color = "black",
-         fontsize = 11,
-         fontsize_number = 16,
-         angle_col = 0,
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 45,
          col = colors,
-         main = "Number of MXE Splicing Events between Cell Types")
+         main = "Sum of All First ΔPSI Values for A3S Events in Each Cell Type")
+
+col_pallete <- colorRampPalette(c("white", "white", "white", "gold", "gold", "darkgoldenrod1", "darkorange1"))
+colors <- col_pallete(250)
+pheatmap(A5S_sums_heatmap[1:30,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 45,
+         col = colors,
+         main = "Sum of All First ΔPSI Values for A5S Events in Each Cell Type")
+
+col_pallete <- colorRampPalette(c("white", "white", "white", "gold", "gold", "gold", "darkgoldenrod1", "darkorange1", "darkorange1"))
+colors <- col_pallete(250)
+pheatmap(cassette_sums_heatmap[1:30,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 45,
+         col = colors,
+         main = "Sum of All First ΔPSI Values for Cassette Events in Each Cell Type")
+
+col_pallete <- colorRampPalette(c("white", "white", "white", "white", "white", "gold", "gold", "darkgoldenrod1", "darkgoldenrod1", "darkorange1"))
+colors <- col_pallete(250)
+pheatmap(composite_sums_heatmap[1:30,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         show_rownames = T,
+         display_numbers = F,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 45,
+         col = colors,
+         main = "Sum of All First ΔPSI Values for Composite Events in Each Cell Type")
+
+col_pallete <- colorRampPalette(c("white", "white", "gold", "gold", "gold", "darkgoldenrod1", "darkgoldenrod1", "darkorange1"))
+colors <- col_pallete(250)
+pheatmap(intron_sums_heatmap[1:30,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 45,
+         col = colors,
+         main = "Sum of All First ΔPSI Values for Intron Retention Events in Each Cell Type")
+
+col_pallete <- colorRampPalette(c("white", "white", "white", "white", "white", "white", "white",  "gold", "gold", "darkgoldenrod1", "darkorange1"))
+colors <- col_pallete(250)
+pheatmap(MXE_sums_heatmap[1:30,],
+         border_color = "black",
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         cluster_rows = F,
+         cluster_cols = F,
+         display_numbers = F,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 45,
+         col = colors,
+         main = "Sum of All First ΔPSI Values for MXE Events in Each Cell Type")
 ```
 
-# Combine every excel file for each cell type:
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-# Since ASG is the first in alphabetical order for my cell types, I know that every valid file will contain ASG as the first cell type
-ASG_A3S_JUMfiles <- list.files(pattern = "JUM_A3SASGvs*")
-ASG_A5S_JUMfiles <- list.files(pattern = "JUM_A5SASGvs*")
-ASG_cassette_JUMfiles <- list.files(pattern = "JUM_cassetteASGvs*")
-ASG_composite_JUMfiles <- list.files(pattern = "JUM_compositeASGvs*")
-ASG_intron_JUMfiles <- list.files(pattern = "JUM_intronASGvs*")
-ASG_MXE_JUMfiles <- list.files(pattern = "JUM_MXEASGvs*")
-
-# Remember, however, if a comparison is out of alphabetical order, we need to change the files (and file names) to reflect alphabetical order (and thus the correct JUM output file)
-AVE_A3S_JUMfiles <- list.files(pattern = "JUM_A3SAVEvs*")
-AVE_A3S_JUMfiles <- append(AVE_A3S_JUMfiles, "JUM_A3SASGvsAVE.csv")
-AVE_A3S_JUMfiles <- AVE_A3S_JUMfiles[-c(1)] # delete the incorrect .csv file from the list ("JUM_A3SAVEvsASG.csv")
-AVE_A5S_JUMfiles <- list.files(pattern = "JUM_A5SAVEvs*")
-AVE_A5S_JUMfiles <- append(AVE_A5S_JUMfiles, "JUM_A5SASGvsAVE.csv")
-AVE_A5S_JUMfiles <- AVE_A5S_JUMfiles[-c(1)]
-AVE_cassette_JUMfiles <- list.files(pattern = "JUM_cassetteAVEvs*")
-AVE_cassette_JUMfiles <- append(AVE_cassette_JUMfiles, "JUM_cassetteASGvsAVE.csv")
-AVE_cassette_JUMfiles <- AVE_cassette_JUMfiles[-c(1)]
-AVE_composite_JUMfiles <- list.files(pattern = "JUM_compositeAVEvs*")
-AVE_composite_JUMfiles <- append(AVE_composite_JUMfiles, "JUM_compositeASGvsAVE.csv")
-AVE_composite_JUMfiles <- AVE_composite_JUMfiles[-c(1)]
-AVE_intron_JUMfiles <- list.files(pattern = "JUM_intronAVEvs*")
-AVE_intron_JUMfiles <- append(AVE_intron_JUMfiles, "JUM_intronASGvsAVE.csv")
-AVE_intron_JUMfiles <- AVE_intron_JUMfiles[-c(1)]
-AVE_MXE_JUMfiles <- list.files(pattern = "JUM_MXEAVEvs*")
-AVE_MXE_JUMfiles <- append(AVE_MXE_JUMfiles, "JUM_MXEASGvsAVE.csv")
-AVE_MXE_JUMfiles <- AVE_MXE_JUMfiles[-c(1)]
-
-AVG_A3S_JUMfiles <- list.files(pattern = "JUM_A3SAVGvs*")
-AVG_A3S_JUMfiles <- append(AVG_A3S_JUMfiles, "JUM_A3SASGvsAVG.csv")
-AVG_A3S_JUMfiles <- append(AVG_A3S_JUMfiles, "JUM_A3SAVEvsAVG.csv")
-AVG_A3S_JUMfiles <- AVG_A3S_JUMfiles[-c(1:2)]
-AVG_A5S_JUMfiles <- list.files(pattern = "JUM_A5SAVGvs*")
-AVG_A5S_JUMfiles <- append(AVG_A5S_JUMfiles, "JUM_A5SASGvsAVG.csv")
-AVG_A5S_JUMfiles <- append(AVG_A5S_JUMfiles, "JUM_A5SAVEvsAVG.csv")
-AVG_A5S_JUMfiles <- AVG_A5S_JUMfiles[-c(1:2)]
-AVG_cassette_JUMfiles <- list.files(pattern = "JUM_cassetteAVGvs*")
-AVG_cassette_JUMfiles <- append(AVG_cassette_JUMfiles, "JUM_cassetteASGvsAVG.csv")
-AVG_cassette_JUMfiles <- append(AVG_cassette_JUMfiles, "JUM_cassetteAVEvsAVG.csv")
-AVG_cassette_JUMfiles <- AVG_cassette_JUMfiles[-c(1:2)]
-AVG_composite_JUMfiles <- list.files(pattern = "JUM_compositeAVGvs*")
-AVG_composite_JUMfiles <- append(AVG_composite_JUMfiles, "JUM_compositeASGvsAVG.csv")
-AVG_composite_JUMfiles <- append(AVG_composite_JUMfiles, "JUM_compositeAVEvsAVG.csv")
-AVG_composite_JUMfiles <- AVG_composite_JUMfiles[-c(1:2)]
-AVG_intron_JUMfiles <- list.files(pattern = "JUM_intronAVGvs*")
-AVG_intron_JUMfiles <- append(AVG_intron_JUMfiles, "JUM_intronASGvsAVG.csv")
-AVG_intron_JUMfiles <- append(AVG_intron_JUMfiles, "JUM_intronAVEvsAVG.csv")
-AVG_intron_JUMfiles <- AVG_intron_JUMfiles[-c(1:2)]
-AVG_MXE_JUMfiles <- list.files(pattern = "JUM_MXEAVGvs*")
-AVG_MXE_JUMfiles <- append(AVG_MXE_JUMfiles, "JUM_MXEASGvsAVG.csv")
-AVG_MXE_JUMfiles <- append(AVG_MXE_JUMfiles, "JUM_MXEAVEvsAVG.csv")
-AVG_MXE_JUMfiles <- AVG_MXE_JUMfiles[-c(1:2)]
-
-AWA_A3S_JUMfiles <- list.files(pattern = "JUM_A3SAWAvs*")
-AWA_A3S_JUMfiles <- append(AWA_A3S_JUMfiles, "JUM_A3SASGvsAWA.csv")
-AWA_A3S_JUMfiles <- append(AWA_A3S_JUMfiles, "JUM_A3SAVEvsAWA.csv")
-AWA_A3S_JUMfiles <- append(AWA_A3S_JUMfiles, "JUM_A3SAVGvsAWA.csv")
-AWA_A3S_JUMfiles <- AWA_A3S_JUMfiles[-c(1:3)]
-AWA_A5S_JUMfiles <- list.files(pattern = "JUM_A5SAWAvs*")
-AWA_A5S_JUMfiles <- append(AWA_A5S_JUMfiles, "JUM_A5SASGvsAWA.csv")
-AWA_A5S_JUMfiles <- append(AWA_A5S_JUMfiles, "JUM_A5SAVEvsAWA.csv")
-AWA_A5S_JUMfiles <- append(AWA_A5S_JUMfiles, "JUM_A5SAVGvsAWA.csv")
-AWA_A5S_JUMfiles <- AWA_A5S_JUMfiles[-c(1:3)]
-AWA_cassette_JUMfiles <- list.files(pattern = "JUM_cassetteAWAvs*")
-AWA_cassette_JUMfiles <- append(AWA_cassette_JUMfiles, "JUM_cassetteASGvsAWA.csv")
-AWA_cassette_JUMfiles <- append(AWA_cassette_JUMfiles, "JUM_cassetteAVEvsAWA.csv")
-AWA_cassette_JUMfiles <- append(AWA_cassette_JUMfiles, "JUM_cassetteAVGvsAWA.csv")
-AWA_cassette_JUMfiles <- AWA_cassette_JUMfiles[-c(1:3)]
-AWA_composite_JUMfiles <- list.files(pattern = "JUM_compositeAWAvs*")
-AWA_composite_JUMfiles <- append(AWA_composite_JUMfiles, "JUM_compositeASGvsAWA.csv")
-AWA_composite_JUMfiles <- append(AWA_composite_JUMfiles, "JUM_compositeAVEvsAWA.csv")
-AWA_composite_JUMfiles <- append(AWA_composite_JUMfiles, "JUM_compositeAVGvsAWA.csv")
-AWA_composite_JUMfiles <- AWA_composite_JUMfiles[-c(1:3)]
-AWA_intron_JUMfiles <- list.files(pattern = "JUM_intronAWAvs*")
-AWA_intron_JUMfiles <- append(AWA_intron_JUMfiles, "JUM_intronASGvsAWA.csv")
-AWA_intron_JUMfiles <- append(AWA_intron_JUMfiles, "JUM_intronAVEvsAWA.csv")
-AWA_intron_JUMfiles <- append(AWA_intron_JUMfiles, "JUM_intronAVGvsAWA.csv")
-AWA_intron_JUMfiles <- AWA_intron_JUMfiles[-c(1:3)]
-AWA_MXE_JUMfiles <- list.files(pattern = "JUM_MXEAWAvs*")
-AWA_MXE_JUMfiles <- append(AWA_MXE_JUMfiles, "JUM_MXEASGvsAWA.csv")
-AWA_MXE_JUMfiles <- append(AWA_MXE_JUMfiles, "JUM_MXEAVEvsAWA.csv")
-AWA_MXE_JUMfiles <- append(AWA_MXE_JUMfiles, "JUM_MXEAVGvsAWA.csv")
-AWA_MXE_JUMfiles <- AWA_MXE_JUMfiles[-c(1:3)]
-
-AWB_A3S_JUMfiles <- list.files(pattern = "JUM_A3SAWBvs*")
-AWB_A3S_JUMfiles <- append(AWB_A3S_JUMfiles, "JUM_A3SASGvsAWB.csv")
-AWB_A3S_JUMfiles <- append(AWB_A3S_JUMfiles, "JUM_A3SAVEvsAWB.csv")
-AWB_A3S_JUMfiles <- append(AWB_A3S_JUMfiles, "JUM_A3SAVGvsAWB.csv")
-AWB_A3S_JUMfiles <- append(AWB_A3S_JUMfiles, "JUM_A3SAWAvsAWB.csv")
-AWB_A3S_JUMfiles <- AWB_A3S_JUMfiles[-c(1:4)]
-AWB_A5S_JUMfiles <- list.files(pattern = "JUM_A5SAWBvs*")
-AWB_A5S_JUMfiles <- append(AWB_A5S_JUMfiles, "JUM_A5SASGvsAWB.csv")
-AWB_A5S_JUMfiles <- append(AWB_A5S_JUMfiles, "JUM_A5SAVEvsAWB.csv")
-AWB_A5S_JUMfiles <- append(AWB_A5S_JUMfiles, "JUM_A5SAVGvsAWB.csv")
-AWB_A5S_JUMfiles <- append(AWB_A5S_JUMfiles, "JUM_A5SAWAvsAWB.csv")
-AWB_A5S_JUMfiles <- AWB_A5S_JUMfiles[-c(1:4)]
-AWB_cassette_JUMfiles <- list.files(pattern = "JUM_cassetteAWBvs*")
-AWB_cassette_JUMfiles <- append(AWB_cassette_JUMfiles, "JUM_cassetteASGvsAWB.csv")
-AWB_cassette_JUMfiles <- append(AWB_cassette_JUMfiles, "JUM_cassetteAVEvsAWB.csv")
-AWB_cassette_JUMfiles <- append(AWB_cassette_JUMfiles, "JUM_cassetteAVGvsAWB.csv")
-AWB_cassette_JUMfiles <- append(AWB_cassette_JUMfiles, "JUM_cassetteAWAvsAWB.csv")
-AWB_cassette_JUMfiles <- AWB_cassette_JUMfiles[-c(1:4)]
-AWB_composite_JUMfiles <- list.files(pattern = "JUM_compositeAWBvs*")
-AWB_composite_JUMfiles <- append(AWB_composite_JUMfiles, "JUM_compositeASGvsAWB.csv")
-AWB_composite_JUMfiles <- append(AWB_composite_JUMfiles, "JUM_compositeAVEvsAWB.csv")
-AWB_composite_JUMfiles <- append(AWB_composite_JUMfiles, "JUM_compositeAVGvsAWB.csv")
-AWB_composite_JUMfiles <- append(AWB_composite_JUMfiles, "JUM_compositeAWAvsAWB.csv")
-AWB_composite_JUMfiles <- AWB_composite_JUMfiles[-c(1:4)]
-AWB_intron_JUMfiles <- list.files(pattern = "JUM_intronAWBvs*")
-AWB_intron_JUMfiles <- append(AWB_intron_JUMfiles, "JUM_intronASGvsAWB.csv")
-AWB_intron_JUMfiles <- append(AWB_intron_JUMfiles, "JUM_intronAVEvsAWB.csv")
-AWB_intron_JUMfiles <- append(AWB_intron_JUMfiles, "JUM_intronAVGvsAWB.csv")
-AWB_intron_JUMfiles <- append(AWB_intron_JUMfiles, "JUM_intronAWAvsAWB.csv")
-AWB_intron_JUMfiles <- AWB_intron_JUMfiles[-c(1:4)]
-AWB_MXE_JUMfiles <- list.files(pattern = "JUM_MXEAWBvs*")
-AWB_MXE_JUMfiles <- append(AWB_MXE_JUMfiles, "JUM_MXEASGvsAWB.csv")
-AWB_MXE_JUMfiles <- append(AWB_MXE_JUMfiles, "JUM_MXEAVEvsAWB.csv")
-AWB_MXE_JUMfiles <- append(AWB_MXE_JUMfiles, "JUM_MXEAVGvsAWB.csv")
-AWB_MXE_JUMfiles <- append(AWB_MXE_JUMfiles, "JUM_MXEAWAvsAWB.csv")
-AWB_MXE_JUMfiles <- AWB_MXE_JUMfiles[-c(1:4)]
-
-DD_A3S_JUMfiles <- list.files(pattern = "JUM_A3SDDvs*")
-DD_A3S_JUMfiles <- append(DD_A3S_JUMfiles, "JUM_A3SASGvsDD.csv")
-DD_A3S_JUMfiles <- append(DD_A3S_JUMfiles, "JUM_A3SAVEvsDD.csv")
-DD_A3S_JUMfiles <- append(DD_A3S_JUMfiles, "JUM_A3SAVGvsDD.csv")
-DD_A3S_JUMfiles <- append(DD_A3S_JUMfiles, "JUM_A3SAWAvsDD.csv")
-DD_A3S_JUMfiles <- append(DD_A3S_JUMfiles, "JUM_A3SAWBvsDD.csv")
-DD_A3S_JUMfiles <- DD_A3S_JUMfiles[-c(1:5)]
-DD_A5S_JUMfiles <- list.files(pattern = "JUM_A5SDDvs*")
-DD_A5S_JUMfiles <- append(DD_A5S_JUMfiles, "JUM_A5SASGvsDD.csv")
-DD_A5S_JUMfiles <- append(DD_A5S_JUMfiles, "JUM_A5SAVEvsDD.csv")
-DD_A5S_JUMfiles <- append(DD_A5S_JUMfiles, "JUM_A5SAVGvsDD.csv")
-DD_A5S_JUMfiles <- append(DD_A5S_JUMfiles, "JUM_A5SAWAvsDD.csv")
-DD_A5S_JUMfiles <- append(DD_A5S_JUMfiles, "JUM_A5SAWBvsDD.csv")
-DD_A5S_JUMfiles <- DD_A5S_JUMfiles[-c(1:5)]
-DD_cassette_JUMfiles <- list.files(pattern = "JUM_cassetteDDvs*")
-DD_cassette_JUMfiles <- append(DD_cassette_JUMfiles, "JUM_cassetteASGvsDD.csv")
-DD_cassette_JUMfiles <- append(DD_cassette_JUMfiles, "JUM_cassetteAVEvsDD.csv")
-DD_cassette_JUMfiles <- append(DD_cassette_JUMfiles, "JUM_cassetteAVGvsDD.csv")
-DD_cassette_JUMfiles <- append(DD_cassette_JUMfiles, "JUM_cassetteAWAvsDD.csv")
-DD_cassette_JUMfiles <- append(DD_cassette_JUMfiles, "JUM_cassetteAWBvsDD.csv")
-DD_cassette_JUMfiles <- DD_cassette_JUMfiles[-c(1:5)]
-DD_composite_JUMfiles <- list.files(pattern = "JUM_compositeDDvs*")
-DD_composite_JUMfiles <- append(DD_composite_JUMfiles, "JUM_compositeASGvsDD.csv")
-DD_composite_JUMfiles <- append(DD_composite_JUMfiles, "JUM_compositeAVEvsDD.csv")
-DD_composite_JUMfiles <- append(DD_composite_JUMfiles, "JUM_compositeAVGvsDD.csv")
-DD_composite_JUMfiles <- append(DD_composite_JUMfiles, "JUM_compositeAWAvsDD.csv")
-DD_composite_JUMfiles <- append(DD_composite_JUMfiles, "JUM_compositeAWBvsDD.csv")
-DD_composite_JUMfiles <- DD_composite_JUMfiles[-c(1:5)]
-DD_intron_JUMfiles <- list.files(pattern = "JUM_intronDDvs*")
-DD_intron_JUMfiles <- append(DD_intron_JUMfiles, "JUM_intronASGvsDD.csv")
-DD_intron_JUMfiles <- append(DD_intron_JUMfiles, "JUM_intronAVEvsDD.csv")
-DD_intron_JUMfiles <- append(DD_intron_JUMfiles, "JUM_intronAVGvsDD.csv")
-DD_intron_JUMfiles <- append(DD_intron_JUMfiles, "JUM_intronAWAvsDD.csv")
-DD_intron_JUMfiles <- append(DD_intron_JUMfiles, "JUM_intronAWBvsDD.csv")
-DD_intron_JUMfiles <- DD_intron_JUMfiles[-c(1:5)]
-DD_MXE_JUMfiles <- list.files(pattern = "JUM_MXEDDvs*")
-DD_MXE_JUMfiles <- append(DD_MXE_JUMfiles, "JUM_MXEASGvsDD.csv")
-DD_MXE_JUMfiles <- append(DD_MXE_JUMfiles, "JUM_MXEAVEvsDD.csv")
-DD_MXE_JUMfiles <- append(DD_MXE_JUMfiles, "JUM_MXEAVGvsDD.csv")
-DD_MXE_JUMfiles <- append(DD_MXE_JUMfiles, "JUM_MXEAWAvsDD.csv")
-DD_MXE_JUMfiles <- append(DD_MXE_JUMfiles, "JUM_MXEAWBvsDD.csv")
-DD_MXE_JUMfiles <- DD_MXE_JUMfiles[-c(1:5)]
-
-PVD_A3S_JUMfiles <- list.files(pattern = "JUM_A3SPVDvs*")
-PVD_A3S_JUMfiles <- append(PVD_A3S_JUMfiles, "JUM_A3SASGvsPVD.csv")
-PVD_A3S_JUMfiles <- append(PVD_A3S_JUMfiles, "JUM_A3SAVEvsPVD.csv")
-PVD_A3S_JUMfiles <- append(PVD_A3S_JUMfiles, "JUM_A3SAVGvsPVD.csv")
-PVD_A3S_JUMfiles <- append(PVD_A3S_JUMfiles, "JUM_A3SAWAvsPVD.csv")
-PVD_A3S_JUMfiles <- append(PVD_A3S_JUMfiles, "JUM_A3SAWBvsPVD.csv")
-PVD_A3S_JUMfiles <- append(PVD_A3S_JUMfiles, "JUM_A3SDDvsPVD.csv")
-PVD_A3S_JUMfiles <- PVD_A3S_JUMfiles[-c(1:6)]
-PVD_A5S_JUMfiles <- list.files(pattern = "JUM_A5SPVDvs*")
-PVD_A5S_JUMfiles <- append(PVD_A5S_JUMfiles, "JUM_A5SASGvsPVD.csv")
-PVD_A5S_JUMfiles <- append(PVD_A5S_JUMfiles, "JUM_A5SAVEvsPVD.csv")
-PVD_A5S_JUMfiles <- append(PVD_A5S_JUMfiles, "JUM_A5SAVGvsPVD.csv")
-PVD_A5S_JUMfiles <- append(PVD_A5S_JUMfiles, "JUM_A5SAWAvsPVD.csv")
-PVD_A5S_JUMfiles <- append(PVD_A5S_JUMfiles, "JUM_A5SAWBvsPVD.csv")
-PVD_A5S_JUMfiles <- append(PVD_A5S_JUMfiles, "JUM_A5SDDvsPVD.csv")
-PVD_A5S_JUMfiles <- PVD_A5S_JUMfiles[-c(1:6)]
-PVD_cassette_JUMfiles <- list.files(pattern = "JUM_cassettePVDvs*")
-PVD_cassette_JUMfiles <- append(PVD_cassette_JUMfiles, "JUM_cassetteASGvsPVD.csv")
-PVD_cassette_JUMfiles <- append(PVD_cassette_JUMfiles, "JUM_cassetteAVEvsPVD.csv")
-PVD_cassette_JUMfiles <- append(PVD_cassette_JUMfiles, "JUM_cassetteAVGvsPVD.csv")
-PVD_cassette_JUMfiles <- append(PVD_cassette_JUMfiles, "JUM_cassetteAWAvsPVD.csv")
-PVD_cassette_JUMfiles <- append(PVD_cassette_JUMfiles, "JUM_cassetteAWBvsPVD.csv")
-PVD_cassette_JUMfiles <- append(PVD_cassette_JUMfiles, "JUM_cassetteDDvsPVD.csv")
-PVD_cassette_JUMfiles <- PVD_cassette_JUMfiles[-c(1:6)]
-PVD_composite_JUMfiles <- list.files(pattern = "JUM_compositePVDvs*")
-PVD_composite_JUMfiles <- append(PVD_composite_JUMfiles, "JUM_compositeASGvsPVD.csv")
-PVD_composite_JUMfiles <- append(PVD_composite_JUMfiles, "JUM_compositeAVEvsPVD.csv")
-PVD_composite_JUMfiles <- append(PVD_composite_JUMfiles, "JUM_compositeAVGvsPVD.csv")
-PVD_composite_JUMfiles <- append(PVD_composite_JUMfiles, "JUM_compositeAWAvsPVD.csv")
-PVD_composite_JUMfiles <- append(PVD_composite_JUMfiles, "JUM_compositeAWBvsPVD.csv")
-PVD_composite_JUMfiles <- append(PVD_composite_JUMfiles, "JUM_compositeDDvsPVD.csv")
-PVD_composite_JUMfiles <- PVD_composite_JUMfiles[-c(1:6)]
-PVD_intron_JUMfiles <- list.files(pattern = "JUM_intronPVDvs*")
-PVD_intron_JUMfiles <- append(PVD_intron_JUMfiles, "JUM_intronASGvsPVD.csv")
-PVD_intron_JUMfiles <- append(PVD_intron_JUMfiles, "JUM_intronAVEvsPVD.csv")
-PVD_intron_JUMfiles <- append(PVD_intron_JUMfiles, "JUM_intronAVGvsPVD.csv")
-PVD_intron_JUMfiles <- append(PVD_intron_JUMfiles, "JUM_intronAWAvsPVD.csv")
-PVD_intron_JUMfiles <- append(PVD_intron_JUMfiles, "JUM_intronAWBvsPVD.csv")
-PVD_intron_JUMfiles <- append(PVD_intron_JUMfiles, "JUM_intronDDvsPVD.csv")
-PVD_intron_JUMfiles <- PVD_intron_JUMfiles[-c(1:6)]
-PVD_MXE_JUMfiles <- list.files(pattern = "JUM_MXEPVDvs*")
-PVD_MXE_JUMfiles <- append(PVD_MXE_JUMfiles, "JUM_MXEASGvsPVD.csv")
-PVD_MXE_JUMfiles <- append(PVD_MXE_JUMfiles, "JUM_MXEAVEvsPVD.csv")
-PVD_MXE_JUMfiles <- append(PVD_MXE_JUMfiles, "JUM_MXEAVGvsPVD.csv")
-PVD_MXE_JUMfiles <- append(PVD_MXE_JUMfiles, "JUM_MXEAWAvsPVD.csv")
-PVD_MXE_JUMfiles <- append(PVD_MXE_JUMfiles, "JUM_MXEAWBvsPVD.csv")
-PVD_MXE_JUMfiles <- append(PVD_MXE_JUMfiles, "JUM_MXEDDvsPVD.csv")
-PVD_MXE_JUMfiles <- PVD_MXE_JUMfiles[-c(1:6)]
-
-VD_A3S_JUMfiles <- c("JUM_A3SASGvsVD.csv", "JUM_A3SAVEvsVD.csv", "JUM_A3SAVGvsVD.csv", "JUM_A3SAWAvsVD.csv", "JUM_A3SAWBvsVD.csv", "JUM_A3SDDvsVD.csv", "JUM_A3SPVDvsVD.csv")
-VD_A5S_JUMfiles <- c("JUM_A5SASGvsVD.csv", "JUM_A5SAVEvsVD.csv", "JUM_A5SAVGvsVD.csv", "JUM_A5SAWAvsVD.csv", "JUM_A5SAWBvsVD.csv", "JUM_A5SDDvsVD.csv", "JUM_A5SPVDvsVD.csv")
-VD_composite_JUMfiles <- c("JUM_compositeASGvsVD.csv", "JUM_compositeAVEvsVD.csv", "JUM_compositeAVGvsVD.csv", "JUM_compositeAWAvsVD.csv", "JUM_compositeAWBvsVD.csv", "JUM_compositeDDvsVD.csv", "JUM_compositePVDvsVD.csv")
-VD_cassette_JUMfiles <- c("JUM_cassetteASGvsVD.csv", "JUM_cassetteAVEvsVD.csv", "JUM_cassetteAVGvsVD.csv", "JUM_cassetteAWAvsVD.csv", "JUM_cassetteAWBvsVD.csv", "JUM_cassetteDDvsVD.csv", "JUM_cassettePVDvsVD.csv")
-VD_intron_JUMfiles <- c("JUM_intronASGvsVD.csv", "JUM_intronAVEvsVD.csv", "JUM_intronAVGvsVD.csv", "JUM_intronAWAvsVD.csv", "JUM_intronAWBvsVD.csv", "JUM_intronDDvsVD.csv", "JUM_intronPVDvsVD.csv")
-VD_MXE_JUMfiles <- c("JUM_MXEASGvsVD.csv", "JUM_MXEAVEvsVD.csv", "JUM_MXEAVGvsVD.csv", "JUM_MXEAWAvsVD.csv", "JUM_MXEAWBvsVD.csv", "JUM_MXEDDvsVD.csv", "JUM_MXEPVDvsVD.csv")
-```
-
-# deltaPSI values for unique AS events in individual "cell type vs" files (this doesn't work correctly as of 11-17-22):
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-LargeA3Sdf <- ASG_A3S_JUMfiles %>% map_dfr(read.csv) # change cell type here
-unique_A3S_events <- unique(LargeA3Sdf$AS_event_ID)
-unique_A3S_genes <- unique(LargeA3Sdf$Gene)
-
-A3SMeans <- matrix(nrow = length(unique_A3S_genes), ncol = 34, dimnames = list(unique_A3S_genes), LargeA3Sdf[,10:43])
-
-for(i in unique_A3S_genes){
-  for(j in 1:34){   # change number of columns here
-A3SMeans[is.na(A3SMeans)] <- 0
-A3SMeans[is.null(A3SMeans)] <- 0
-#A3SMeans[!is.finite(as.numeric(unlist(A3SMeans)))] <- 0
-A3SMeans[i,j] <- max(LargeA3Sdf[LargeA3Sdf$Gene == i, (j+9)])
-A3SMeans[is.na(A3SMeans)] <- 0
-A3SMeans[is.null(A3SMeans)] <- 0
-#A3SMeans$Means <- apply(as.data.frame(as.numeric(unlist(A3SMeans))), 1, function(x) {mean(x, na.rm=TRUE)})
-#A3SMeans$Means <- apply(as.data.frame(as.numeric(unlist(A3SMeans)), 1, mean))
- }
-}
-
-A3S_colcount <- as.numeric(ncol(A3SMeans))
-A3S_rowcount <- as.numeric(nrow(A3SMeans))
-colnames(A3SMeans) <- colnames(LargeA3Sdf[,10:43]) # change number of columns here
-```
-
-# Note: If there are 0 AS events in a comparison, dplyr will assume that the rows in the .csv file are logical (we want them to be character/numeric). This will prevent us from merging rows in different .csv files together in the upcoming chunks. You may have to examine each JUM file and manually move them outside of your working directory if there are 0 rows: <--- add update with loop
-
-## cell types with 0 Diff. Exp. RBPs in my example can be found in D:\Zach Wolfe's JUM analysis\Zero_AS_JUM_comparisons
-
-# deltaPSI values for unique AS events in individual "cell type vs" files (v. 2.0, works as of 11-18-22):
-
-# A3S events:
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-LargeA3Sdf_VD <- VD_A3S_JUMfiles %>% map_dfr(read.csv) # change cell type here
-LargeA3Sdf_VD_colnames <- colnames(LargeA3Sdf_VD)
-deltaPSI_names <- rep(paste0("deltaPSI_", 1:32)) # change number of columns here
-
-LargeA3Sdf_VD <- LargeA3Sdf_VD %>% setnames(old = c(LargeA3Sdf_VD_colnames[10:41]), new = c(deltaPSI_names)) # change number of columns here
-
-LargeA3Sdf_VD <- LargeA3Sdf_VD[order(LargeA3Sdf_VD$AS_event_ID),]
-A3S_event_ID_VD_count <- as.data.frame(table(LargeA3Sdf_VD$AS_event_ID))
-A3S_event_ID_VD_count <- A3S_event_ID_VD_count[rev(order(A3S_event_ID_VD_count$Freq)),]
-#A3S_event_ID_VD_count <- count(LargeA3Sdf_VD$AS_event_ID)
-#A3S_event_ID_VD_count <- A3S_event_ID_VD_count[rev(order(A3S_event_ID_VD_count$freq)),]
-names(A3S_event_ID_VD_count) <- c("A3S_event_ID", "Freq")
-
-LargeA3Sdf_VD[is.na(LargeA3Sdf_VD)] <- 0 # Add if inf <- 0 ??
-LargeA3Sdf_VD$MaxPSIs <- rowMaxs(as.numeric(unlist(LargeA3Sdf_VD[,10:41])), dim. = dim(LargeA3Sdf_VD[,10:41]))
-LargeA3Sdf_VD$MinPSIs <- rowMins(as.numeric(unlist(LargeA3Sdf_VD[,10:41])), dim. = dim(LargeA3Sdf_VD[,10:41]))
-LargeA3Sdf_VD <- LargeA3Sdf_VD[LargeA3Sdf_VD$MaxPSIs > 0.1,] ## deltaPSI cutoff
-LargeA3Sdf_VD$first_PSI <- apply(LargeA3Sdf_VD[,10:41], 1, function(x) x[x != 0][1])    # eliminate zeros: if first delta PSI is 0, gene name cannot be added
-# add a line that eliminates all A3S events with more than 2 delta PSIs
-LargeA3Sdf_VD <- LargeA3Sdf_VD[which(LargeA3Sdf_VD$MaxPSIs == ((-1)*LargeA3Sdf_VD$MinPSIs)),] # IMPORTANT: "#" this row out if you want to keep complex alternative splicing events (i.e. more than 2 alternative splice sites)
-unique_A3S_events <- unique(LargeA3Sdf_VD$AS_event_ID)
-unique_A3S_genes <- unique(LargeA3Sdf_VD$Gene)
-LargeA3Sdf_VD <- LargeA3Sdf_VD[,-c(10:41)]   # If you want to keep all ΔPSI columns, "#" this row out
-# Calculate the sum of ΔPSI values for unique_A3S_events:
-A3S_VD_deltaPSI_sums <- aggregate(LargeA3Sdf_VD[,10:11], list(LargeA3Sdf_VD$AS_event_ID, LargeA3Sdf_VD$Gene, LargeA3Sdf_VD$first_PSI), sum)
-names(A3S_VD_deltaPSI_sums) <- c("A3S_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
-A3S_VD_deltaPSI_sums$`max delta PSI plus min delta PSI` <- A3S_VD_deltaPSI_sums[,4] + A3S_VD_deltaPSI_sums[,5]
-# for unique_AS_events, sum of first deltaPSI:
-A3S_VD_first_PSI_Sums <- data.frame()
-for(i in unique_A3S_events){
-A3S_VD_first_PSI_Sums[i,1] <- sum(LargeA3Sdf_VD[LargeA3Sdf_VD$AS_event_ID == i, 12])
-}
-# add gene names:
-for (i in rownames(A3S_VD_first_PSI_Sums)){
-A3S_VD_first_PSI_Sums[i,2] <- first(LargeA3Sdf_VD$Gene[LargeA3Sdf_VD$AS_event_ID == i])
-}
-
-names(A3S_VD_first_PSI_Sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
-
-# repeat the count file with only non-complex alternative splicing events included:
-A3S_event_ID_VD_count <- as.data.frame(table(LargeA3Sdf_VD$AS_event_ID))
-
-# add gene names and first_PSIs:
-rownames(A3S_event_ID_VD_count) <- A3S_event_ID_VD_count[,1]
-for (i in rownames(A3S_event_ID_VD_count)){
-A3S_event_ID_VD_count[i,3] <- A3S_VD_first_PSI_Sums$Gene[A3S_event_ID_VD_count$Var1 == i]
-A3S_event_ID_VD_count[i,4] <- A3S_VD_first_PSI_Sums$`sum of all first deltaPSIs for AS_event_ID`[A3S_event_ID_VD_count$Var1 == i]
-}
-#A3S_event_ID_VD_count <- count(LargeA3Sdf_VD$AS_event_ID)
-#A3S_event_ID_VD_count <- A3S_event_ID_VD_count[rev(order(A3S_event_ID_VD_count$freq)),]
-names(A3S_event_ID_VD_count) <- c("A3S_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
-
-# re-order the count data by frequency (Freq):
-A3S_event_ID_VD_count <- A3S_event_ID_VD_count[rev(order(A3S_event_ID_VD_count$Freq)),]
-```
-
-# Save/change cell type here:
-```{r}
-write.csv(LargeA3Sdf_VD, file = "LargeA3Sdf_VD.csv")
-write.csv(A3S_event_ID_VD_count, file = "A3S_event_ID_VD_count.csv")
-write.csv(A3S_VD_deltaPSI_sums, file = "A3S_VD_deltaPSI_sums.csv")
-write.csv(A3S_VD_first_PSI_Sums, file = "A3S_VD_first_PSI_sums.csv")
-```
-
-# A5S events:
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-LargeA5Sdf_VD <- VD_A5S_JUMfiles %>% map_dfr(read.csv) # change cell type here
-LargeA5Sdf_VD_colnames <- colnames(LargeA5Sdf_VD)
-deltaPSI_names <- rep(paste0("deltaPSI_", 1:42)) # change number of columns here
-
-LargeA5Sdf_VD <- LargeA5Sdf_VD %>% setnames(old = c(LargeA5Sdf_VD_colnames[10:51]), new = c(deltaPSI_names)) # change number of columns here
-
-LargeA5Sdf_VD <- LargeA5Sdf_VD[order(LargeA5Sdf_VD$AS_event_ID),]
-A5S_event_ID_VD_count <- as.data.frame(table(LargeA5Sdf_VD$AS_event_ID))
-#A5S_event_ID_VD_count <- A5S_event_ID_VD_count[rev(order(A5S_event_ID_VD_count$Freq)),]
-#A5S_event_ID_VD_count <- count(LargeA5Sdf_VD$AS_event_ID)
-#A5S_event_ID_VD_count <- A5S_event_ID_VD_count[rev(order(A5S_event_ID_VD_count$freq)),]
-names(A5S_event_ID_VD_count) <- c("A5S_event_ID", "Freq")
-
-LargeA5Sdf_VD[is.na(LargeA5Sdf_VD)] <- 0
-LargeA5Sdf_VD$MaxPSIs <- rowMaxs(as.numeric(unlist(LargeA5Sdf_VD[,10:51])), dim. = dim(LargeA5Sdf_VD[,10:51]))
-LargeA5Sdf_VD$MinPSIs <- rowMins(as.numeric(unlist(LargeA5Sdf_VD[,10:51])), dim. = dim(LargeA5Sdf_VD[,10:51]))
-LargeA5Sdf_VD <- LargeA5Sdf_VD[LargeA5Sdf_VD$MaxPSIs > 0.1,] ## deltaPSI cutoff
-LargeA5Sdf_VD$first_PSI <- apply(LargeA5Sdf_VD[,10:51], 1, function(x) x[x != 0][1])    # eliminate zeros: if first delta PSI is 0, gene name cannot be added
-# add a line that eliminates all A5S events with more than 2 delta PSIs
-LargeA5Sdf_VD <- LargeA5Sdf_VD[which(LargeA5Sdf_VD$MaxPSIs == ((-1)*LargeA5Sdf_VD$MinPSIs)),] # IMPORTANT: "#" this row out if you want to keep complex alternative splicing events (i.e. more than 2 alternative splice sites)
-unique_A5S_events <- unique(LargeA5Sdf_VD$AS_event_ID)
-unique_A5S_genes <- unique(LargeA5Sdf_VD$Gene)
-LargeA5Sdf_VD <- LargeA5Sdf_VD[,-c(10:51)]   # If you want to keep all ΔPSI columns, "#" this row out
-# Calculate the sum of ΔPSI values for unique_A5S_events:
-A5S_VD_deltaPSI_sums <- aggregate(LargeA5Sdf_VD[,10:11], list(LargeA5Sdf_VD$AS_event_ID, LargeA5Sdf_VD$Gene, LargeA5Sdf_VD$first_PSI), sum)
-names(A5S_VD_deltaPSI_sums) <- c("A5S_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
-A5S_VD_deltaPSI_sums$`max delta PSI plus min delta PSI` <- A5S_VD_deltaPSI_sums[,4] + A5S_VD_deltaPSI_sums[,5]
-# for unique_AS_events, sum of first deltaPSI:
-A5S_VD_first_PSI_Sums <- data.frame()
-for(i in unique_A5S_events){
-A5S_VD_first_PSI_Sums[i,1] <- sum(LargeA5Sdf_VD[LargeA5Sdf_VD$AS_event_ID == i, 12])
-}
-# add gene names:
-for (i in rownames(A5S_VD_first_PSI_Sums)){
-A5S_VD_first_PSI_Sums[i,2] <- first(LargeA5Sdf_VD$Gene[LargeA5Sdf_VD$AS_event_ID == i])
-}
-
-names(A5S_VD_first_PSI_Sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
-
-# repeat the count file with only non-complex alternative splicing events included:
-A5S_event_ID_VD_count <- as.data.frame(table(LargeA5Sdf_VD$AS_event_ID))
-
-# add gene names:
-rownames(A5S_event_ID_VD_count) <- A5S_event_ID_VD_count[,1]
-for (i in rownames(A5S_event_ID_VD_count)){
-A5S_event_ID_VD_count[i,3] <- A5S_VD_first_PSI_Sums$Gene[A5S_event_ID_VD_count$Var1 == i]
-A5S_event_ID_VD_count[i,4] <- A5S_VD_first_PSI_Sums$`sum of all first deltaPSIs for AS_event_ID`[A5S_event_ID_VD_count$Var1 == i]
-}
-#A5S_event_ID_VD_count <- count(LargeA5Sdf_VD$AS_event_ID)
-#A5S_event_ID_VD_count <- A5S_event_ID_VD_count[rev(order(A5S_event_ID_VD_count$freq)),]
-names(A5S_event_ID_VD_count) <- c("A5S_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
-
-# re-order the count data by frequency (Freq):
-A5S_event_ID_VD_count <- A5S_event_ID_VD_count[rev(order(A5S_event_ID_VD_count$Freq)),]
-```
-
-# Save/change cell type here:
-```{r}
-write.csv(LargeA5Sdf_VD, file = "LargeA5Sdf_VD.csv")
-write.csv(A5S_event_ID_VD_count, file = "A5S_event_ID_VD_count.csv")
-write.csv(A5S_VD_deltaPSI_sums, file = "A5S_VD_deltaPSI_sums.csv")
-write.csv(A5S_VD_first_PSI_Sums, file = "A5S_VD_first_PSI_sums.csv")
-```
-
-# Cassette exons:
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-Largecassettedf_VD <- VD_cassette_JUMfiles %>% map_dfr(read.csv) # change cell type here
-unique_cassette_events <- unique(Largecassettedf_VD$AS_event_ID)
-unique_cassette_genes <- unique(Largecassettedf_VD$Gene)
-Largecassettedf_VD_colnames <- colnames(Largecassettedf_VD)
-deltaPSI_names <- rep(paste0("deltaPSI_", 1:7))
-
-Largecassettedf_VD <- Largecassettedf_VD %>% setnames(old = c(Largecassettedf_VD_colnames[12:18]), new = c(deltaPSI_names))
-
-Largecassettedf_VD <- Largecassettedf_VD[order(Largecassettedf_VD$AS_event_ID),]
-cassette_event_ID_VD_count <- as.data.frame(table(Largecassettedf_VD$AS_event_ID))
-cassette_event_ID_VD_count <- cassette_event_ID_VD_count[rev(order(cassette_event_ID_VD_count$Freq)),]
-#cassette_event_ID_VD_count <- count(Largecassettedf_VD[,3])
-#cassette_event_ID_VD_count <- cassette_event_ID_VD_count[rev(order(cassette_event_ID_VD_count$freq)),]
-names(cassette_event_ID_VD_count) <- c("cassette_event_ID", "Freq")
-
-Largecassettedf_VD[is.na(Largecassettedf_VD)] <- 0
-Largecassettedf_VD$MaxPSIs <- rowMaxs(as.numeric(unlist(Largecassettedf_VD[,12:18])), dim. = dim(Largecassettedf_VD[,12:18]))
-Largecassettedf_VD$MinPSIs <- rowMins(as.numeric(unlist(Largecassettedf_VD[,12:18])), dim. = dim(Largecassettedf_VD[,12:18]))
-Largecassettedf_VD <- Largecassettedf_VD[Largecassettedf_VD$MaxPSIs > 0.1,] ## deltaPSI cutoff
-Largecassettedf_VD$first_PSI <- apply(Largecassettedf_VD[,12:18], 1, function(x) x[x != 0][1])
-unique_cassette_events <- unique(Largecassettedf_VD$AS_event_ID)
-unique_cassette_genes <- unique(Largecassettedf_VD$Gene)
-Largecassettedf_VD <- Largecassettedf_VD[,-c(12:18)]   # If you want to keep all ΔPSI columns, "#" this row out
-# Calculate the sum of ΔPSI values for unique_cassette_events:
-cassette_VD_deltaPSI_sums <- aggregate(Largecassettedf_VD[,12:13], list(Largecassettedf_VD$AS_event_ID, Largecassettedf_VD$Gene, Largecassettedf_VD$first_PSI), sum)
-names(cassette_VD_deltaPSI_sums) <- c("cassette_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
-cassette_VD_deltaPSI_sums$`max delta PSI plus min delta PSI` <- cassette_VD_deltaPSI_sums[,4] + cassette_VD_deltaPSI_sums[,5]
-# for unique_AS_events, sum of first deltaPSI:
-cassette_VD_first_PSI_Sums <- data.frame()
-for(i in unique_cassette_events){
-cassette_VD_first_PSI_Sums[i,1] <- sum(Largecassettedf_VD[Largecassettedf_VD$AS_event_ID == i, 14])
-}
-# add gene names:
-for (i in rownames(cassette_VD_first_PSI_Sums)){
-cassette_VD_first_PSI_Sums[i,2] <- first(Largecassettedf_VD$Gene[Largecassettedf_VD$AS_event_ID == i])
-}
-
-names(cassette_VD_first_PSI_Sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
-
-# re-make the "count" file with the deltaPSI cutoff included:
-cassette_event_ID_VD_count <- as.data.frame(table(Largecassettedf_VD$AS_event_ID))
-
-# add gene names:
-rownames(cassette_event_ID_VD_count) <- cassette_event_ID_VD_count[,1]
-for (i in rownames(cassette_event_ID_VD_count)){
-cassette_event_ID_VD_count[i,3] <- cassette_VD_first_PSI_Sums[cassette_event_ID_VD_count$Var1 == i,2]
-cassette_event_ID_VD_count[i,4] <- cassette_VD_first_PSI_Sums$`sum of all first deltaPSIs for AS_event_ID`[cassette_event_ID_VD_count$Var1 == i]
-}
-#cassette_event_ID_VD_count <- count(Largecassettedf_VD$AS_event_ID)
-#cassette_event_ID_VD_count <- cassette_event_ID_VD_count[rev(order(cassette_event_ID_VD_count$Freq)),]
-names(cassette_event_ID_VD_count) <- c("cassette_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
-
-# re-order the count data by frequency (Freq):
-cassette_event_ID_VD_count <- cassette_event_ID_VD_count[rev(order(cassette_event_ID_VD_count$Freq)),]
-```
-
-# Save/change cell type here:
-```{r}
-write.csv(Largecassettedf_VD, file = "Largecassettedf_VD.csv")
-write.csv(cassette_event_ID_VD_count, file = "cassette_event_ID_VD_count.csv")
-write.csv(cassette_VD_deltaPSI_sums, file = "cassette_VD_deltaPSI_sums.csv")
-write.csv(cassette_VD_first_PSI_Sums, file = "cassette_VD_first_PSI_sums.csv")
-```
-
-# Composite events: # still have to remove infs (12-12-22) <------
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-Largecompositedf_VD <- VD_composite_JUMfiles %>% map_dfr(read.csv) # change cell type here
-Largecompositedf_VD_colnames <- colnames(Largecompositedf_VD)
-deltaPSI_names <- rep(paste0("deltaPSI_", 1:464)) # change number of columns here
-
-Largecompositedf_VD <- Largecompositedf_VD %>% setnames(old = c(Largecompositedf_VD_colnames[9:472]), new = c(deltaPSI_names)) # change number of columns here
-
-Largecompositedf_VD <- Largecompositedf_VD[order(Largecompositedf_VD$AS_event_ID),]
-composite_event_ID_VD_count <- as.data.frame(table(Largecompositedf_VD$AS_event_ID))
-composite_event_ID_VD_count <- composite_event_ID_VD_count[rev(order(composite_event_ID_VD_count$Freq)),]
-#composite_event_ID_VD_count <- count(Largecompositedf_VD$AS_event_ID)
-#composite_event_ID_VD_count <- composite_event_ID_VD_count[rev(order(composite_event_ID_VD_count$freq)),]
-names(composite_event_ID_VD_count) <- c("composite_event_ID", "Freq")
-
-Largecompositedf_VD[is.na(Largecompositedf_VD)] <- 0 # Add if inf <- 0 ??
-Largecompositedf_VD$MaxPSIs <- rowMaxs(as.numeric(unlist(Largecompositedf_VD[,9:472])), dim. = dim(Largecompositedf_VD[,9:472]))
-Largecompositedf_VD$MinPSIs <- rowMins(as.numeric(unlist(Largecompositedf_VD[,9:472])), dim. = dim(Largecompositedf_VD[,9:472]))
-Largecompositedf_VD <- Largecompositedf_VD[Largecompositedf_VD$MaxPSIs > 0.1,] ## deltaPSI cutoff
-Largecompositedf_VD$first_PSI <- apply(Largecompositedf_VD[,9:472], 1, function(x) x[x != 0][1])
-unique_composite_events <- unique(Largecompositedf_VD$AS_event_ID)
-unique_composite_genes <- unique(Largecompositedf_VD$Gene)
-Largecompositedf_VD <- Largecompositedf_VD[,-c(9:472)]   # If you want to keep all ΔPSI columns, "#" this row out
-# Calculate the sum of ΔPSI values for unique_composite_events:
-composite_VD_deltaPSI_sums <- aggregate(Largecompositedf_VD[,9:10], list(Largecompositedf_VD$AS_event_ID, Largecompositedf_VD$Gene, Largecompositedf_VD$first_PSI), sum)
-names(composite_VD_deltaPSI_sums) <- c("composite_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
-composite_VD_deltaPSI_sums$`max delta PSI plus min delta PSI` <- composite_VD_deltaPSI_sums[,4] + composite_VD_deltaPSI_sums[,5]
-# for unique_AS_events, sum of first deltaPSI:
-composite_VD_first_PSI_Sums <- data.frame()
-for(i in unique_composite_events){
-composite_VD_first_PSI_Sums[i,1] <- sum(Largecompositedf_VD[Largecompositedf_VD$AS_event_ID == i, 11])
-}
-# add gene names:
-for (i in rownames(composite_VD_first_PSI_Sums)){
-composite_VD_first_PSI_Sums[i,2] <- first(Largecompositedf_VD$Gene[Largecompositedf_VD$AS_event_ID == i])
-}
-
-names(composite_VD_first_PSI_Sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
-
-# re-make the "count" file with the deltaPSI cutoff included:
-composite_event_ID_VD_count <- as.data.frame(table(Largecompositedf_VD$AS_event_ID))
-
-# add gene names:
-rownames(composite_event_ID_VD_count) <- composite_event_ID_VD_count[,1]
-for (i in rownames(composite_event_ID_VD_count)){
-composite_event_ID_VD_count[i,3] <- composite_VD_first_PSI_Sums$Gene[composite_event_ID_VD_count$Var1 == i]
-composite_event_ID_VD_count[i,4] <- composite_VD_first_PSI_Sums$`sum of all first deltaPSIs for AS_event_ID`[composite_event_ID_VD_count$Var1 == i]
-}
-#composite_event_ID_VD_count <- count(Largecompositedf_VD$AS_event_ID)
-#composite_event_ID_VD_count <- composite_event_ID_VD_count[rev(order(composite_event_ID_VD_count$freq)),]
-names(composite_event_ID_VD_count) <- c("composite_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
-
-# re-order the count data by frequency (Freq):
-composite_event_ID_VD_count <- composite_event_ID_VD_count[rev(order(composite_event_ID_VD_count$Freq)),]
-```
-
-# Save/change cell type here:
-```{r}
-write.csv(Largecompositedf_VD, file = "Largecompositedf_VD.csv")
-write.csv(composite_event_ID_VD_count, file = "composite_event_ID_VD_count.csv")
-write.csv(composite_VD_deltaPSI_sums, file = "composite_VD_deltaPSI_sums.csv")
-write.csv(composite_VD_first_PSI_Sums, file = "composite_VD_first_PSI_sums.csv")
-```
-
-# Intron retention:
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-Largeintrondf_VD <- VD_intron_JUMfiles %>% map_dfr(read.csv) # change cell type here
-Largeintrondf_VD_colnames <- colnames(Largeintrondf_VD)
-deltaPSI_names <- rep(paste0("deltaPSI_", 1:7))
-
-Largeintrondf_VD <- Largeintrondf_VD %>% setnames(old = c(Largeintrondf_VD_colnames[10:16]), new = c(deltaPSI_names))
-
-Largeintrondf_VD <- Largeintrondf_VD[order(Largeintrondf_VD$AS_event_ID),]
-intron_event_ID_VD_count <- as.data.frame(table(Largeintrondf_VD$AS_event_ID))
-intron_event_ID_VD_count <- intron_event_ID_VD_count[rev(order(intron_event_ID_VD_count$Freq)),]
-#intron_event_ID_VD_count <- count(Largeintrondf_VD[,3])
-#intron_event_ID_VD_count <- intron_event_ID_VD_count[rev(order(intron_event_ID_VD_count$freq)),]
-names(intron_event_ID_VD_count) <- c("intron_event_ID", "Freq")
-
-Largeintrondf_VD[is.na(Largeintrondf_VD)] <- 0
-Largeintrondf_VD$MaxPSIs <- rowMaxs(as.numeric(unlist(Largeintrondf_VD[,10:16])), dim. = dim(Largeintrondf_VD[,10:16]))
-Largeintrondf_VD$MinPSIs <- rowMins(as.numeric(unlist(Largeintrondf_VD[,10:16])), dim. = dim(Largeintrondf_VD[,10:16]))
-Largeintrondf_VD <- Largeintrondf_VD[Largeintrondf_VD$MaxPSIs > 0.1,] ## deltaPSI cutoff
-Largeintrondf_VD$first_PSI <- apply(Largeintrondf_VD[,10:16], 1, function(x) x[x != 0][1])
-unique_intron_events <- unique(Largeintrondf_VD$AS_event_ID)
-unique_intron_genes <- unique(Largeintrondf_VD$Gene)
-Largeintrondf_VD <- Largeintrondf_VD[,-c(10:16)]   # If you want to keep all ΔPSI columns, "#" this row out
-# Calculate the sum of ΔPSI values for unique_intron_events:
-intron_VD_deltaPSI_sums <- aggregate(Largeintrondf_VD[,10:11], list(Largeintrondf_VD$AS_event_ID, Largeintrondf_VD$Gene, Largeintrondf_VD$first_PSI), sum)
-names(intron_VD_deltaPSI_sums) <- c("intron_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
-intron_VD_deltaPSI_sums$`max delta PSI plus min delta PSI` <- intron_VD_deltaPSI_sums[,4] + intron_VD_deltaPSI_sums[,5]
-# for unique_AS_events, sum of first deltaPSI:
-intron_VD_first_PSI_Sums <- data.frame()
-for(i in unique_intron_events){
-intron_VD_first_PSI_Sums[i,1] <- sum(Largeintrondf_VD[Largeintrondf_VD$AS_event_ID == i, 12])
-}
-# add gene names:
-for (i in rownames(intron_VD_first_PSI_Sums)){
-intron_VD_first_PSI_Sums[i,2] <- first(Largeintrondf_VD$Gene[Largeintrondf_VD$AS_event_ID == i])
-}
-
-names(intron_VD_first_PSI_Sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
-
-# re-make the "count" file with the deltaPSI cutoff included:
-intron_event_ID_VD_count <- as.data.frame(table(Largeintrondf_VD$AS_event_ID))
-
-# add gene names:
-rownames(intron_event_ID_VD_count) <- intron_event_ID_VD_count[,1]
-for (i in rownames(intron_event_ID_VD_count)){
-intron_event_ID_VD_count[i,3] <- intron_VD_first_PSI_Sums$Gene[intron_event_ID_VD_count$Var1 == i]
-intron_event_ID_VD_count[i,4] <- intron_VD_first_PSI_Sums$`sum of all first deltaPSIs for AS_event_ID`[intron_event_ID_VD_count$Var1 == i]
-}
-#intron_event_ID_VD_count <- count(Largeintrondf_VD$AS_event_ID)
-#intron_event_ID_VD_count <- intron_event_ID_VD_count[rev(order(intron_event_ID_VD_count$freq)),]
-names(intron_event_ID_VD_count) <- c("intron_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
-
-# re-order the count data by frequency (Freq):
-intron_event_ID_VD_count <- intron_event_ID_VD_count[rev(order(intron_event_ID_VD_count$Freq)),]
-```
-
-# Save/change cell type here:
-```{r}
-write.csv(Largeintrondf_VD, file = "Largeintrondf_VD.csv")
-write.csv(intron_event_ID_VD_count, file = "intron_event_ID_VD_count.csv")
-write.csv(intron_VD_deltaPSI_sums, file = "intron_VD_deltaPSI_sums.csv")
-write.csv(intron_VD_first_PSI_Sums, file = "intron_VD_first_PSI_sums.csv")
-```
-
-# Mutually exclusive exons:
-```{r}
-setwd("D:/Zach Wolfe's JUM analysis")
-
-## The following loop is to ensure we don't parse through .csv files with 0 data/AS events in them. R does not know how to combine an empty .csv with a normally populated .csv.
-## If you get the error message "Error: Can't combine `..1` <character> and `..2` <logical>" you may need to run this loop:
-
-for (i in singletypesprac){
-    if (i != "VD"){                     # change cell type here
-    if (JUM_table_MXE["VD",i] == 0){
-      file_eliminate <- as.character(paste0("JUM_MXEVDvs", i, ".csv"))
-      VD_MXE_JUMfiles <- VD_MXE_JUMfiles[!VD_MXE_JUMfiles %in% file_eliminate]
-    }
-      
-    if (JUM_table_MXE[i,"VD"] == 0){
-      file_eliminate_2 <- as.character(paste0("JUM_MXE", i, "vsVD.csv"))
-      VD_MXE_JUMfiles <- VD_MXE_JUMfiles[!VD_MXE_JUMfiles %in% file_eliminate_2]
-    }
-      
-      if (JUM_table_MXE["VD",i] != 0) next
-      if (JUM_table_MXE[i,"VD"] != 0) next
-    }
-    if (i == "VD") next
-}
-
-LargeMXEdf_VD <- VD_MXE_JUMfiles %>% map_dfr(read.csv) # change cell type here
-LargeMXEdf_VD_colnames <- colnames(LargeMXEdf_VD)
-deltaPSI_names <- rep(paste0("deltaPSI_", 1:12)) # change number of columns here
-
-LargeMXEdf_VD <- LargeMXEdf_VD %>% setnames(old = c(LargeMXEdf_VD_colnames[11:22]), new = c(deltaPSI_names)) # change number of columns here
-
-LargeMXEdf_VD <- LargeMXEdf_VD[order(LargeMXEdf_VD$AS_event_ID),]
-MXE_event_ID_VD_count <- as.data.frame(table(LargeMXEdf_VD$AS_event_ID))
-MXE_event_ID_VD_count <- MXE_event_ID_VD_count[rev(order(MXE_event_ID_VD_count$Freq)),]
-#MXE_event_ID_VD_count <- count(LargeMXEdf_VD$AS_event_ID)
-#MXE_event_ID_VD_count <- MXE_event_ID_VD_count[rev(order(MXE_event_ID_VD_count$freq)),]
-names(MXE_event_ID_VD_count) <- c("MXE_event_ID", "Freq")
-
-LargeMXEdf_VD[is.na(LargeMXEdf_VD)] <- 0
-LargeMXEdf_VD$MaxPSIs <- rowMaxs(as.numeric(unlist(LargeMXEdf_VD[,11:22])), dim. = dim(LargeMXEdf_VD[,11:22]))
-LargeMXEdf_VD$MinPSIs <- rowMins(as.numeric(unlist(LargeMXEdf_VD[,11:22])), dim. = dim(LargeMXEdf_VD[,11:22]))
-LargeMXEdf_VD <- LargeMXEdf_VD[LargeMXEdf_VD$MaxPSIs > 0.1,] ## deltaPSI cutoff
-LargeMXEdf_VD$first_PSI <- apply(LargeMXEdf_VD[,11:22], 1, function(x) x[x != 0][1])
-# add a line that eliminates all MXE events with more than 2 delta PSIs
-LargeMXEdf_VD <- LargeMXEdf_VD[which(LargeMXEdf_VD$MaxPSIs == ((-1)*LargeMXEdf_VD$MinPSIs)),] # IMPORTANT: "#" this row out if you want to keep complex alternative splicing events (i.e. more than 2 alternative splice sites)
-unique_MXE_events <- unique(LargeMXEdf_VD$AS_event_ID)
-unique_MXE_genes <- unique(LargeMXEdf_VD$Gene)
-LargeMXEdf_VD <- LargeMXEdf_VD[,-c(11:22)]   # If you want to keep all ΔPSI columns, "#" this row out
-# Calculate the sum of ΔPSI values for unique_MXE_events:
-MXE_VD_deltaPSI_sums <- aggregate(LargeMXEdf_VD[,11:12], list(LargeMXEdf_VD$AS_event_ID, LargeMXEdf_VD$Gene, LargeMXEdf_VD$first_PSI), sum)
-names(MXE_VD_deltaPSI_sums) <- c("MXE_event_ID", "Gene", "first deltaPSI", "max deltaPSI", "min deltaPSI")
-MXE_VD_deltaPSI_sums$`max delta PSI plus min delta PSI` <- MXE_VD_deltaPSI_sums[,4] + MXE_VD_deltaPSI_sums[,5]
-# for unique_AS_events, sum of first deltaPSI:
-MXE_VD_first_PSI_Sums <- data.frame()
-for(i in unique_MXE_events){
-MXE_VD_first_PSI_Sums[i,1] <- sum(LargeMXEdf_VD[LargeMXEdf_VD$AS_event_ID == i, 13])
-}
-# add gene names:
-for (i in rownames(MXE_VD_first_PSI_Sums)){
-MXE_VD_first_PSI_Sums[i,2] <- first(LargeMXEdf_VD$Gene[LargeMXEdf_VD$AS_event_ID == i])
-}
-
-names(MXE_VD_first_PSI_Sums) <- c("sum of all first deltaPSIs for AS_event_ID", "Gene")
-
-# repeat the count file with only non-complex alternative splicing events included:
-MXE_event_ID_VD_count <- as.data.frame(table(LargeMXEdf_VD$AS_event_ID))
-
-# add gene names:
-rownames(MXE_event_ID_VD_count) <- MXE_event_ID_VD_count[,1]
-for (i in rownames(MXE_event_ID_VD_count)){
-MXE_event_ID_VD_count[i,3] <- MXE_VD_first_PSI_Sums$Gene[MXE_event_ID_VD_count$Var1 == i]
-MXE_event_ID_VD_count[i,4] <- MXE_VD_first_PSI_Sums$`sum of all first deltaPSIs for AS_event_ID`[MXE_event_ID_VD_count$Var1 == i]
-}
-#MXE_event_ID_VD_count <- count(LargeMXEdf_VD$AS_event_ID)
-#MXE_event_ID_VD_count <- MXE_event_ID_VD_count[rev(order(MXE_event_ID_VD_count$freq)),]
-names(MXE_event_ID_VD_count) <- c("MXE_event_ID", "Freq", "Gene", "sum of all first deltaPSIs for AS_event_ID")
-
-# re-order the count data by frequency (Freq):
-MXE_event_ID_VD_count <- MXE_event_ID_VD_count[rev(order(MXE_event_ID_VD_count$Freq)),]
-```
-
-# Save/change cell type here:
-```{r}
-write.csv(LargeMXEdf_VD, file = "LargeMXEdf_VD.csv")
-write.csv(MXE_event_ID_VD_count, file = "MXE_event_ID_VD_count.csv")
-write.csv(MXE_VD_deltaPSI_sums, file = "MXE_VD_deltaPSI_sums.csv")
-write.csv(MXE_VD_first_PSI_Sums, file = "MXE_VD_first_PSI_sums.csv")
-```
 
 # Plots for AS events:
 ```{r}
-ggplot(data = A3S_event_ID_ASG_count, aes(x = A3S_event_ID, y = Freq)) +
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+ggplot(data = read.csv("A3S_event_ID_ASG_count.csv"), aes(x = A3S_event_ID, y = Freq)) +
   geom_point(size = 2) +
   geom_segment(aes(x = A3S_event_ID, xend = A3S_event_ID, y = 0, yend = Freq)) +
   labs(title = "Frequency of A3S Events in ASG cells", x = "", y = "Count") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.3))
 
-ggplot(data = A3S_event_ID_ASG_count, aes(x = Freq, y = A3S_event_ID)) +
+ggplot(data = read.csv("A3S_event_ID_ASG_count.csv"), aes(x = Freq, y = A3S_event_ID)) +
   geom_point(size = 2) +
   geom_segment(aes(x = 0, xend = Freq, y = A3S_event_ID, yend = A3S_event_ID)) +
   labs(title = "Frequency of A3S Events in ASG cells", x = "Count", y = "") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.3, size = 0.3))
 
-ggplot(data = A3S_event_ID_ASG_count, aes(x = A3S_event_ID, y = Freq, fill = A3S_event_ID)) +
+ggplot(data = read.csv("A3S_event_ID_ASG_count.csv"), aes(x = A3S_event_ID, y = Freq, fill = A3S_event_ID)) +
   geom_bar(stat = "identity", color = "black") +
   labs(title = "Frequency of A3S Events in ASG cells", x = "", y = "Count") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.3), legend.position = "none")
 
-ggplot(data = A3S_event_ID_ASG_count, aes(x = Freq, y = A3S_event_ID, fill = A3S_event_ID)) +
+ggplot(data = read.csv("A3S_event_ID_ASG_count.csv"), aes(x = Freq, y = A3S_event_ID, fill = A3S_event_ID)) +
   geom_bar(stat = "identity", color = "black") +
   labs(title = "Frequency of A3S Events in ASG cells", x = "Count", y = "") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 0, vjust = 0.3), legend.position = "none")
-
-par(mar=c(10,15,2,2))
-barplot(A3S_event_ID_ASG_count$Freq, width = 0.5, col = rainbow(30), horiz = TRUE, main = "Count of A3S Event IDs in ASG cells", xlab = "Count", ylab = "", names.arg = A3S_event_ID_ASG_count$A3S_event_ID, las = 1, cex.names = 0.65, cex.axis = 1)
-
-par(mar=c(10,15,2,2))
-barplot(A5S_event_ID_ASG_count$Freq[1:50], width = 0.5, col = rainbow(25), horiz = TRUE, main = "Count of A5S Event IDs (top 50) in ASG cells", xlab = "Count", ylab = "", names.arg = A5S_event_ID_ASG_count$A5S_event_ID[1:50], las = 1, cex.names = 0.65, cex.axis = 1)
-
-par(mar=c(10,28,2,2))
-barplot(MXE_event_ID_ASG_count$Freq, width = 0.5, col = rainbow(25), horiz = TRUE, main = "Count of MXE Event IDs in ASG cells", xlab = "Count", ylab = "", names.arg = MXE_event_ID_ASG_count$MXE_event_ID, las = 1, cex.names = 0.8, cex.axis = 1)
-
-#end_point = nrow(MXE_event_ID_ASG_count)
-#barplot(MXE_event_ID_ASG_count$Freq, width = 0.5, col = rainbow(25), horiz = FALSE, main = "Count of MXE Event IDs in ASG cells", #xlab = "", ylab = "Count")
-#text(seq(1, end_point, by = 1), par(las=2), 
-#     srt = 75, adj = 1, xpd = TRUE,
-#     labels = MXE_event_ID_ASG_count$MXE_event_ID, cex = 1)
-
-#ggplot(data = cassette_ASG_deltaPSI_sums, aes(x = cassette_event_ID, y = `max delta PSI plus min delta PSI`)) +
-#  geom_point() +
-#  theme(axis.text.x = element_text(angle = 90, vjust = 0.3))
 ```
 
 # Combine every cell type for each A.S. event into one data frame to get the "most interesting" A.S. events in all comparisons:
 ```{r}
-A3S_events_dataframe <- rbind(A3S_event_ID_ASG_count, A3S_event_ID_AVE_count, A3S_event_ID_AVG_count, A3S_event_ID_AWA_count, A3S_event_ID_AWB_count, A3S_event_ID_DD_count, A3S_event_ID_PVD_count, A3S_event_ID_VD_count)
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+A3S_events_dataframe <- data.frame()
+
+# Loop over the comparisons
+for (i in singletypes) {
+  # Construct the file name
+  file_name <- paste0("A3S_event_ID_", i, "_count.csv")
+  
+  # Check if the file exists
+  if (file.exists(file_name)) {
+    # Read the CSV file
+    df <- read.csv(file_name)
+    
+    # Append the data frame to A3S_events_dataframe
+    A3S_events_dataframe <- rbind(A3S_events_dataframe, df)
+  }
+}
+
 A3S_events_dataframe <- ddply(A3S_events_dataframe, c("A3S_event_ID", "Gene"), numcolwise(sum))
 A3S_events_dataframe$Freq <- A3S_events_dataframe$Freq/2 # We have to divide by 2 to get the true frequency of A.S. events because there are 2 datasets for each comparison
 A3S_events_dataframe <- A3S_events_dataframe[rev(order(A3S_events_dataframe$Freq)),]
 
-A5S_events_dataframe <- rbind(A5S_event_ID_ASG_count, A5S_event_ID_AVE_count, A5S_event_ID_AVG_count, A5S_event_ID_AWA_count, A5S_event_ID_AWB_count, A5S_event_ID_DD_count, A5S_event_ID_PVD_count, A5S_event_ID_VD_count)
+# Create an empty data frame to store the results
+A5S_events_dataframe <- data.frame()
+
+# Loop over the comparisons
+for (i in singletypes) {
+  # Construct the file name
+  file_name <- paste0("A5S_event_ID_", i, "_count.csv")
+  
+  # Check if the file exists
+  if (file.exists(file_name)) {
+    # Read the CSV file
+    df <- read.csv(file_name)
+    
+    # Append the data frame to A5S_events_dataframe
+    A5S_events_dataframe <- rbind(A5S_events_dataframe, df)
+  }
+}
+
 A5S_events_dataframe <- ddply(A5S_events_dataframe, c("A5S_event_ID", "Gene"), numcolwise(sum))
 A5S_events_dataframe$Freq <- A5S_events_dataframe$Freq/2
 A5S_events_dataframe <- A5S_events_dataframe[rev(order(A5S_events_dataframe$Freq)),]
 
-cassette_events_dataframe <- rbind(cassette_event_ID_ASG_count, cassette_event_ID_AVE_count, cassette_event_ID_AVG_count, cassette_event_ID_AWA_count, cassette_event_ID_AWB_count, cassette_event_ID_DD_count, cassette_event_ID_PVD_count, cassette_event_ID_VD_count)
+# Create an empty data frame to store the results
+cassette_events_dataframe <- data.frame()
+
+# Loop over the comparisons
+for (i in singletypes) {
+  # Construct the file name
+  file_name <- paste0("cassette_event_ID_", i, "_count.csv")
+  
+  # Check if the file exists
+  if (file.exists(file_name)) {
+    # Read the CSV file
+    df <- read.csv(file_name)
+    
+    # Append the data frame to cassette_events_dataframe
+    cassette_events_dataframe <- rbind(cassette_events_dataframe, df)
+  }
+}
+
 cassette_events_dataframe <- ddply(cassette_events_dataframe, c("cassette_event_ID", "Gene"), numcolwise(sum))
 cassette_events_dataframe$Freq <- cassette_events_dataframe$Freq/2
 cassette_events_dataframe <- cassette_events_dataframe[rev(order(cassette_events_dataframe$Freq)),]
 
-composite_events_dataframe <- rbind(composite_event_ID_ASG_count, composite_event_ID_AVE_count, composite_event_ID_AVG_count, composite_event_ID_AWA_count, composite_event_ID_AWB_count, composite_event_ID_DD_count, composite_event_ID_PVD_count, composite_event_ID_VD_count)
+# Create an empty data frame to store the results
+composite_events_dataframe <- data.frame()
+
+# Loop over the comparisons
+for (i in singletypes) {
+  # Construct the file name
+  file_name <- paste0("composite_event_ID_", i, "_count.csv")
+  
+  # Check if the file exists
+  if (file.exists(file_name)) {
+    # Read the CSV file
+    df <- read.csv(file_name)
+    
+    # Append the data frame to composite_events_dataframe
+    composite_events_dataframe <- rbind(composite_events_dataframe, df)
+  }
+}
+
 composite_events_dataframe <- ddply(composite_events_dataframe, c("composite_event_ID", "Gene"), numcolwise(sum))
 composite_events_dataframe$Freq <- composite_events_dataframe$Freq/2
 composite_events_dataframe <- composite_events_dataframe[rev(order(composite_events_dataframe$Freq)),]
 
-intron_events_dataframe <- rbind(intron_event_ID_ASG_count, intron_event_ID_AVE_count, intron_event_ID_AVG_count, intron_event_ID_AWA_count, intron_event_ID_AWB_count, intron_event_ID_DD_count, intron_event_ID_PVD_count, intron_event_ID_VD_count)
+# Create an empty data frame to store the results
+intron_events_dataframe <- data.frame()
+
+# Loop over the comparisons
+for (i in singletypes) {
+  # Construct the file name
+  file_name <- paste0("intron_event_ID_", i, "_count.csv")
+  
+  # Check if the file exists
+  if (file.exists(file_name)) {
+    # Read the CSV file
+    df <- read.csv(file_name)
+    
+    # Append the data frame to intron_events_dataframe
+    intron_events_dataframe <- rbind(intron_events_dataframe, df)
+  }
+}
+
 intron_events_dataframe <- ddply(intron_events_dataframe, c("intron_event_ID", "Gene"), numcolwise(sum))
 intron_events_dataframe$Freq <- intron_events_dataframe$Freq/2
 intron_events_dataframe <- intron_events_dataframe[rev(order(intron_events_dataframe$Freq)),]
 
-MXE_events_dataframe <- rbind(MXE_event_ID_ASG_count, MXE_event_ID_AVE_count, MXE_event_ID_AVG_count, MXE_event_ID_AWA_count, MXE_event_ID_AWB_count, MXE_event_ID_DD_count, MXE_event_ID_PVD_count, MXE_event_ID_VD_count)
+# Create an empty data frame to store the results
+MXE_events_dataframe <- data.frame()
+
+# Loop over the comparisons
+for (i in singletypes) {
+  # Construct the file name
+  file_name <- paste0("MXE_event_ID_", i, "_count.csv")
+  
+  # Check if the file exists
+  if (file.exists(file_name)) {
+    # Read the CSV file
+    df <- read.csv(file_name)
+    
+    # Append the data frame to MXE_events_dataframe
+    MXE_events_dataframe <- rbind(MXE_events_dataframe, df)
+  }
+}
+
 MXE_events_dataframe <- ddply(MXE_events_dataframe, c("MXE_event_ID", "Gene"), numcolwise(sum))
 MXE_events_dataframe$Freq <- MXE_events_dataframe$Freq/2
 MXE_events_dataframe <- MXE_events_dataframe[rev(order(MXE_events_dataframe$Freq)),]

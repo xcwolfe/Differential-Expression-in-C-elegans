@@ -13,25 +13,17 @@ library("ggplot2")
 # Create a dataframe that contains the count of AS events that pass statistical thresholds in XXX vs YYY:
 # (used for linear regression later)
 ```{r}
-lin_reg_df_cas_vs_int <- data.frame(comparison = c("ASG vs AVE", "ASG vs AVG", "ASG vs AWA", "ASG vs AWB", "ASG vs DD", "ASG vs PVD", "ASG vs VD"), cassette_events = 1:7, intron_events = 1:7) # change cell type/comparisons here
+# change cell type/comparisons here:
+singletypes <- c("ADL","AFD","AIM","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","AVA","AVE","AVG","AVH","AVK","AVL","AVM","AWA","AWB","AWC","BAG","CAN","DA","DD","DVC","I5","IL1","IL2","LUA","NSM","OLL","OLQ","PHA","PVC","PVD","PVM","RIA","RIC","RIM","RIS","RMD","SMB","SMD","VB","VC","VD")
 
-# First, compile cassette exon events:
-lin_reg_df_cas_vs_int[1,2] = JUM_table_cassette[1,2] # row 1 corresponds to ASG, column 2 corresponds to AVE, etc.
-lin_reg_df_cas_vs_int[2,2] = JUM_table_cassette[1,3] # change row and column numbers to match the cell type(s) you want to examine
-lin_reg_df_cas_vs_int[3,2] = JUM_table_cassette[1,4]
-lin_reg_df_cas_vs_int[4,2] = JUM_table_cassette[1,5]
-lin_reg_df_cas_vs_int[5,2] = JUM_table_cassette[1,6]
-lin_reg_df_cas_vs_int[6,2] = JUM_table_cassette[1,7]
-lin_reg_df_cas_vs_int[7,2] = JUM_table_cassette[1,8]
+lin_reg_df_cas_vs_int <- data.frame(comparison = character(length(singletypes)), cassette_events = numeric(length(singletypes)), intron_events = numeric(length(singletypes))) # change cell type/comparisons here
 
-# Next, compile intron retention events:
-lin_reg_df_cas_vs_int[1,3] = JUM_table_intron[1,2] # row 1 corresponds to ASG, column 2 corresponds to AVE, etc.
-lin_reg_df_cas_vs_int[2,3] = JUM_table_intron[1,3] # change row and column numbers to match the cell type(s) you want to examine
-lin_reg_df_cas_vs_int[3,3] = JUM_table_intron[1,4]
-lin_reg_df_cas_vs_int[4,3] = JUM_table_intron[1,5]
-lin_reg_df_cas_vs_int[5,3] = JUM_table_intron[1,6]
-lin_reg_df_cas_vs_int[6,3] = JUM_table_intron[1,7]
-lin_reg_df_cas_vs_int[7,3] = JUM_table_intron[1,8]
+# Loop to compile cassette exon events:
+for (i in 1:length(singletypes)) {
+  lin_reg_df_cas_vs_int[i, 1] <- paste("ADL vs", singletypes[i])
+  lin_reg_df_cas_vs_int[i, 2] <- JUM_table_cassette[1, i] # row 1 corresponds to ADL, column 2 corresponds to AFD, etc.
+  lin_reg_df_cas_vs_int[i, 3] <- JUM_table_intron[1, i] # row 1 corresponds to ADL, column 2 corresponds to AFD, etc.
+}
 ```
 
 # Linear regression:
@@ -42,201 +34,110 @@ ggplot(lin_reg_df_cas_vs_int, aes(intron_events, cassette_events, label = compar
   geom_point() +
   geom_text(hjust = 0.5, vjust = -0.5, color = "blue", size = 2.5) +
   geom_smooth(method = 'lm', color='red') +
-  labs(title = "Linear Regression Model of Cassette Exon Events vs Intron Retention Events in ASG vs Individual Cell Types", x = "Intron Retention Events", y = "Cassette Exon Events") +
+  labs(title = "Linear Regression Model of Cassette Exon Events vs Intron Retention Events in ADL vs Individual Cell Types", x = "Intron Retention Events", y = "Cassette Exon Events") +
   theme(plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'), axis.title.x = element_text(size = 9, face = 'bold'), axis.title.y = element_text(size = 9, face = 'bold'))
 ```
 
 
 # Let's make a list of all cell types vs all cell types so that we can easily create our first column in future linear regression data frames:
 ```{r}
-# change cell type/comparisons here:
-comparison_list <- c("ASG vs ASG", "ASG vs AVE", "ASG vs AVG", "ASG vs AWA", "ASG vs AWB", "ASG vs DD", "ASG vs PVD", "ASG vs VD", "AVE vs ASG", "AVE vs AVE", "AVE vs AVG", "AVE vs AWA", "AVE vs AWB", "AVE vs DD", "AVE vs PVD", "AVE vs VD", "AVG vs ASG", "AVG vs AVE", "AVG vs AVG", "AVG vs AWA", "AVG vs AWB", "AVG vs DD", "AVG vs PVD", "AVG vs VD", "AWA vs ASG", "AWA vs AVE", "AWA vs AVG", "AWA vs AWA", "AWA vs AWB", "AWA vs DD", "AWA vs PVD", "AWA vs VD", "AWB vs ASG", "AWB vs AVE", "AWB vs AVG", "AWB vs AWA", "AWB vs AWB", "AWB vs DD", "AWB vs PVD", "AWB vs VD", "DD vs ASG", "DD vs AVE", "DD vs AVG", "DD vs AWA", "DD vs AWB", "DD vs DD", "DD vs PVD", "DD vs VD", "PVD vs ASG", "PVD vs AVE", "PVD vs AVG", "PVD vs AWA", "PVD vs AWB", "PVD vs DD", "PVD vs PVD", "PVD vs VD", "VD vs ASG", "VD vs AVE", "VD vs AVG", "VD vs AWA", "VD vs AWB", "VD vs DD", "VD vs PVD", "VD vs VD")
+comparison_list <- list()
+
+for (i in 1:length(singletypes)) {
+  for (j in 1:length(singletypes)) {
+   comparison_list[[length(comparison_list) + 1]] <- paste(singletypes[i], "vs", singletypes[j])
+  }
+}
 ```
 
 # New linear regression data frame(s) with compiled A.S. events in each column:
 ```{r}
-lin_reg_df_AS_compilation <- data.frame(comparison = comparison_list, A3S_events = 1:64, A5S_events = 1:64, cassette_events = 1:64, composite_events = 1:64, intron_events = 1:64, MXE_events = 1:64, sum_of_all_A.S._events = 1:64)
+lin_reg_df_AS_compilation <- data.frame(A3S_events = numeric(), A5S_events = numeric(), cassette_events = numeric(), composite_events = numeric(), intron_events = numeric(), MXE_events = numeric(), sum_of_all_A.S._events = numeric())
+
+lin_reg_df_AS_compilation <- lin_reg_df_AS_compilation[1:(length(singletypes)^2),]
+rownames(lin_reg_df_AS_compilation) <- comparison_list
 
 # First, compile all A3S, A5S, cassette, composite, intron, and MXE events together:
 for (i in 1:nrow(lin_reg_df_AS_compilation)){
-lin_reg_df_AS_compilation[i,2] <- JUM_table_A3S[i]
-lin_reg_df_AS_compilation[i,3] <- JUM_table_A5S[i]
-lin_reg_df_AS_compilation[i,4] <- JUM_table_cassette[i]
-lin_reg_df_AS_compilation[i,5] <- JUM_table_composite[i]
-lin_reg_df_AS_compilation[i,6] <- JUM_table_intron[i]
-lin_reg_df_AS_compilation[i,7] <- JUM_table_MXE[i]
+lin_reg_df_AS_compilation[i,1] <- JUM_table_A3S[i]
+lin_reg_df_AS_compilation[i,2] <- JUM_table_A5S[i]
+lin_reg_df_AS_compilation[i,3] <- JUM_table_cassette[i]
+lin_reg_df_AS_compilation[i,4] <- JUM_table_composite[i]
+lin_reg_df_AS_compilation[i,5] <- JUM_table_intron[i]
+lin_reg_df_AS_compilation[i,6] <- JUM_table_MXE[i]
 # Let's also make a column that includes the sum of all A.S. events for each comparison:
-lin_reg_df_AS_compilation[i,8] <- sum(lin_reg_df_AS_compilation[i,2:7])
+lin_reg_df_AS_compilation[i,7] <- sum(lin_reg_df_AS_compilation[i,2:6])
 }
 
 # We now have to remove all rows which are in alphabetical order because JUM doesn't calculate these properly:
-lin_reg_df_AS_compilation <- lin_reg_df_AS_compilation[-c(1:8, 10:16, 19:24, 28:32, 37:40, 46:48, 55:56, 64),]
+rows_to_remove <- c()
+
+for (i in 1:nrow(lin_reg_df_AS_compilation)) {
+  rowname <- rownames(lin_reg_df_AS_compilation)[i]
+  row_split <- strsplit(rowname, " vs ")[[1]]
+  if (row_split[1] >= row_split[2]) {
+    rows_to_remove <- c(rows_to_remove, i)
+  }
+}
+
+lin_reg_df_AS_compilation <- lin_reg_df_AS_compilation[-rows_to_remove,]
 ```
 
 # New linear regression data frame(s) in relation to differential gene and RBP expression:
 ```{r}
-lin_reg_df_AS_vs_DE_genes_RBPs <- data.frame(comparison = c("ASG vs AVE", "ASG vs AVG", "ASG vs AWA", "ASG vs AWB", "ASG vs DD", "ASG vs PVD", "ASG vs VD", "AVE vs ASG", "AVE vs AVG", "AVE vs AWA", "AVE vs AWB", "AVE vs DD", "AVE vs PVD", "AVE vs VD", "AVG vs ASG", "AVG vs AVE", "AVG vs AWA", "AVG vs AWB", "AVG vs DD", "AVG vs PVD", "AVG vs VD", "AWA vs ASG", "AWA vs AVE", "AWA vs AVG", "AWA vs AWB", "AWA vs DD", "AWA vs PVD", "AWA vs VD", "AWB vs ASG", "AWB vs AVE", "AWB vs AVG", "AWB vs AWA", "AWB vs DD", "AWB vs PVD", "AWB vs VD", "DD vs ASG", "DD vs AVE", "DD vs AVG", "DD vs AWA", "DD vs AWB", "DD vs PVD", "DD vs VD", "PVD vs ASG", "PVD vs AVE", "PVD vs AVG", "PVD vs AWA", "PVD vs AWB", "PVD vs DD", "PVD vs VD", "VD vs ASG", "VD vs AVE", "VD vs AVG", "VD vs AWA", "VD vs AWB", "VD vs DD", "VD vs PVD"), `A.S._Events` = 1:56, `Differentially_Expressed_Genes` = 1:56, `Differentially_Expressed_RBPs` = 1:56)
+lin_reg_df_AS_vs_DE_genes_RBPs <- data.frame(`A.S._Events` = numeric(), `Differentially_Expressed_Genes` = numeric(), `Differentially_Expressed_RBPs` = numeric())
+
+lin_reg_df_AS_vs_DE_genes_RBPs <- lin_reg_df_AS_vs_DE_genes_RBPs[1:(length(singletypes)^2),]
+rownames(lin_reg_df_AS_vs_DE_genes_RBPs) <- comparison_list
 
 # Add all types of significantly dysregulated A.S. events together (cassettes + introns + 5' + 3' + mutually exclusive + composite)
 
 # First, compile all A.S. events together:
-lin_reg_df_AS_vs_DE_genes_RBPs[1,2] = sum(JUM_table_A3S[1,2] + JUM_table_A5S[1,2] + JUM_table_cassette[1,2] + JUM_table_composite[1,2] + JUM_table_intron[1,2] + JUM_table_MXE[1,2]) # ASG is the 1st row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[2,2] = sum(JUM_table_A3S[1,3] + JUM_table_A5S[1,3] + JUM_table_cassette[1,3] + JUM_table_composite[1,3] + JUM_table_intron[1,3] + JUM_table_MXE[1,3])
-lin_reg_df_AS_vs_DE_genes_RBPs[3,2] = sum(JUM_table_A3S[1,4] + JUM_table_A5S[1,4] + JUM_table_cassette[1,4] + JUM_table_composite[1,4] + JUM_table_intron[1,4] + JUM_table_MXE[1,4])
-lin_reg_df_AS_vs_DE_genes_RBPs[4,2] = sum(JUM_table_A3S[1,5] + JUM_table_A5S[1,5] + JUM_table_cassette[1,5] + JUM_table_composite[1,5] + JUM_table_intron[1,5] + JUM_table_MXE[1,5])
-lin_reg_df_AS_vs_DE_genes_RBPs[5,2] = sum(JUM_table_A3S[1,6] + JUM_table_A5S[1,6] + JUM_table_cassette[1,6] + JUM_table_composite[1,6] + JUM_table_intron[1,6] + JUM_table_MXE[1,6])
-lin_reg_df_AS_vs_DE_genes_RBPs[6,2] = sum(JUM_table_A3S[1,7] + JUM_table_A5S[1,7] + JUM_table_cassette[1,7] + JUM_table_composite[1,7] + JUM_table_intron[1,7] + JUM_table_MXE[1,7])
-lin_reg_df_AS_vs_DE_genes_RBPs[7,2] = sum(JUM_table_A3S[1,8] + JUM_table_A5S[1,8] + JUM_table_cassette[1,8] + JUM_table_composite[1,8] + JUM_table_intron[1,8] + JUM_table_MXE[1,8])
+row_indices <- c(1:46)  # Row indices for JUM tables
+column_indices <- c(1:46)  # Column indices for JUM tables
 
-lin_reg_df_AS_vs_DE_genes_RBPs[8,2] = sum(JUM_table_A3S[2,1] + JUM_table_A5S[2,1] + JUM_table_cassette[2,1] + JUM_table_composite[2,1] + JUM_table_intron[2,1] + JUM_table_MXE[2,1]) # AVE is the 2nd row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[9,2] = sum(JUM_table_A3S[2,3] + JUM_table_A5S[2,3] + JUM_table_cassette[2,3] + JUM_table_composite[2,3] + JUM_table_intron[2,3] + JUM_table_MXE[2,3])
-lin_reg_df_AS_vs_DE_genes_RBPs[10,2] = sum(JUM_table_A3S[2,4] + JUM_table_A5S[2,4] + JUM_table_cassette[2,4] + JUM_table_composite[2,4] + JUM_table_intron[2,4] + JUM_table_MXE[2,4])
-lin_reg_df_AS_vs_DE_genes_RBPs[11,2] = sum(JUM_table_A3S[2,5] + JUM_table_A5S[2,5] + JUM_table_cassette[2,5] + JUM_table_composite[2,5] + JUM_table_intron[2,5] + JUM_table_MXE[2,5])
-lin_reg_df_AS_vs_DE_genes_RBPs[12,2] = sum(JUM_table_A3S[2,6] + JUM_table_A5S[2,6] + JUM_table_cassette[2,6] + JUM_table_composite[2,6] + JUM_table_intron[2,6] + JUM_table_MXE[2,6])
-lin_reg_df_AS_vs_DE_genes_RBPs[13,2] = sum(JUM_table_A3S[2,7] + JUM_table_A5S[2,7] + JUM_table_cassette[2,7] + JUM_table_composite[2,7] + JUM_table_intron[2,7] + JUM_table_MXE[2,7])
-lin_reg_df_AS_vs_DE_genes_RBPs[14,2] = sum(JUM_table_A3S[2,8] + JUM_table_A5S[2,8] + JUM_table_cassette[2,8] + JUM_table_composite[2,8] + JUM_table_intron[2,8] + JUM_table_MXE[2,8])
+row_counter <- 1  # Counter for lin_reg_df_AS_vs_DE_genes_RBPs row index
 
-lin_reg_df_AS_vs_DE_genes_RBPs[15,2] = sum(JUM_table_A3S[3,1] + JUM_table_A5S[3,1] + JUM_table_cassette[3,1] + JUM_table_composite[3,1] + JUM_table_intron[3,1] + JUM_table_MXE[3,1]) # AVG is the 3rd row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[16,2] = sum(JUM_table_A3S[3,2] + JUM_table_A5S[3,2] + JUM_table_cassette[3,2] + JUM_table_composite[3,2] + JUM_table_intron[3,2] + JUM_table_MXE[3,2])
-lin_reg_df_AS_vs_DE_genes_RBPs[17,2] = sum(JUM_table_A3S[3,4] + JUM_table_A5S[3,4] + JUM_table_cassette[3,4] + JUM_table_composite[3,4] + JUM_table_intron[3,4] + JUM_table_MXE[3,4])
-lin_reg_df_AS_vs_DE_genes_RBPs[18,2] = sum(JUM_table_A3S[3,5] + JUM_table_A5S[3,5] + JUM_table_cassette[3,5] + JUM_table_composite[3,5] + JUM_table_intron[3,5] + JUM_table_MXE[3,5])
-lin_reg_df_AS_vs_DE_genes_RBPs[19,2] = sum(JUM_table_A3S[3,6] + JUM_table_A5S[3,6] + JUM_table_cassette[3,6] + JUM_table_composite[3,6] + JUM_table_intron[3,6] + JUM_table_MXE[3,6])
-lin_reg_df_AS_vs_DE_genes_RBPs[20,2] = sum(JUM_table_A3S[3,7] + JUM_table_A5S[3,7] + JUM_table_cassette[3,7] + JUM_table_composite[3,7] + JUM_table_intron[3,7] + JUM_table_MXE[3,7])
-lin_reg_df_AS_vs_DE_genes_RBPs[21,2] = sum(JUM_table_A3S[3,8] + JUM_table_A5S[3,8] + JUM_table_cassette[3,8] + JUM_table_composite[3,8] + JUM_table_intron[3,8] + JUM_table_MXE[3,8])
+for (row_index in row_indices) {
+  for (col_index in column_indices) {
+    lin_reg_df_AS_vs_DE_genes_RBPs[row_counter, 1] <- sum(JUM_table_A3S[row_index, col_index] +
+                                                         JUM_table_A5S[row_index, col_index] +
+                                                         JUM_table_cassette[row_index, col_index] +
+                                                         JUM_table_composite[row_index, col_index] +
+                                                         JUM_table_intron[row_index, col_index] +
+                                                         JUM_table_MXE[row_index, col_index])
+    lin_reg_df_AS_vs_DE_genes_RBPs[row_counter, 2] <- new_results[row_index, col_index]   # new_results was created in Type vs Type DESeq comparison.Rmd
+    lin_reg_df_AS_vs_DE_genes_RBPs[row_counter, 3] <- RBP_cutoff_results[row_index, col_index]   # RBP_cutoff_results was created in RNA binding protein search.Rmd
+    row_counter <- row_counter + 1
+  }
+}
 
-lin_reg_df_AS_vs_DE_genes_RBPs[22,2] = sum(JUM_table_A3S[4,1] + JUM_table_A5S[4,1] + JUM_table_cassette[4,1] + JUM_table_composite[4,1] + JUM_table_intron[4,1] + JUM_table_MXE[4,1]) # AWA is the 4th row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[23,2] = sum(JUM_table_A3S[4,2] + JUM_table_A5S[4,2] + JUM_table_cassette[4,2] + JUM_table_composite[4,2] + JUM_table_intron[4,2] + JUM_table_MXE[4,2])
-lin_reg_df_AS_vs_DE_genes_RBPs[24,2] = sum(JUM_table_A3S[4,3] + JUM_table_A5S[4,3] + JUM_table_cassette[4,3] + JUM_table_composite[4,3] + JUM_table_intron[4,3] + JUM_table_MXE[4,3])
-lin_reg_df_AS_vs_DE_genes_RBPs[25,2] = sum(JUM_table_A3S[4,5] + JUM_table_A5S[4,5] + JUM_table_cassette[4,5] + JUM_table_composite[4,5] + JUM_table_intron[4,5] + JUM_table_MXE[4,5])
-lin_reg_df_AS_vs_DE_genes_RBPs[26,2] = sum(JUM_table_A3S[4,6] + JUM_table_A5S[4,6] + JUM_table_cassette[4,6] + JUM_table_composite[4,6] + JUM_table_intron[4,6] + JUM_table_MXE[4,6])
-lin_reg_df_AS_vs_DE_genes_RBPs[27,2] = sum(JUM_table_A3S[4,7] + JUM_table_A5S[4,7] + JUM_table_cassette[4,7] + JUM_table_composite[4,7] + JUM_table_intron[4,7] + JUM_table_MXE[4,7])
-lin_reg_df_AS_vs_DE_genes_RBPs[28,2] = sum(JUM_table_A3S[4,8] + JUM_table_A5S[4,8] + JUM_table_cassette[4,8] + JUM_table_composite[4,8] + JUM_table_intron[4,8] + JUM_table_MXE[4,8])
-
-lin_reg_df_AS_vs_DE_genes_RBPs[29,2] = sum(JUM_table_A3S[5,1] + JUM_table_A5S[5,1] + JUM_table_cassette[5,1] + JUM_table_composite[5,1] + JUM_table_intron[5,1] + JUM_table_MXE[5,1]) # AWB is the 5th row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[30,2] = sum(JUM_table_A3S[5,2] + JUM_table_A5S[5,2] + JUM_table_cassette[5,2] + JUM_table_composite[5,2] + JUM_table_intron[5,2] + JUM_table_MXE[5,2])
-lin_reg_df_AS_vs_DE_genes_RBPs[31,2] = sum(JUM_table_A3S[5,3] + JUM_table_A5S[5,3] + JUM_table_cassette[5,3] + JUM_table_composite[5,3] + JUM_table_intron[5,3] + JUM_table_MXE[5,3])
-lin_reg_df_AS_vs_DE_genes_RBPs[32,2] = sum(JUM_table_A3S[5,4] + JUM_table_A5S[5,4] + JUM_table_cassette[5,4] + JUM_table_composite[5,4] + JUM_table_intron[5,4] + JUM_table_MXE[5,4])
-lin_reg_df_AS_vs_DE_genes_RBPs[33,2] = sum(JUM_table_A3S[5,6] + JUM_table_A5S[5,6] + JUM_table_cassette[5,6] + JUM_table_composite[5,6] + JUM_table_intron[5,6] + JUM_table_MXE[5,6])
-lin_reg_df_AS_vs_DE_genes_RBPs[34,2] = sum(JUM_table_A3S[5,7] + JUM_table_A5S[5,7] + JUM_table_cassette[5,7] + JUM_table_composite[5,7] + JUM_table_intron[5,7] + JUM_table_MXE[5,7])
-lin_reg_df_AS_vs_DE_genes_RBPs[35,2] = sum(JUM_table_A3S[5,8] + JUM_table_A5S[5,8] + JUM_table_cassette[5,8] + JUM_table_composite[5,8] + JUM_table_intron[5,8] + JUM_table_MXE[5,8])
-
-lin_reg_df_AS_vs_DE_genes_RBPs[36,2] = sum(JUM_table_A3S[6,1] + JUM_table_A5S[6,1] + JUM_table_cassette[6,1] + JUM_table_composite[6,1] + JUM_table_intron[6,1] + JUM_table_MXE[6,1]) # DD is the 6th row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[37,2] = sum(JUM_table_A3S[6,2] + JUM_table_A5S[6,2] + JUM_table_cassette[6,2] + JUM_table_composite[6,2] + JUM_table_intron[6,2] + JUM_table_MXE[6,2])
-lin_reg_df_AS_vs_DE_genes_RBPs[38,2] = sum(JUM_table_A3S[6,3] + JUM_table_A5S[6,3] + JUM_table_cassette[6,3] + JUM_table_composite[6,3] + JUM_table_intron[6,3] + JUM_table_MXE[6,3])
-lin_reg_df_AS_vs_DE_genes_RBPs[39,2] = sum(JUM_table_A3S[6,4] + JUM_table_A5S[6,4] + JUM_table_cassette[6,4] + JUM_table_composite[6,4] + JUM_table_intron[6,4] + JUM_table_MXE[6,4])
-lin_reg_df_AS_vs_DE_genes_RBPs[40,2] = sum(JUM_table_A3S[6,5] + JUM_table_A5S[6,5] + JUM_table_cassette[6,5] + JUM_table_composite[6,5] + JUM_table_intron[6,5] + JUM_table_MXE[6,5])
-lin_reg_df_AS_vs_DE_genes_RBPs[41,2] = sum(JUM_table_A3S[6,7] + JUM_table_A5S[6,7] + JUM_table_cassette[6,7] + JUM_table_composite[6,7] + JUM_table_intron[6,7] + JUM_table_MXE[6,7])
-lin_reg_df_AS_vs_DE_genes_RBPs[42,2] = sum(JUM_table_A3S[6,8] + JUM_table_A5S[6,8] + JUM_table_cassette[6,8] + JUM_table_composite[6,8] + JUM_table_intron[6,8] + JUM_table_MXE[6,8])
-
-lin_reg_df_AS_vs_DE_genes_RBPs[43,2] = sum(JUM_table_A3S[7,1] + JUM_table_A5S[7,1] + JUM_table_cassette[7,1] + JUM_table_composite[7,1] + JUM_table_intron[7,1] + JUM_table_MXE[7,1]) # PVD is the 7th row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[44,2] = sum(JUM_table_A3S[7,2] + JUM_table_A5S[7,2] + JUM_table_cassette[7,2] + JUM_table_composite[7,2] + JUM_table_intron[7,2] + JUM_table_MXE[7,2])
-lin_reg_df_AS_vs_DE_genes_RBPs[45,2] = sum(JUM_table_A3S[7,3] + JUM_table_A5S[7,3] + JUM_table_cassette[7,3] + JUM_table_composite[7,3] + JUM_table_intron[7,3] + JUM_table_MXE[7,3])
-lin_reg_df_AS_vs_DE_genes_RBPs[46,2] = sum(JUM_table_A3S[7,4] + JUM_table_A5S[7,4] + JUM_table_cassette[7,4] + JUM_table_composite[7,4] + JUM_table_intron[7,4] + JUM_table_MXE[7,4])
-lin_reg_df_AS_vs_DE_genes_RBPs[47,2] = sum(JUM_table_A3S[7,5] + JUM_table_A5S[7,5] + JUM_table_cassette[7,5] + JUM_table_composite[7,5] + JUM_table_intron[7,5] + JUM_table_MXE[7,5])
-lin_reg_df_AS_vs_DE_genes_RBPs[48,2] = sum(JUM_table_A3S[7,6] + JUM_table_A5S[7,6] + JUM_table_cassette[7,6] + JUM_table_composite[7,6] + JUM_table_intron[7,6] + JUM_table_MXE[7,6])
-lin_reg_df_AS_vs_DE_genes_RBPs[49,2] = sum(JUM_table_A3S[7,8] + JUM_table_A5S[7,8] + JUM_table_cassette[7,8] + JUM_table_composite[7,8] + JUM_table_intron[7,8] + JUM_table_MXE[7,8])
-
-lin_reg_df_AS_vs_DE_genes_RBPs[50,2] = sum(JUM_table_A3S[8,1] + JUM_table_A5S[8,1] + JUM_table_cassette[8,1] + JUM_table_composite[8,1] + JUM_table_intron[8,1] + JUM_table_MXE[8,1]) # PVD is the 7th row in our JUM tables
-lin_reg_df_AS_vs_DE_genes_RBPs[51,2] = sum(JUM_table_A3S[8,2] + JUM_table_A5S[8,2] + JUM_table_cassette[8,2] + JUM_table_composite[8,2] + JUM_table_intron[8,2] + JUM_table_MXE[8,2])
-lin_reg_df_AS_vs_DE_genes_RBPs[52,2] = sum(JUM_table_A3S[8,3] + JUM_table_A5S[8,3] + JUM_table_cassette[8,3] + JUM_table_composite[8,3] + JUM_table_intron[8,3] + JUM_table_MXE[8,3])
-lin_reg_df_AS_vs_DE_genes_RBPs[53,2] = sum(JUM_table_A3S[8,4] + JUM_table_A5S[8,4] + JUM_table_cassette[8,4] + JUM_table_composite[8,4] + JUM_table_intron[8,4] + JUM_table_MXE[8,4])
-lin_reg_df_AS_vs_DE_genes_RBPs[54,2] = sum(JUM_table_A3S[8,5] + JUM_table_A5S[8,5] + JUM_table_cassette[8,5] + JUM_table_composite[8,5] + JUM_table_intron[8,5] + JUM_table_MXE[8,5])
-lin_reg_df_AS_vs_DE_genes_RBPs[55,2] = sum(JUM_table_A3S[8,6] + JUM_table_A5S[8,6] + JUM_table_cassette[8,6] + JUM_table_composite[8,6] + JUM_table_intron[8,6] + JUM_table_MXE[8,6])
-lin_reg_df_AS_vs_DE_genes_RBPs[56,2] = sum(JUM_table_A3S[8,7] + JUM_table_A5S[8,7] + JUM_table_cassette[8,7] + JUM_table_composite[8,7] + JUM_table_intron[8,7] + JUM_table_MXE[8,7])
 
 # We now have to remove all rows which are in reverse alphabetical order because JUM doesn't calculate these properly:
-lin_reg_df_AS_vs_DE_genes_RBPs <- lin_reg_df_AS_vs_DE_genes_RBPs[-c(8, 15:16, 22:24, 29:32, 36:40, 43:48, 50:56),]
-```
-
-# D.E. Genes column:
-```{r}
-# The Y axis for 2B would be number of genes passing our threshold for significantly dysregulated (e.g. log2FC >2, q<.01)
-
-# Next, use the new_results data frame to find the number of differentially expressed genes in each comparison:
-lin_reg_df_AS_vs_DE_genes_RBPs[1,3] = new_results[7,11] # ASG is the 7th row in new_results and AVE is the 11th column in new_results
-lin_reg_df_AS_vs_DE_genes_RBPs[2,3] = new_results[7,12]
-lin_reg_df_AS_vs_DE_genes_RBPs[3,3] = new_results[7,16]
-lin_reg_df_AS_vs_DE_genes_RBPs[4,3] = new_results[7,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[5,3] = new_results[7,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[6,3] = new_results[7,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[7,3] = new_results[7,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[8,3] = new_results[11,12]
-lin_reg_df_AS_vs_DE_genes_RBPs[9,3] = new_results[11,16]
-lin_reg_df_AS_vs_DE_genes_RBPs[10,3] = new_results[11,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[11,3] = new_results[11,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[12,3] = new_results[11,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[13,3] = new_results[11,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[14,3] = new_results[12,16]
-lin_reg_df_AS_vs_DE_genes_RBPs[15,3] = new_results[12,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[16,3] = new_results[12,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[17,3] = new_results[12,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[18,3] = new_results[12,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[19,3] = new_results[16,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[20,3] = new_results[16,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[21,3] = new_results[16,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[22,3] = new_results[16,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[23,3] = new_results[17,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[24,3] = new_results[17,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[25,3] = new_results[17,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[26,3] = new_results[22,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[27,3] = new_results[22,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[28,3] = new_results[31,41]
+lin_reg_df_AS_vs_DE_genes_RBPs <- lin_reg_df_AS_vs_DE_genes_RBPs[-rows_to_remove,]
 ```
 
 # Linear regression:
 ```{r}
-summary(lm(formula = Differentially_Expressed_Genes ~ A.S._Events, data = lin_reg_df_AS_vs_DE_genes_RBPs))
+lm <- summary(lm(formula = Differentially_Expressed_Genes ~ A.S._Events, data = lin_reg_df_AS_vs_DE_genes_RBPs))
 
-ggplot(lin_reg_df_AS_vs_DE_genes_RBPs, aes(A.S._Events, Differentially_Expressed_Genes, label = comparison)) +
+ggplot(lin_reg_df_AS_vs_DE_genes_RBPs, aes(A.S._Events, Differentially_Expressed_Genes, label = rownames(lin_reg_df_AS_vs_DE_genes_RBPs))) +
   geom_point() +
   geom_text(hjust = 0.5, vjust = -0.5, color = "blue", size = 2.5) +
+  annotate("text", x = max(lin_reg_df_AS_vs_DE_genes_RBPs$A.S._Events), y = max(lin_reg_df_AS_vs_DE_genes_RBPs$Differentially_Expressed_Genes), label = paste0("Adj. R-squared = ", round(lm$adj.r.squared, 3)), hjust = 1, vjust = 1, color = "black", size = 4, fontface = "bold") +
   geom_smooth(method = 'lm', color='red') +
   labs(title = "Linear Regression Model of Alternative Splicing Events vs D.E. Genes by Cell Type Comparison", x = "Alternative Splicing Events", y = "Differentially Expressed Genes") +
   theme(plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'), axis.title.x = element_text(size = 9, face = 'bold'), axis.title.y = element_text(size = 9, face = 'bold'))
 ```
 
-# D.E. RBPs column:
-```{r}
-# The Y axis for 2C would be the same for 2B, except now the only genes reported for differential gene expression will be those that are RBPs.
-
-# Use the new_results data frame to find the number of differentially expressed genes in each comparison:
-lin_reg_df_AS_vs_DE_genes_RBPs[1,4] = RBP_results[7,11] # ASG is the 7th row in RBP_results and AVE is the 11th column in RBP_results
-lin_reg_df_AS_vs_DE_genes_RBPs[2,4] = RBP_results[7,12]
-lin_reg_df_AS_vs_DE_genes_RBPs[3,4] = RBP_results[7,16]
-lin_reg_df_AS_vs_DE_genes_RBPs[4,4] = RBP_results[7,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[5,4] = RBP_results[7,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[6,4] = RBP_results[7,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[7,4] = RBP_results[7,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[8,4] = RBP_results[11,12]
-lin_reg_df_AS_vs_DE_genes_RBPs[9,4] = RBP_results[11,16]
-lin_reg_df_AS_vs_DE_genes_RBPs[10,4] = RBP_results[11,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[11,4] = RBP_results[11,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[12,4] = RBP_results[11,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[13,4] = RBP_results[11,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[14,4] = RBP_results[12,16]
-lin_reg_df_AS_vs_DE_genes_RBPs[15,4] = RBP_results[12,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[16,4] = RBP_results[12,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[17,4] = RBP_results[12,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[18,4] = RBP_results[12,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[19,4] = RBP_results[16,17]
-lin_reg_df_AS_vs_DE_genes_RBPs[20,4] = RBP_results[16,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[21,4] = RBP_results[16,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[22,4] = RBP_results[16,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[23,4] = RBP_results[17,22]
-lin_reg_df_AS_vs_DE_genes_RBPs[24,4] = RBP_results[17,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[25,4] = RBP_results[17,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[26,4] = RBP_results[22,31]
-lin_reg_df_AS_vs_DE_genes_RBPs[27,4] = RBP_results[22,41]
-lin_reg_df_AS_vs_DE_genes_RBPs[28,4] = RBP_results[31,41]
-```
-
 # Linear regression RBPs vs A.S. events:
 ```{r}
-summary(lm(formula = Differentially_Expressed_RBPs ~ A.S._Events, data = lin_reg_df_AS_vs_DE_genes_RBPs))
+lm <- summary(lm(formula = Differentially_Expressed_RBPs ~ A.S._Events, data = lin_reg_df_AS_vs_DE_genes_RBPs))
 
-ggplot(lin_reg_df_AS_vs_DE_genes_RBPs, aes(A.S._Events, Differentially_Expressed_RBPs, label = comparison)) +
+ggplot(lin_reg_df_AS_vs_DE_genes_RBPs, aes(A.S._Events, Differentially_Expressed_RBPs, label = rownames(lin_reg_df_AS_vs_DE_genes_RBPs))) +
   geom_point() +
   geom_text(hjust = 0.5, vjust = -0.5, color = "blue", size = 2.5) +
+  annotate("text", x = max(lin_reg_df_AS_vs_DE_genes_RBPs$A.S._Events), y = max(lin_reg_df_AS_vs_DE_genes_RBPs$Differentially_Expressed_RBPs), label = paste0("Adj. R-squared = ", round(lm$adj.r.squared, 3)), hjust = 1, vjust = 1, color = "black", size = 4, fontface = "bold") +
   geom_smooth(method = 'lm', color='red') +
   labs(title = "Linear Regression Model of Alternative Splicing Events vs D.E. RBPs by Cell Type Comparison", x = "Alternative Splicing Events", y = "Differentially Expressed RNA Binding Proteins") +
   theme(plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'), axis.title.x = element_text(size = 9, face = 'bold'), axis.title.y = element_text(size = 9, face = 'bold'))
@@ -244,74 +145,11 @@ ggplot(lin_reg_df_AS_vs_DE_genes_RBPs, aes(A.S._Events, Differentially_Expressed
 
 # It would be much easier for us to do linear regressions if all of the data in the chunk(s) above were in the same data frame. Let's add the D.E. gene and RBP results into the AS_compilation lin_reg data frame. But be careful - we have to order everything correctly!
 ```{r}
-lin_reg_df_AS_compilation$Diff_Expressed_Genes = 1:28
-lin_reg_df_AS_compilation$Diff_Expressed_RBPs = 1:28
+lin_reg_df_AS_compilation$Diff_Expressed_Genes = 1:nrow(lin_reg_df_AS_compilation)
+lin_reg_df_AS_compilation$Diff_Expressed_RBPs = 1:nrow(lin_reg_df_AS_compilation)
 
-lin_reg_df_AS_compilation[1,9] = new_results[11,7]
-lin_reg_df_AS_compilation[2,9] = new_results[12,7]
-lin_reg_df_AS_compilation[3,9] = new_results[12,11]
-lin_reg_df_AS_compilation[4,9] = new_results[16,7]
-lin_reg_df_AS_compilation[5,9] = new_results[16,11]
-lin_reg_df_AS_compilation[6,9] = new_results[16,12]
-lin_reg_df_AS_compilation[7,9] = new_results[17,7]
-lin_reg_df_AS_compilation[8,9] = new_results[17,11]
-lin_reg_df_AS_compilation[9,9] = new_results[17,12]
-lin_reg_df_AS_compilation[10,9] = new_results[17,16]
-lin_reg_df_AS_compilation[11,9] = new_results[22,7]
-lin_reg_df_AS_compilation[12,9] = new_results[22,11] 
-lin_reg_df_AS_compilation[13,9] = new_results[22,12]
-lin_reg_df_AS_compilation[14,9] = new_results[22,16]
-lin_reg_df_AS_compilation[15,9] = new_results[22,17]
-lin_reg_df_AS_compilation[16,9] = new_results[31,7]
-lin_reg_df_AS_compilation[17,9] = new_results[31,11]
-lin_reg_df_AS_compilation[18,9] = new_results[31,12]
-lin_reg_df_AS_compilation[19,9] = new_results[31,16]
-lin_reg_df_AS_compilation[20,9] = new_results[31,17]
-lin_reg_df_AS_compilation[21,9] = new_results[31,22]
-lin_reg_df_AS_compilation[22,9] = new_results[41,7]
-lin_reg_df_AS_compilation[23,9] = new_results[41,11]
-lin_reg_df_AS_compilation[24,9] = new_results[41,12]
-lin_reg_df_AS_compilation[25,9] = new_results[41,16]
-lin_reg_df_AS_compilation[26,9] = new_results[41,17]
-lin_reg_df_AS_compilation[27,9] = new_results[41,22]
-lin_reg_df_AS_compilation[28,9] = new_results[41,31]
-```
-
-```{r}
-lin_reg_df_AS_compilation[1,10] = RBP_results[11,7]
-lin_reg_df_AS_compilation[2,10] = RBP_results[12,7]
-lin_reg_df_AS_compilation[3,10] = RBP_results[12,11]
-lin_reg_df_AS_compilation[4,10] = RBP_results[16,7]
-lin_reg_df_AS_compilation[5,10] = RBP_results[16,11]
-lin_reg_df_AS_compilation[6,10] = RBP_results[16,12]
-lin_reg_df_AS_compilation[7,10] = RBP_results[17,7]
-lin_reg_df_AS_compilation[8,10] = RBP_results[17,11]
-lin_reg_df_AS_compilation[9,10] = RBP_results[17,12]
-lin_reg_df_AS_compilation[10,10] = RBP_results[17,16]
-lin_reg_df_AS_compilation[11,10] = RBP_results[22,7]
-lin_reg_df_AS_compilation[12,10] = RBP_results[22,11] 
-lin_reg_df_AS_compilation[13,10] = RBP_results[22,12]
-lin_reg_df_AS_compilation[14,10] = RBP_results[22,16]
-lin_reg_df_AS_compilation[15,10] = RBP_results[22,17]
-lin_reg_df_AS_compilation[16,10] = RBP_results[31,7]
-lin_reg_df_AS_compilation[17,10] = RBP_results[31,11]
-lin_reg_df_AS_compilation[18,10] = RBP_results[31,12]
-lin_reg_df_AS_compilation[19,10] = RBP_results[31,16]
-lin_reg_df_AS_compilation[20,10] = RBP_results[31,17]
-lin_reg_df_AS_compilation[21,10] = RBP_results[31,22]
-lin_reg_df_AS_compilation[22,10] = RBP_results[41,7]
-lin_reg_df_AS_compilation[23,10] = RBP_results[41,11]
-lin_reg_df_AS_compilation[24,10] = RBP_results[41,12]
-lin_reg_df_AS_compilation[25,10] = RBP_results[41,16]
-lin_reg_df_AS_compilation[26,10] = RBP_results[41,17]
-lin_reg_df_AS_compilation[27,10] = RBP_results[41,22]
-lin_reg_df_AS_compilation[28,10] = RBP_results[41,31]
-```
-
-# Use the comparison column as rownmaes, then get rid of the comparison column:
-```{r}
-rownames(lin_reg_df_AS_compilation) <- lin_reg_df_AS_compilation[,1]
-lin_reg_df_AS_compilation <- lin_reg_df_AS_compilation[,-1]
+lin_reg_df_AS_compilation[,8] = lin_reg_df_AS_vs_DE_genes_RBPs[,2]
+lin_reg_df_AS_compilation[,9] = lin_reg_df_AS_vs_DE_genes_RBPs[,3]
 ```
 
 # Now we need to do linear regression for every column vs every column:
@@ -345,11 +183,12 @@ pheatmap(lin_reg_df_heatmap,
 
 # Linear regression cassette vs composite:
 ```{r}
-summary(lm(formula = composite_events ~ cassette_events, data = lin_reg_df_AS_compilation))
+lm <- summary(lm(formula = composite_events ~ cassette_events, data = lin_reg_df_AS_compilation))
 
 ggplot(lin_reg_df_AS_compilation, aes(cassette_events, composite_events, label = row.names(lin_reg_df_AS_compilation))) +
   geom_point() +
   geom_text(hjust = 0.5, vjust = -0.5, color = "darkgreen", size = 2.5) +
+  annotate("text", x = 50, y = max(lin_reg_df_AS_compilation$composite_events), label = paste0("Adj. R-squared = ", round(lm$adj.r.squared, 3)), hjust = 1, vjust = 1, color = "black", size = 4, fontface = "bold") +
   geom_smooth(method = 'lm', color='pink') +
   labs(title = "Linear Regression Model of Composite vs Cassette Exon Events by Cell Type Comparison", x = "Cassette Events", y = "Composite Events") +
   theme(plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'), axis.title.x = element_text(size = 9, face = 'bold'), axis.title.y = element_text(size = 9, face = 'bold'))
@@ -357,20 +196,22 @@ ggplot(lin_reg_df_AS_compilation, aes(cassette_events, composite_events, label =
 
 # Linear regression D.E. genes and RBPs:
 ```{r}
-summary(lm(formula = Diff_Expressed_Genes ~ sum_of_all_A.S._events, data = lin_reg_df_AS_compilation))
+lm <- summary(lm(formula = Diff_Expressed_Genes ~ sum_of_all_A.S._events, data = lin_reg_df_AS_compilation))
 
 ggplot(lin_reg_df_AS_compilation, aes(sum_of_all_A.S._events, Diff_Expressed_Genes, label = row.names(lin_reg_df_AS_compilation))) +
   geom_point() +
   geom_text(hjust = 0.5, vjust = -0.5, color = "blue", size = 2.5) +
+  annotate("text", x = 1500, y = 5000, label = paste0("Adj. R-squared = ", round(lm$adj.r.squared, 3)), hjust = 1, vjust = 1, color = "black", size = 4, fontface = "bold") +
   geom_smooth(method = 'lm', color='red') +
   labs(title = "Linear Regression Model of Alternative Splicing Events vs D.E. Genes by Cell Type Comparison", x = "Alternative Splicing Events", y = "Differentially Expressed Genes") +
   theme(plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'), axis.title.x = element_text(size = 9, face = 'bold'), axis.title.y = element_text(size = 9, face = 'bold'))
 
-summary(lm(formula = Diff_Expressed_RBPs ~ sum_of_all_A.S._events, data = lin_reg_df_AS_compilation))
+lm <- summary(lm(formula = Diff_Expressed_RBPs ~ sum_of_all_A.S._events, data = lin_reg_df_AS_compilation))
 
 ggplot(lin_reg_df_AS_compilation, aes(sum_of_all_A.S._events, Diff_Expressed_RBPs, label = row.names(lin_reg_df_AS_compilation))) +
   geom_point() +
   geom_text(hjust = 0.5, vjust = -0.5, color = "blue", size = 2.5) +
+  annotate("text", x = 1400, y = 120, label = paste0("Adj. R-squared = ", round(lm$adj.r.squared, 3)), hjust = 1, vjust = 1, color = "black", size = 4, fontface = "bold") +
   geom_smooth(method = 'lm', color='red') +
   labs(title = "Linear Regression Model of Alternative Splicing Events vs D.E. RNABPs by Cell Type Comparison", x = "Alternative Splicing Events", y = "Differentially Expressed RNA-Binding Proteins") +
   theme(plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'), axis.title.x = element_text(size = 9, face = 'bold'), axis.title.y = element_text(size = 9, face = 'bold'))
@@ -378,12 +219,23 @@ ggplot(lin_reg_df_AS_compilation, aes(sum_of_all_A.S._events, Diff_Expressed_RBP
 
 # Linear regression A5S vs A3S:
 ```{r}
-summary(lm(formula = A5S_events ~ A3S_events, data = lin_reg_df_AS_compilation))
+lm <- summary(lm(formula = A5S_events ~ A3S_events, data = lin_reg_df_AS_compilation))
 
 ggplot(lin_reg_df_AS_compilation, aes(A3S_events, A5S_events, label = row.names(lin_reg_df_AS_compilation))) +
   geom_point() +
   geom_text(hjust = 0.5, vjust = -0.5, color = "chocolate3", size = 2.5) +
+  annotate("text", x = 100, y = 270, label = paste0("Adj. R-squared = ", round(lm$adj.r.squared, 3)), hjust = 1, vjust = 1, color = "black", size = 4, fontface = "bold") +
   geom_smooth(method = 'lm', color='magenta') +
   labs(title = "Linear Regression Model of A5S vs A3S Events by Cell Type Comparison", x = "A3S Events", y = "A5S Events") +
+  theme(plot.title = element_text(hjust = 0.5, size = 12, face = 'bold'), axis.title.x = element_text(size = 12, face = 'bold'), axis.title.y = element_text(size = 12, face = 'bold'))
+
+lm <- summary(lm(formula = A5S_events ~ cassette_events, data = lin_reg_df_AS_compilation))
+
+ggplot(lin_reg_df_AS_compilation, aes(cassette_events, A5S_events, label = row.names(lin_reg_df_AS_compilation))) +
+  geom_point() +
+  geom_text(hjust = 0.5, vjust = -0.5, color = "chocolate3", size = 2.5) +
+  annotate("text", x = 100, y = 270, label = paste0("Adj. R-squared = ", round(lm$adj.r.squared, 3)), hjust = 1, vjust = 1, color = "black", size = 4, fontface = "bold") +
+  geom_smooth(method = 'lm', color='magenta') +
+  labs(title = "Linear Regression Model of A5S vs Cassette Events by Cell Type Comparison", x = "cassette Events", y = "A5S Events") +
   theme(plot.title = element_text(hjust = 0.5, size = 12, face = 'bold'), axis.title.x = element_text(size = 12, face = 'bold'), axis.title.y = element_text(size = 12, face = 'bold'))
 ```

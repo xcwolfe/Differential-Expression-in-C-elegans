@@ -15,8 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-save.image("C:/Users/xcwol/Downloads/.RData")
-load("C:/Users/xcwol/Downloads/.RData")
+save.image("E:/.RData")
+load("E:/.RData")
 ```
 
 
@@ -25,6 +25,7 @@ load("C:/Users/xcwol/Downloads/.RData")
 library("devtools")
 require(devtools)
 #install.packages("remotes")
+#install_github('dieterich-lab/CircTest')
 library("CircTest")
 library("utils")
 library("dplyr")
@@ -47,16 +48,22 @@ library("gdata")
 
 # Make a list of your cell types and replicate numbers:
 ```{r}
-singletypesprac <-  c("ASG","AVE","AVG","AWA","AWB","DD","PVD","VD","PANNEURON")
+singletypes <- c("ADL","AFD","AIM","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","AVA","AVE","AVG","AVH","AVK","AVL","AVM","AWA","AWB","AWC","BAG","CAN","DA","DD","DVC","I5","IL1","IL2","LUA","NSM","OLL","OLQ","PHA","PVC","PVD","PVM","RIA","RIC","RIM","RIS","RMD","SMB","SMD","VB","VC","VD")
 
-singletypesprac_withreps <- c("ASG1", "ASG2", "ASG3", "ASG4", "AVE1", "AVE2", "AVE3", "AVG1", "AVG2", "AVG3", "AWA1", "AWA2", "AWA3", "AWA4", "AWB1", "AWB2", "AWB3", "AWB4", "AWB5", "DD1", "DD2", "DD3", "PVD1", "PVD2", "VD1", "VD2", "VD3", "VD4", "PAN1", "PAN2", "PAN3", "PAN4")
+singletypes_withreps <- c("ADL1", "ADL2", "ADL3", "ADL4", "AFD1", "AFD2", "AFD3", "AFD4", "AFD5", "AIM1", "AIM2", "AIM3", "AIM4", "AIN1", "AIN2", "AIN3", "AIN4", "AIN5", "AIN6", "AIY1", "AIY2", "AIY3", "ASEL1", "ASEL2", "ASEL3", "ASER1", "ASER2", "ASER3", "ASER4", "ASG1", "ASG2", "ASG3", "ASG4", "ASI1", "ASI2", "ASI3", "ASI4", "ASK1", "ASK2", "ASK3", "ASK4", "AVA1", "AVA2", "AVA3", "AVA4", "AVA5", "AVA6", "AVE1", "AVE2", "AVE3", "AVG1", "AVG2", "AVG3", "AVH1", "AVH2", "AVH3", "AVH4", "AVK1", "AVK2", "AVK3", "AVK4", "AVL1", "AVL2", "AVL3", "AVM1", "AVM2", "AVM3", "AWA1", "AWA2", "AWA3", "AWA4", "AWB1", "AWB2", "AWB3", "AWB4", "AWB5", "AWC1", "AWC2", "AWC3", "AWC4", "BAG1", "BAG2", "BAG3", "BAG4", "CAN1", "CAN2", "CAN3", "DA1", "DA2", "DA3", "DA4", "DD1", "DD2", "DD3", "DD4", "DVC1", "DVC2", "DVC3", "DVC4", "I51", "I52", "I53", "I54", "IL11", "IL12", "IL13", "IL21", "IL22", "IL23", "IL24", "LUA1", "LUA2", "LUA3", "LUA4", "NSM1", "NSM2", "NSM3", "OLL1", "OLL2", "OLQ1", "OLQ2", "OLQ3", "PHA1", "PHA2", "PHA3", "PHA4", "PVC1", "PVC2", "PVC3", "PVC4", "PVC5", "PVD1", "PVD2", "PVM1", "PVM2", "RIA1", "RIA2", "RIA3", "RIA4", "RIA5", "RIA6", "RIC1", "RIC2", "RIC3", "RIC4", "RIM1", "RIM2", "RIM3", "RIM4", "RIS1", "RIS2", "RIS3", "RMD1", "RMD2", "RMD3", "RMD4", "RMD5", "SMB1", "SMB2", "SMB3", "SMB4", "SMB5", "SMD1", "SMD2", "SMD3", "SMD4", "VB1", "VB2", "VB3", "VB4", "VC1", "VC2", "VC3", "VC4", "VC5", "VC6", "VD1", "VD2", "VD3", "VD4")
+
+##NOTE: Since OLL2 and PVC1 had no circRNA detected (No circRNA passed the expression threshold filtering), no files could be generated and renamed using the DCC scripts
 ```
 
 # Import of DCC output files into R:
 ```{r, include=FALSE}
 setwd("D:/Zach Wolfe's CircRNA analysis") # set your working directory here
 
-circRNA_table <- matrix(nrow = 32, ncol = 2, dimnames = list(x = singletypesprac_withreps, y = c(paste("circRNA count"), paste("Most frequently circularized gene"))))
+singletypes_withreps <- singletypes_withreps[!(singletypes_withreps %in% c("OLL1", "OLL2", "PVC1"))] # OLL2 and PVC1 had no circRNA detected, which means they will have no output files for DCC, which means we have to exclude them from our analysis
+## additionally, since there are only 2 reps of OLL, this means we will have to eliminate OLL entirely from our circRNA analysis at this point. Otherwise we will have a problem with Circ.test in our next chunk
+singletypes <- singletypes[!(singletypes %in% "OLL")]
+
+circRNA_table <- matrix(nrow = 177, ncol = 2, dimnames = list(x = singletypes_withreps, y = c(paste("circRNA count"), paste("Most frequently circularized gene"))))
 circRNA_table[is.na(circRNA_table)] <- 0
 
 CircRNACount_filtered_combined <- data.frame(matrix(ncol = 3, nrow = 0))
@@ -85,10 +92,10 @@ CircCoordinates_filtered_combined$Strand <- as.character()
 CircCoordinates_filtered_combined$Start.End.Region <- as.character()
 CircCoordinates_filtered_combined$OverallRegion <- as.character()
 
-for (i in 1:length(singletypesprac_withreps)){
-CircRNACount <- read.delim(paste0(singletypesprac_withreps[i], 'CircRNACount'))
-LinearCount <- read.delim(paste0(singletypesprac_withreps[i], 'LinearCount'))
-CircCoordinates <- read.delim(paste0(singletypesprac_withreps[i], 'CircCoordinates'))
+for (i in 1:length(singletypes_withreps)){
+CircRNACount <- read.delim(paste0(singletypes_withreps[i], 'CircRNACount'))
+LinearCount <- read.delim(paste0(singletypes_withreps[i], 'LinearCount'))
+CircCoordinates <- read.delim(paste0(singletypes_withreps[i], 'CircCoordinates'))
 
 CircRNACount_filtered <- Circ.filter(circ = CircRNACount,
                                      linear = LinearCount,
@@ -104,10 +111,10 @@ LinearCount_filtered <- LinearCount[rownames(CircRNACount_filtered),]
 
 # We need to combine chimeric.out.junctions columns, then put them on one big table
 
-names(CircRNACount_filtered)[names(CircRNACount_filtered) == "Chimeric.out.junction"] <- paste0("Chimeric.out.junction", singletypesprac_withreps[i])
+names(CircRNACount_filtered)[names(CircRNACount_filtered) == "Chimeric.out.junction"] <- paste0("Chimeric.out.junction", singletypes_withreps[i])
 CircRNACount_filtered_combined <- full_join(CircRNACount_filtered_combined, CircRNACount_filtered)
 
-names(LinearCount_filtered)[names(LinearCount_filtered) == "Chimeric.out.junction"] <- paste0("Chimeric.out.junction", singletypesprac_withreps[i])
+names(LinearCount_filtered)[names(LinearCount_filtered) == "Chimeric.out.junction"] <- paste0("Chimeric.out.junction", singletypes_withreps[i])
 LinearCount_filtered_combined <- full_join(LinearCount_filtered_combined, LinearCount_filtered)
 
 CircCoordinates_filtered_combined <- full_join(CircCoordinates_filtered_combined, CircCoordinates_filtered)
@@ -125,53 +132,217 @@ circRNA_table[i,2] <- as.character(paste("NA"))
  }
 }
 
-#CircRNACount_filtered_combined[is.na(CircRNACount_filtered_combined)] <- 0
-#LinearCount_filtered_combined[is.na(LinearCount_filtered_combined)] <- 0
-#CircCoordinates_filtered_combined[is.na(CircCoordinates_filtered_combined)] <- 0
+# For now, we need NA values to be zero in order to perform Circ.test later.
+CircRNACount_filtered_combined[is.na(CircRNACount_filtered_combined)] <- 0
+LinearCount_filtered_combined[is.na(LinearCount_filtered_combined)] <- 0
+CircCoordinates_filtered_combined[is.na(CircCoordinates_filtered_combined)] <- 0
 ```
 
-# Exclude any circRNA that is only expressed in 1 or fewer cells:
-```{r}
-CircRNACount_filtered_combined <- CircRNACount_filtered_combined %>% mutate(num_NA = rowSums(!is.na(select(., -Chr)))) # this line counts the number of non-NA elements per row
-CircRNACount_filtered_combined_2 <- CircRNACount_filtered_combined[CircRNACount_filtered_combined$num_NA > 7,] # keep all rows with more than 5 non-NA values (> 7 because Start and End coordinates are both non-NA)
-LinearCount_filtered_combined <- LinearCount_filtered_combined %>% mutate(num_NA = rowSums(!is.na(select(., -Chr)))) # this line counts the number of non-NA elements per row
-LinearCount_filtered_combined_2 <- LinearCount_filtered_combined[LinearCount_filtered_combined$num_NA > 7,] # keep all rows with more than 5 non-NA values (> 7 because Start and End coordinates are both non-NA)
-
-# get rid of the num_NA column:
-CircRNACount_filtered_combined_2 <- CircRNACount_filtered_combined_2[,-36]
-LinearCount_filtered_combined_2 <- LinearCount_filtered_combined_2[,-36]
-```
 
 # Circular RNA test (Circ.test):
 ```{r, message=FALSE}
-group <- c(rep(1, 4), rep(2, 3), rep(3, 3), rep(4, 4), rep(5, 5), rep(6, 3), rep(7, 2), rep(8, 4), rep(9, 4))
+group <- c(rep(1:length(singletypes), times = sapply(singletypes, function(x) sum(grepl(paste0("^", x), singletypes_withreps)))))
+group <- as.numeric(group, levels = unique(group))
 
 test <- Circ.test(CircRNACount_filtered_combined,
                  LinearCount_filtered_combined,
                  CircCoordinates_filtered_combined,
-                 group=group, # I have 9 groups with variable numbers of replicates in each group
+                 group=group, # I have 45 groups with variable numbers of replicates in each group
                  alpha = 1 # p-value cutoff (default is 0.05)
 )
 ```
 
 # Significant results are shown in a summary table:
 ```{r}
-colnames(test$summary_table) <- c("Chr", "Start", "End", "Gene", "JunctionType", "Strand", "Start.End.Region", "OverallRegion", "sig_p", "ASG_ratio_mean", "AVE_ratio_mean", "AVG_ratio_mean", "AWA_ratio_mean", "AWB_ratio_mean", "DD_ratio_mean", "PVD_ratio_mean", "VD_ratio_mean", "PANNEURON_ratio_mean")
+colnames(test$summary_table) <- c("Chr", "Start", "End", "Gene", "JunctionType", "Strand", "Start.End.Region", "OverallRegion", "sig_p", paste0(singletypes, "_ratio_mean"))
 
-test$summary_table[is.na(test$summary_table)] <- 0
+#test$summary_table[is.na(test$summary_table)] <- 0
+
+# p-value cutoff:
+test_p_summary_table <- test$summary_table[test$summary_table$sig_p < 0.05,]
+
+# optional: re-order by row names:
+test_summary_table_ordered <- test$summary_table[order(as.numeric(rownames(test$summary_table))),]
 
 View(test$summary_table)
 
-for (j in rownames(test$summary_table)){
- Circ.ratioplot(CircRNACount_filtered_combined_2,
-                LinearCount_filtered_combined_2,
+# unless EVERY SINGLE replicate of a given cell type has a value present for a given RNA strand, the Circ.ratioplot won't be able to plot ANY ratios for that cell type. Here is my solution:
+## Change all 0s in LinearCount file to 0.00001
+
+LinearCount_filtered_combined_0_as_fraction <- LinearCount_filtered_combined
+LinearCount_filtered_combined_0_as_fraction[LinearCount_filtered_combined == 0] <- 0.00001
+```
+
+# Make a summarySE function (this is from DCC's github):
+```{r}
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  require(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+```
+
+# Edit DCC's Circ.ratioplot function (this will allow us to manually adjust parameters and aesthetics):
+```{r}
+my.Circ.ratioplot <- function(Circ,Linear,CircCoordinates = None,plotrow='1',size=12,ncol=2,groupindicator1=NULL,groupindicator2=NULL,x='Conditions',y='circRNA/(circRNA+Linear)',lab_legend='groupindicator1', circle_description = c(1:3), gene_column = None, y_axis_range = 1, colour_mode = "colour"){
+
+  if( !is.null(groupindicator1) & length(groupindicator1) != ncol(Circ)-length(circle_description) ){
+    stop("If provided, the length of groupindicator1 should be equal to the number of samples.")
+  }
+  if( !is.null(groupindicator2) & length(groupindicator2) != ncol(Circ)-length(circle_description) ){
+    stop("If provided, the length of groupindicator2 should be equal to the number of samples.")
+  }
+  if(is.null(groupindicator1)){
+    stop("At least one grouping should be provided through groupindicator1.")
+  }
+  if(!is.null(groupindicator2)){
+    twolevel <- TRUE
+  }else{
+    twolevel <- FALSE
+  }
+  
+  rownames.circ <- rownames(Circ)
+  Circ <- data.frame(lapply(Circ, as.character), stringsAsFactors=FALSE)
+  rownames(Circ) <- rownames.circ
+  
+  rownames.linear <- rownames(Linear)
+  Linear <- data.frame(lapply(Linear, as.character), stringsAsFactors=FALSE)
+  rownames(Linear) <- rownames.linear
+  
+  if(!missing(CircCoordinates)){
+    rownames.circCoordinates <- rownames(CircCoordinates)
+    CircCoordinates <- data.frame(lapply(CircCoordinates, as.character), stringsAsFactors=FALSE)
+    rownames(CircCoordinates) <- rownames.circCoordinates
+  }else{
+    CircCoordinates <- data.frame(Circ[,circle_description])
+    rownames(CircCoordinates) <- rownames.circ
+    rownames.circCoordinates <- rownames(CircCoordinates)
+    CircCoordinates <- data.frame(lapply(CircCoordinates, as.character), stringsAsFactors=FALSE)
+    rownames(CircCoordinates) <- rownames.circCoordinates  
+  }
+  
+  groupindicator1 <- factor(groupindicator1,levels=unique(groupindicator1))
+  groupindicator2 <- factor(groupindicator2,levels=unique(groupindicator2))
+  
+  # Get gene name, if no annotation, output NULL
+  if (is.character(plotrow)){
+    if ( ! plotrow %in% rownames(CircCoordinates) ){
+      stop("Specified 'plotrow' not found.")
+    }
+  }else{
+    if ( is.numeric(plotrow) ){
+      if ( ! plotrow %in% 1:nrow(CircCoordinates) ){
+        stop("Specified 'plotrow' not found.")
+      }
+    }else{
+      stop("Specified plotrow should be ONE rowname or ONE rownumber.")
+    }
+  }
+  # Choose your own column containing the gene name using gene_column. The genename will be displayed in the plot title if available
+  if (missing(gene_column)){
+    genename = NULL
+  }else{
+    genename <- as.character(CircCoordinates[plotrow,gene_column])
+    if (genename == '.'){
+      genename = NULL
+    }
+  }
+  if(twolevel){
+    plotdat <- summarySE( data.frame(Ratio=as.numeric(Circ[plotrow,-circle_description])/(as.numeric(Linear[plotrow,-circle_description])+as.numeric(Circ[plotrow,-circle_description])),
+                                    groupindicator1,
+                                    groupindicator2),
+                         measurevar='Ratio',groupvars=c('groupindicator1','groupindicator2') )
+  }else{
+    plotdat <- summarySE( data.frame(Ratio=as.numeric(Circ[plotrow,-circle_description])/(as.numeric(Linear[plotrow,-circle_description])+as.numeric(Circ[plotrow,-circle_description])),
+                                     groupindicator1),
+                                     measurevar='Ratio',groupvars=c('groupindicator1') )
+  }
+# construct plot
+  Q <- ggplot(plotdat, aes(x=groupindicator1, y=Ratio)) +
+       geom_boxplot() + theme_classic() +
+       theme(axis.text.x = element_blank())+
+       theme(axis.text.y = element_text(size=8))+
+       theme(axis.ticks = element_line(colour = 'black', linewidth = 0.7)) +
+       theme(axis.ticks.x = element_blank())+
+       theme(legend.title=element_blank()) + 
+       theme(text=element_text(size=9))+
+       theme(legend.text=element_text(size=8)) +
+       theme(plot.title = element_text(size=10)) + 
+       theme(axis.text.y = element_text(margin=margin(5,5,10,5,"pt")))+
+       ggtitle(paste("Annotation: ", genename, "\nChr ", toString(Circ[plotrow,circle_description]),sep="")) +
+       ylab("Percentage of Circular RNA vs All RNA") + 
+       xlab("Cell Type") +
+       geom_bar(stat="identity",aes(fill=groupindicator1), color = "black", size=1) +         
+       geom_errorbar(aes(ymin=Ratio-se, ymax=Ratio+se), width=1 , size=0.5)
+
+  if (colour_mode == "bw"){
+      Q <- Q + scale_fill_grey(start = 0.0, end = 1)
+  } else {
+      Q <- Q + scale_fill_discrete(name=lab_legend)
+  }
+
+       Q <- Q +
+       theme(legend.position="bottom") +
+       theme(axis.ticks.length = unit(0.4, "cm")) +
+       theme(panel.background = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill=NA, size=2)) + 
+        guides(fill=guide_legend(
+                 keywidth=0.3,
+                 keyheight=0.2,
+                 default.unit="inch")
+      ) + scale_y_continuous(expand=c(0,0), limits= c(0, y_axis_range), labels = scales::percent_format(scale = 100))
+
+  if(twolevel){
+    Q <- Q + facet_wrap( ~ groupindicator2,ncol=ncol )
+  }
+
+  print(Q)
+}
+```
+
+# Circ.ratioplot:
+```{r}
+for (j in 1:nrow(test$summary_table)){
+ my.Circ.ratioplot(CircRNACount_filtered_combined,
+                LinearCount_filtered_combined_0_as_fraction,
                 CircCoordinates_filtered_combined,
                 plotrow = j,
-                size = 15,
-                groupindicator1 = c(rep("ASG",4), rep("AVE",3), rep("AVG",3), rep("AWA",4), rep("AWB",5), rep("DD",3), rep("PVD",2), rep("VD",4), rep("PAN",4)),
+                size = 14,
+                groupindicator1 = c(rep(singletypes, times = sapply(singletypes, function(x) sum(grepl(paste0("^", x), singletypes_withreps))))),
                 lab_legend = "groupindicator1",
-                x = "Cell type",
-                y = "Percentage of Circular RNA vs All RNA",
                 gene_column = 4
                 )
 }
@@ -190,7 +361,7 @@ write.csv(CircCoordinates_filtered_combined, file = "CircCoordinates_filtered_co
 # Let's continue filtering independently to find the "most interesting" circular RNAs:
 ```{r, message=FALSE}
 # consolidate test table:
-circ_test_consolidated <- test$summary_table[,c(2:4,9:18)]
+circ_test_consolidated <- test$summary_table[,c(1:4,10:54)]
 
 # add a p-value cutoff:
 # circ_test_consolidated <- circ_test_consolidated[circ_test_consolidated$sig_p < 0.05,]
@@ -200,19 +371,13 @@ unique_circ_genes <- unique(circ_test_consolidated$Gene)
   
 circ_gene_means <- data.frame()
 for(i in unique_circ_genes){
-circ_gene_means[i,1] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 5])
-circ_gene_means[i,2] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 6])
-circ_gene_means[i,3] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 7])
-circ_gene_means[i,4] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 8])
-circ_gene_means[i,5] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 9])
-circ_gene_means[i,6] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 10])
-circ_gene_means[i,7] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 11])
-circ_gene_means[i,8] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 12])
-circ_gene_means[i,9] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, 13])
+  for (j in 5:ncol(circ_test_consolidated)){
+   circ_gene_means[i,(j-4)] <- mean(circ_test_consolidated[circ_test_consolidated$Gene == i, j])
+ }
 }
 
 # add column names:
-names(circ_gene_means) <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD", "PANNEURON")
+names(circ_gene_means) <- c(singletypes)
 
 circ_gene_count <- as.data.frame(table(circ_test_consolidated$Gene))
 circ_gene_count <- circ_gene_count[rev(order(circ_gene_count$Freq)),]
@@ -227,19 +392,13 @@ unique_circ_coordinates <- unique(as.character(circ_test_consolidated$Start))
 
 circ_coordinates_means <- data.frame()
 for(i in unique_circ_coordinates){
-circ_coordinates_means[i,1] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 5])
-circ_coordinates_means[i,2] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 6])
-circ_coordinates_means[i,3] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 7])
-circ_coordinates_means[i,4] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 8])
-circ_coordinates_means[i,5] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 9])
-circ_coordinates_means[i,6] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 10])
-circ_coordinates_means[i,7] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 11])
-circ_coordinates_means[i,8] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 12])
-circ_coordinates_means[i,9] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, 13])
+  for (j in 5:ncol(circ_test_consolidated)){
+   circ_coordinates_means[i,(j-4)] <- mean(circ_test_consolidated[circ_test_consolidated$Start == i, j])
+ }
 }
 
 # add column names:
-names(circ_coordinates_means) <- c("ASG", "AVE", "AVG", "AWA", "AWB", "DD", "PVD", "VD", "PANNEURON")
+names(circ_coordinates_means) <- c(singletypes)
 
 circ_coordinates_count <- as.data.frame(table(circ_test_consolidated$Start))
 circ_coordinates_count <- circ_coordinates_count[rev(order(circ_coordinates_count$Freq)),]
@@ -253,232 +412,39 @@ circ_coordinates_means[is.na(circ_coordinates_means)] <- 0
 colors <- colorRampPalette(brewer.pal(6, "Oranges"))(250)
 pheatmap(circ_gene_means,
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
          display_numbers = F,
          fontsize = 9,
          fontsize_number = 16,
-         angle_col = 0,
+         angle_col = 90,
          col = colors,
-         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
+         main = "Mean Proportion of Circular to Total RNAs for Each Cell Type")
 
-# Make a heatmap of the same gene data, but order it by PANNEURON:
-circ_gene_means_PAN <- circ_gene_means[rev(order(circ_gene_means$PANNEURON)),]
-pheatmap(circ_gene_means_PAN[1:50,],
+circ_gene_means_RBPs <- circ_gene_means[rownames(circ_gene_means) %in% RBP_common_names$Public.Name,]
+circ_gene_means_RBPs <- circ_gene_means_RBPs[order(circ_gene_means_RBPs$AWC, decreasing = TRUE),] # change cell type of interest here
+
+colors <- colorRampPalette(c("white", "darkblue"))(250)
+pheatmap(circ_gene_means_RBPs,
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
          display_numbers = F,
          fontsize = 8,
          fontsize_number = 16,
-         angle_col = 0,
+         angle_col = 90,
          col = colors,
-         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
-
+         main = "Mean Proportion of Circular to Total RNAs of RNA Binding Proteins for Each Cell Type")
 
 colors <- colorRampPalette(brewer.pal(6, "PuRd"))(250)
 pheatmap(circ_coordinates_means,
          border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
          cluster_rows = F,
          cluster_cols = F,
          display_numbers = F,
          fontsize = 9,
          fontsize_number = 16,
-         angle_col = 0,
+         angle_col = 90,
          col = colors,
-         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
-
-# Make a heatmap of the same start coordinates data, but order it by PANNEURON:
-circ_coordinates_means_PAN <- circ_coordinates_means[rev(order(circ_coordinates_means$PANNEURON)),]
-pheatmap(circ_coordinates_means_PAN[1:50,],
-         border_color = "black",
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
-         cluster_rows = F,
-         cluster_cols = F,
-         display_numbers = F,
-         fontsize = 8,
-         fontsize_number = 16,
-         angle_col = 0,
-         col = colors,
-         main = "Mean Proportion of Circular to Linear RNAs for Each Cell Type")
-```
-
-# Can we create a DEXSeq object out of our DCC outputs?
-```{r}
-countData <- interleave(CircRNACount_filtered_combined[,4:ncol(LinearCount_filtered_combined)],
-                 LinearCount_filtered_combined[,4:ncol(LinearCount_filtered_combined)])
-RNA_ID <- rep(1:1153, each = 2)
-Sub_ID = sprintf("%03d", rep(1:2, times = 1153))
-countData$Combined_ID <- paste(RNA_ID, Sub_ID, sep = ":")
-countData <- countData[, c(colnames(countData)[length(colnames(countData))], colnames(countData)[-length(colnames(countData))])]
-countData[is.na(countData)] <- 0 ## have to make NAs 0
-
-sampleData <- data.frame(sample = colnames(countData[,2:length(colnames(countData))]), condition = substr(singletypesprac_withreps, 1, nchar(singletypesprac_withreps) - 1))
-
-
-for (i in 1:(1153*3)) {   #1153 rows in CircRNACount_filtered_combined
-  if (i %% 3 == 1) {
-    values[i] <- paste0("gene_id ", ceiling(i/3))
-  } else {
-    values[i] <- paste0("exonic_part_number ", sprintf("%03d", (i-1) %% 3), "; gene_id ", ceiling(i/3))
-  }
-}
-
-values <- values[1:3459]   #1153*3 = 3459
-
-gff_content <- paste(
- rep(CircRNACount_filtered_combined$Chr, each=3),
- "splice_junction_refGene_mm10_and_merged_from_five_samples.gtf",
- #rep(c("RNA_ID", "circular", "linear"), length.out = 1153*3),
- rep(c("aggregate_gene", "exonic_part", "exonic_part"), length.out = 1153*3),
- rep(CircRNACount_filtered_combined$Start, each=3),
- rep(CircRNACount_filtered_combined$End, each=3),
- ".",
- rep(CircCoordinates_filtered_combined$Strand, each=3),
- ".",
- values,
- sep = "\t")
-
-gff_content <- gff_content[1:3459]   #1153*3 = 3459
-
-# Write GFF content to file
-writeLines(gff_content, "output.gff")
-annotationFile <- fread("output.gff")
-
-
-countfiles <- character(length = ncol(countData)-1)
-for (i in colnames(countData)) {
-  temp_count_file <- paste0(i, "_combined_count.txt")
-  write.table(cbind(countData$Combined_ID, countData[,i]), file = temp_count_file, col.names = FALSE, row.names = FALSE, quote = FALSE)
-  countfiles[i] <- temp_count_file
-}
-
-source_folder <- "C:/Users/xcwol/Downloads"
-destination_folder <- "C:/Users/xcwol/Downloads/countfiles"
-filenames <- dir(pattern = "_combined_count")
-filenames <- filenames[-c(33)]
-file.copy(from = file.path(source_folder, filenames), to = destination_folder, recursive = TRUE)
-
-
-
-countfilesdir <- dir(pattern = "_combined_count")
-countfilesdir <- countfilesdir[-c(33)] # get rid of the one file that isn't a count file in my directory (corresponds to Combined_ID column)
-countfileslist <- list()
-
-singletypesprac <-  c("ASG","AVE","AVG","AWA","AWB","DD","PVD","VD","PAN")
-
-for (i in singletypesprac){
- sub_countfiles <- grep(i, countfilesdir, value = TRUE)
- countfileslist[[i]] <- sub_countfiles
-}
-
-# remove overlapping files from grep that aren't the correct cell type:
-countfileslist$VD <- countfileslist$VD[-c(1,2)] # PVD took up the first two values of the VD files
-
-#create megalist that will contain all DEXSeq objects:
-dxd_list <- list()
-
-for (i in singletypesprac){
-  for (j in singletypesprac){
-    if (i != j){
-    dxd <- DEXSeqDataSetFromHTSeq(c(countfileslist[[i]],countfileslist[[j]]),
-      sampleData = subset(sampleData, condition %in% c(i,j)),
-      design = ~ sample + exon + condition:exon,
-      flattenedfile = file.path("output.gff")
-    )
-    dxd_list[[paste0(i, "vs", j)]] <- dxd
-    }
-    if (i == j) next
-  }
-}
-
-```
-
-# Perform follow-up descriptor functions for DEXSeq object:
-```{r}
-for (i in singletypesprac){
-  for (j in singletypesprac){
-    if (i != j){
-    dxd_size <- estimateSizeFactors(dxd_list[[paste0(i, "vs", j)]])
-    sizeFactors(dxd_size)
-    dxd_size <- estimateDispersions(dxd_size)
-    # remove circRNAs with a high proportion of non-zero counts by filtering out NA values of mu:
-    dxd_size <- dxd_size[!is.na(rowSums(dxd_size@assays@data$mu)),]
-    dxd_list[[paste0(i, "vs", j)]] <- dxd_size
-    }
-    if (i == j) next
-  }
-}
-```
-
-# test for differential exon usage:
-```{r}
-for (i in singletypesprac){
-  for (j in singletypesprac){
-    if (i != j){
-    dxd_DEU <- testForDEU(dxd_list[[paste0(i, "vs", j)]])
-    dxd_DEU <- estimateExonFoldChanges(dxd_DEU, fitExpToVar="condition")
-    dxd_list[[paste0(i, "vs", j)]] <- dxd_DEU
-    }
-    if (i == j) next
-  }
-}
-```
-
-# store results in new dataframe:
-```{r}
-#create megalist that will contain all DEXSeq results:
-dxr_list <- list()
-
-for (i in singletypesprac){
-  for (j in singletypesprac){
-    if (i != j){
-    dxr <- DEXSeqResults(dxd_list[[paste0(i, "vs", j)]])
-    dxr_list[[paste0(i, "vs", j)]] <- dxr
-    }
-    if (i == j) next
-  }
-}
-
-# the comparisons that are not in alphabetical order are incorrect (as is with JUM). Let's remove all comparisons that are not alphabetical:
-alphabetical_dxr_list <- vector("list", length(dxr_list))
-counter <- 1
-
-for (i in seq_along(dxr_list)) {
-  comparison <- unlist(strsplit(names(dxr_list)[i], "vs"))
-  if (comparison[1] < comparison[2]) {
-    alphabetical_dxr_list[[counter]] <- dxr_list[[i]]
-    names(alphabetical_dxr_list)[counter] <- names(dxr_list)[i]
-    counter <- counter + 1
-  }
-}
-
-alphabetical_dxr_list <- alphabetical_dxr_list[!sapply(alphabetical_dxr_list, is.null)]
-
-# add start coordinate, end coordinate, and gene name columns to the count table in each dxr object:
-for (i in names(alphabetical_dxr_list)) {
-  counts <- alphabetical_dxr_list[[i]]@listData$countData
-  row_values <- matrix(nrow = nrow(counts), ncol = 3)
-  counter <- 1
-  for (j in strsplit(rownames(counts), split = ":")){
-  start <- CircRNACount_filtered_combined[j[1], "Start"]
-  end <- CircRNACount_filtered_combined[j[1], "End"]
-  genes <- CircCoordinates_filtered_combined[which(CircCoordinates_filtered_combined$Start == start), "Gene"][1]
-  row_values[counter,] <- c(start, end, genes)
-  counter <- counter + 1
-  }
-  counts_with_genes <- cbind(counts, row_values)
-  colnames(counts_with_genes) <- c(singletypesprac_withreps[as.numeric(colnames(counts_with_genes)[1:(ncol(counts_with_genes) - 3)])], "Start", "End", "Gene")
-  alphabetical_dxr_list[[i]]@listData$countData <- counts_with_genes
-}
-
-# save results as an R object:
-saveRDS(alphabetical_dxr_list, file = "alphabetical_dxr_list_filtered_for_mu.rds")
+         main = "Mean Proportion of Circular to Total RNAs for Each Cell Type")
 ```

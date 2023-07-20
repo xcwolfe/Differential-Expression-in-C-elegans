@@ -1697,7 +1697,7 @@ pheatmap(cassette_sums_heatmap[1:30,],
          fontsize_number = 6,
          angle_col = 45,
          col = colors,
-         main = "Sum of All First ΔPSI Values for Cassette Events in Each Cell Type")
+         main = "Sum of All First ΔPSI Values for Cassette Exon Events in Each Cell Type")
 
 col_pallete <- colorRampPalette(c("white", "white", "white", "white", "white", "gold", "gold", "darkgoldenrod1", "darkgoldenrod1", "darkorange1"))
 colors <- col_pallete(250)
@@ -1752,6 +1752,247 @@ pheatmap(MXE_sums_heatmap[1:30,],
          main = "Sum of All First ΔPSI Values for MXE Events in Each Cell Type")
 ```
 
+# Plot the heatmaps with highly specific break points:
+```{r}
+# Define the specific range for the A3S matrix
+min_matrix <- min(A3S_sums_heatmap[1:30,])
+max_matrix <- max(A3S_sums_heatmap[1:30,])
+
+# Define the breaks for the A3S matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(A3S_sums_heatmap[1:30,])/30)), seq(0, max_matrix, by = max(A3S_sums_heatmap[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("darkblue", "dodgerblue3", "dodgerblue1", "lightblue", "white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("lightyellow", "khaki", "orange", "darkorange"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Create the heatmap
+pheatmap(A3S_sums_heatmap[1:30, ],
+         border_color = "black",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors_matrix,
+         breaks = breaks_matrix,
+         main = "Sum of All First ΔPSI Values for A3S Events in Each Cell Type")
+
+
+# Define the specific range for the A5S matrix
+min_matrix <- min(A5S_sums_heatmap[1:30,])
+max_matrix <- max(A5S_sums_heatmap[1:30,])
+
+# Define the breaks for the A5S matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(A5S_sums_heatmap[1:30,])/30)), seq(0, max_matrix, by = max(A5S_sums_heatmap[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("darkblue", "dodgerblue3", "dodgerblue1", "lightblue", "white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("lightyellow", "khaki", "orange", "darkorange"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Create the heatmap
+pheatmap(A5S_sums_heatmap[1:30, ],
+         border_color = "black",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors_matrix,
+         breaks = breaks_matrix,
+         main = "Sum of All First ΔPSI Values for A5S Events in Each Cell Type")
+
+
+# Define the specific range for the cassette matrix
+min_matrix <- min(cassette_sums_heatmap[1:30,])
+max_matrix <- max(cassette_sums_heatmap[1:30,])
+
+# Define the breaks for the cassette matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(cassette_sums_heatmap[1:30,])/30)), seq(0, max_matrix, by = max(cassette_sums_heatmap[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("darkblue", "dodgerblue3", "dodgerblue1", "lightblue", "white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("lightyellow", "khaki", "orange", "darkorange"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Create the heatmap
+pheatmap(cassette_sums_heatmap[1:30, ],
+         border_color = "black",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors_matrix,
+         breaks = breaks_matrix,
+         main = "Sum of All First ΔPSI Values for Cassette Exon Events in Each Cell Type")
+
+
+# Define the specific range for the composite matrix
+min_matrix <- min(composite_sums_heatmap[1:30,])
+max_matrix <- max(composite_sums_heatmap[1:30,])
+
+# Define the breaks for the composite matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(composite_sums_heatmap[1:30,])/30)), seq(0, max_matrix, by = max(composite_sums_heatmap[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("darkblue", "dodgerblue3", "dodgerblue1", "lightblue", "white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("lightyellow", "khaki", "orange", "darkorange"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Create the heatmap
+pheatmap(composite_sums_heatmap[1:30, ],
+         border_color = "black",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors_matrix,
+         breaks = breaks_matrix,
+         main = "Sum of All First ΔPSI Values for Composite Events in Each Cell Type")
+
+
+# Define the specific range for the intron matrix
+min_matrix <- min(intron_sums_heatmap[1:30,])
+max_matrix <- max(intron_sums_heatmap[1:30,])
+
+# Define the breaks for the intron matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(intron_sums_heatmap[1:30,])/30)), seq(0, max_matrix, by = max(intron_sums_heatmap[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("darkblue", "dodgerblue3", "dodgerblue1", "lightblue", "white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("lightyellow", "khaki", "orange", "darkorange"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Create the heatmap
+pheatmap(intron_sums_heatmap[1:30, ],
+         border_color = "black",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6.5,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors_matrix,
+         breaks = breaks_matrix,
+         main = "Sum of All First ΔPSI Values for Intron Retention Events in Each Cell Type")
+
+
+# Define the specific range for the MXE matrix
+min_matrix <- min(MXE_sums_heatmap[1:30,])
+max_matrix <- max(MXE_sums_heatmap[1:30,])
+
+# Define the breaks for the MXE matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(MXE_sums_heatmap[1:30,])/30)), seq(0, max_matrix, by = max(MXE_sums_heatmap[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("darkblue", "dodgerblue3", "dodgerblue1", "lightblue", "white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("lightyellow", "khaki", "orange", "darkorange"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Create the heatmap
+pheatmap(MXE_sums_heatmap[1:30, ],
+         border_color = "black",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 6,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors_matrix,
+         breaks = breaks_matrix,
+         main = "Sum of All First ΔPSI Values for MXE Events in Each Cell Type")
+```
 
 # Plots for AS events:
 ```{r}

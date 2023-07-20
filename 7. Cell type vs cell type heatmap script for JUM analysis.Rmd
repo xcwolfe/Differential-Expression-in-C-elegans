@@ -1,5 +1,5 @@
 ---
-title: "Heatmap Script for JUM analysis"
+title: "Cell type vs cell type heatmap script for JUM analysis"
 output: html_document
 ---
 

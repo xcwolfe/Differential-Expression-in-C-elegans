@@ -933,7 +933,7 @@ for (cell_type in singletypes) {
   df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
   df$MinPSIs <- rowMins(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
   
-  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  df <- df[df$MaxPSIs > 0.1 | abs(df$MinPSIs) > 0.1, ]
   
   df$first_PSI <- apply(df[, 9:ncol(df)], 1, function(x) x[x != 0][1])
   
@@ -1005,7 +1005,7 @@ for (cell_type in singletypes) {
   df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
   df$MinPSIs <- rowMins(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
   
-  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  df <- df[df$MaxPSIs > 0.1 | abs(df$MinPSIs) > 0.1, ]
   
   df$first_PSI <- apply(df[, 9:ncol(df)], 1, function(x) x[x != 0][1])
   
@@ -1077,7 +1077,7 @@ for (cell_type in singletypes) {
   df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 11:ncol(df)])), dim. = dim(df[, 11:ncol(df)]))
   df$MinPSIs <- rowMins(as.numeric(unlist(df[, 11:ncol(df)])), dim. = dim(df[, 11:ncol(df)]))
   
-  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  df <- df[df$MaxPSIs > 0.1 | abs(df$MinPSIs) > 0.1, ]
 
   df$first_PSI <- apply(df[, 11:ncol(df)], 1, function(x) x[x != 0][1])
     
@@ -1148,7 +1148,7 @@ for (cell_type in singletypes) {
   df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 8:ncol(df)])), dim. = dim(df[, 8:ncol(df)]))
   df$MinPSIs <- rowMins(as.numeric(unlist(df[, 8:ncol(df)])), dim. = dim(df[, 8:ncol(df)]))
   
-  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  df <- df[df$MaxPSIs > 0.1 | abs(df$MinPSIs) > 0.1, ]
   
   df$first_PSI <- apply(df[, 8:ncol(df)], 1, function(x) x[x != 0][1])
   
@@ -1220,7 +1220,7 @@ for (cell_type in singletypes) {
   df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
   df$MinPSIs <- rowMins(as.numeric(unlist(df[, 9:ncol(df)])), dim. = dim(df[, 9:ncol(df)]))
   
-  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  df <- df[df$MaxPSIs > 0.1 | abs(df$MinPSIs) > 0.1, ]
 
   df$first_PSI <- apply(df[, 9:ncol(df)], 1, function(x) x[x != 0][1])
     
@@ -1291,7 +1291,7 @@ for (cell_type in singletypes) {
   df$MaxPSIs <- rowMaxs(as.numeric(unlist(df[, 10:ncol(df)])), dim. = dim(df[, 10:ncol(df)]))
   df$MinPSIs <- rowMins(as.numeric(unlist(df[, 10:ncol(df)])), dim. = dim(df[, 10:ncol(df)]))
   
-  df <- df[df$MaxPSIs > 0.1 | df$MinPSIs < 0.1, ]
+  df <- df[df$MaxPSIs > 0.1 | abs(df$MinPSIs) > 0.1, ]
   
   df$first_PSI <- apply(df[, 10:ncol(df)], 1, function(x) x[x != 0][1])
   

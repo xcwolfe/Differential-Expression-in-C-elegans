@@ -1,6 +1,7 @@
 Before you begin… 
 Read the .md called "STAR, JUM, and DCC using 180 SRA files.md": That document should be read prior to this document. It will show you how to structure the following files: 
 
+```
 JUM_A_${prefix1}vs${prefix2}.txt 
 
 Rscript${prefix1}vs${prefix2}.txt
@@ -12,7 +13,7 @@ JUM_C_${prefix1}vs${prefix2}.txt
 JUM_A_${prefix1}vs${prefix2}.txt 
 
 DCC.txt 
-
+```
  
 
 These loops always contain a vector called “prefixes.” Modify your prefixes to match what you want to call your replicates, cell types, and/or treatments. This will be unique to your experiment and overall scientific question. I am using 46 different cell types with varying numbers of replicates, totaling 180 unique biological replicates. 

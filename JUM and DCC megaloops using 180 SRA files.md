@@ -16,7 +16,7 @@ These loops always contain a vector called “prefixes.” Modify your prefixes 
 
 ### JUM_A_cp_and_dos2unix_loop: 
 
-
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -44,10 +44,11 @@ for prefix1 in "${prefixes[@]}"; do
     fi 
   done 
 done 
-
+```
 
 ### JUM_A_sbatch_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -71,10 +72,11 @@ for prefix1 in "${prefixes[@]}"; do
     fi 
   done 
 done 
-
+```
 
 ### JUM_B_cp_and_dos2unix_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -107,9 +109,11 @@ for prefix1 in "${prefixes[@]}"; do
     fi 
   done 
 done 
+```
 
 ### Rscript_sbatch_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -135,10 +139,11 @@ for prefix1 in "${prefixes[@]}"; do
     fi 
   done 
 done 
-
+```
 
 ### JUM_B_sbatch_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -163,10 +168,12 @@ for prefix1 in "${prefixes[@]}"; do
       sbatch "JUM_B_${prefix1}vs${prefix2}.txt" 
     fi 
   done 
-done 
+done
+```
 
 ### JUM_C_cp_and_dos2unix_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -197,10 +204,11 @@ for prefix1 in "${prefixes[@]}"; do
     fi 
   done 
 done 
-
+```
 
 ### JUM_C_sbatch_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -226,10 +234,11 @@ for prefix1 in "${prefixes[@]}"; do
     fi 
   done 
 done
-
+```
 
 ### DCC_sbatch_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -259,10 +268,11 @@ for prefix in "${prefixes[@]}"; do
   mv CircRNACount "$output_dir" 
   mv DCC-*.log "$output_dir" 
 done 
-
+```
 
 ### DCC_output_file_rename_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -281,10 +291,11 @@ for prefix in "${prefixes[@]}"; do
   mv "$output_dir/CircRNACount" "$output_dir/${prefix}CircRNACount" 
   mv "$output_dir/CircCoordinates" "$output_dir/${prefix}CircCoordinates" 
 done 
- 
+```
 
 ### DCC_output_file_cp_loop: 
 
+```
 #!/bin/bash 
 #SBATCH -N 1 
 #SBATCH -o output.out 
@@ -305,3 +316,4 @@ for prefix in "${prefixes[@]}"; do
  cp "$output_dir/${prefix}CircRNACount" "$output_files_dir" 
  cp "$output_dir/${prefix}CircCoordinates" "$output_files_dir" 
 done 
+```

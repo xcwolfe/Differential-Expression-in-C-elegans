@@ -30,7 +30,7 @@ load("C:/Users/xcwol/Downloads/.RData")
 ```
 
 
-# Then, I want to display these differential expression measures in a new table:
+# I want to display differential expression measures in a new table:
 ```{r}
 setwd("D:/Zach Wolfe's DESeq analysis")
 

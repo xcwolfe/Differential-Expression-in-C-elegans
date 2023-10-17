@@ -170,7 +170,7 @@ pheatmap(untrimmed_cutoff_results,
          cluster_cols = F,
          fontsize = 7.5,
          col = rev(colors),
-         main = "Number of Significantly Differentially Expressed Genes by Cell Type")
+         main = "Number of Differentially Expressed Genes by Cell Type (log2FoldChange > 2 and adj. p-value < 0.01)")
 
 plot.new()
 pheatmap(untrimmed_cutoff_results,
@@ -184,7 +184,7 @@ pheatmap(untrimmed_cutoff_results,
          fontsize = 7.5,
          fontsize_number = 6.75,
          col = colors,
-         main = "Number of Significantly Differentially Expressed Genes by Cell Type")
+         main = "Number of Differentially Expressed Genes by Cell Type (log2FoldChange > 2 and adj. p-value < 0.01)")
 ```
 
 ## log2foldchange per gene:
@@ -610,16 +610,3 @@ pheatmap(logSums_gene_table[,c("AFD", "ASEL", "ASER")],
          main = "Sum of All log2FoldChange Values for AFD, ASEL, and ASER vs All Other Cell Types")
 ```
 
-
-# Plots:
-```{r}
-plot.new()
-pheatmap(untrimmed_cutoff_results,
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
-         cluster_rows = F,
-         cluster_cols = F,
-         fontsize = 7,
-         col = colorRampPalette(brewer.pal(9, "Blues"))(250), # Can we color this differenly by motor vs sensory vs inter?
-         main = "Number of Differentially Expressed Genes by Cell Type (log2FoldChange > 2 and adj. p-value < 0.01)")
-```

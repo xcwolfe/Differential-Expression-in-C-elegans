@@ -197,7 +197,7 @@ pheatmap(RBP_cutoff_results,
          cluster_cols = F,
          fontsize = 7.5,
          col = rev(colors),
-         main = "Number of Differentially Expressed RBPs by Cell Type (out of top 1% diff. expressed genes)")
+         main = "Number of Differentially Expressed RBPs by Cell Type (log2FoldChange > 2 and adj. p-value < 0.01)")
 
 plot.new()
 pheatmap(RBP_cutoff_results,
@@ -211,7 +211,7 @@ pheatmap(RBP_cutoff_results,
          fontsize = 7.5,
          fontsize_number = 6.5,
          col = colors,
-         main = "Number of Differentially Expressed RBPs by Cell Type (out of top 1% diff. expressed genes)")
+         main = "Number of Differentially Expressed RBPs by Cell Type (log2FoldChange > 2 and adj. p-value < 0.01)")
 ```
 
 # Calculate total log2foldchange for each gene:
@@ -659,15 +659,3 @@ pheatmap(logSums_RBP_table[,c("AFD", "ASEL", "ASER")],
 ```
 
 
-# Plots:
-```{r}
-plot.new()
-pheatmap(RBP_cutoff_results,
-         clustering_distance_rows=sampleDists,
-         clustering_distance_cols=sampleDists,
-         cluster_rows = F,
-         cluster_cols = F,
-         fontsize = 7.5,
-         col = colorRampPalette(brewer.pal(9, "Blues"))(250), # Can we color this differenly by motor vs sensory vs inter?
-         main = "Number of Differentially Expressed RBPs by Cell Type (log2FoldChange > 2 and adj. p-value < 0.01)")
-```

@@ -3,7 +3,9 @@ This pipeline illustrates how to run STAR and JUM using a large cluster computer
 
 Navigate to your working directory:
 
-`$ cd /work/users/zwolfe`
+```
+$ cd /work/users/zwolfe
+```
 
 Make a folder to put all your fastq files in:
 
@@ -153,7 +155,7 @@ Change run_JUM_A to reflect appropriate neuron type:
     
   b. repeat for EVERY comparison
   
- ```
+```
 $ dos2unix run_JUM_A.txt
 $ sbatch run_JUM_A.txt
 $ cd /JUM_diff
@@ -204,7 +206,9 @@ $ sbatch run_JUM_B.txt
 
 Download and moved refFlat.txt and run_JUM_C.txt to FINAL_OUTPUT_pvalue_1 directory 
 
-`$ cd FINAL_OUTPUT_pvalue_1`
+```
+$ cd FINAL_OUTPUT_pvalue_1
+```
 
 Change run_JUM_C to reflect appropriate neuron type:
 

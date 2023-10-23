@@ -181,10 +181,10 @@ for (i in singletypes) {
     if (i != j) {   
       
       type1 <- i
-      count1 <- combinedtype$Count[combinedtype$Type == i]
+      count1 <- combinedtype$TrueCount[combinedtype$Type == i]
       
       type2 <- j
-      count2 <- combinedtype$Count[combinedtype$Type == j]
+      count2 <- combinedtype$TrueCount[combinedtype$Type == j]
       
       sample_numbers_condition1 <- paste0(type1, 1:count1)
       sample_numbers_condition2 <- paste0(type2, 1:count2)

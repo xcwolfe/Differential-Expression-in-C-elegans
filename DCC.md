@@ -137,9 +137,6 @@ $ sbatch STAR_in_DCC_mate_1.txt
 
 ```
 $ cd .. 
-```
-
-```
 $ cd mate2
 ```
 

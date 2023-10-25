@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-#load("E:/Zach Wolfe's JUM analysis/.RData")
+#load("E:/Zach Wolfe's JUM analysis/.RData")   # change your working directory here
 #save.image("E:/Zach Wolfe's JUM analysis/.RData")
 ```
 
@@ -1992,6 +1992,8 @@ for (q1 in seq_len(sub_group_length)) {
 }
 }
 
+*### Running these loops may be computationally difficult. We have decided to only examine composite events with 6 or fewer junctions, as the benefit of examining 7+ sub-junctions does not outweigh the computational cost. If you want to examine composite events with 7 or more junctions, you can use the following loop/template (which is similar to the previous loops)*
+
 # if (sub_group_length == 7){
 # for (q1 in seq_len(sub_group_length)) {
 #   for (q2 in seq_len(sub_group_length)) {
@@ -2240,8 +2242,6 @@ write.csv(composite_final, file = paste0(i, "_", j, "_detailed_composite_R.csv")
 write.csv(composite_final, file = paste0(j, "_", i, "_detailed_composite_R.csv"), row.names = T, na = "")
     }
     if (i == j) next
-  # composite_indiv_cell_types_list[[i]][[j]] <- composite_final ## not appropriate given the format of detailed_composite_R.csv
-  # composite_indiv_cell_types_list[[j]][[i]] <- composite_final
   }
 }
 ```
@@ -2340,11 +2340,11 @@ mega_composite_matrix <- mega_composite_matrix[rowSums(!is.na(mega_composite_mat
 
 mega_composite_matrix_by_rep <- mega_composite_matrix_by_rep[rowSums(!is.na(mega_composite_matrix_by_rep)) > 0,]
 
-# organize the composite matrices by junctions with >1% usage:
+# organize the composite matrices by junctions with >10% usage:
 mega_composite_matrix_over_10 <- mega_composite_matrix[which(apply(mega_composite_matrix, 1, max, na.rm = TRUE) > 0.1),]
 mega_composite_matrix_by_rep_over_10 <- mega_composite_matrix_by_rep[which(apply(mega_composite_matrix_by_rep, 1, max, na.rm = TRUE) > 0.1),]
 
-# order by a cell type:
+# order by a cell type (in this case, using AFD as an example):
 mega_composite_AFD <- mega_composite_matrix[order(-mega_composite_matrix[,"AFD"]),]
 
 colors <- colorRampPalette(brewer.pal(6, "BuPu"))(250)
@@ -2382,188 +2382,5 @@ pheatmap(mega_composite_matrix_by_rep,
 
 write.csv(mega_composite_matrix, file = "mega_composite_matrix.csv")
 write.csv(mega_composite_matrix_by_rep, file = "mega_composite_matrix_by_rep.csv")
-```
-
-# Hashouts and Notes from 8-30/8-31:
-```{r}
-  ### version 8-30:
-# create a new df that contains gene, AS_event_ID, junction combination names, and multiplication values for each junction:
-  # comp_with_juncs <- data.frame(matrix(nrow = sum(sapply(end_group, nrow)), ncol = (5 + length(grep(paste0("^", i), singletypes_withreps, value = TRUE)) + length(grep(paste0("^", i), singletypes_withreps, value = TRUE)))))
-  # colnames(comp_with_juncs) <- c("Gene", "AS_event_ID", "junction_name", "AS_structure_ID", "sub_junction_ID (corresponds to AS_structure_ID)", grep(paste0("^", i), singletypes_withreps, value = TRUE), grep(paste0("^", j), singletypes_withreps, value = TRUE))
-  # rep_names <- colnames(comp_with_juncs)[-c(1:5)]
-  # comp_with_juncs$Gene <- group_df$Gene
-  # comp_with_juncs$AS_event_ID <- group_df$AS_event_ID
-  # 
-  # counter <- 1
-  # for (k in 1:length(end_group)){
-  # comp_with_juncs$AS_structure_ID[counter:(counter+nrow(end_group[[k]])-1)] <- end_group[[k]]$AS_structure_ID
-  # comp_with_juncs$junction_name[counter:(counter+nrow(end_group[[k]])-1)] <- names(end_group[k]) ### 8-30 maybe make this specific column more descript so you can eliminate some of the other columns ###
-  # comp_with_juncs$`sub_junction_ID (corresponds to AS_structure_ID)`[counter:(counter+nrow(end_group[[k]])-1)] <- end_group[[k]]$sub_junction_ID
-  # counter <- counter + nrow(end_group[[k]])
-  # }
-  # 
-  # for (a in 1:length(end_group)) {
-  #   temp_junc_df <- end_group[[a]][-c(1:(length(rep_names) + 2))]
-  #   num_columns <- ncol(temp_junc_df) ### pick up here on 8-31 ###
-  #   num_reps <- length(rep_names)
-  #   step <- num_columns / num_reps
-  #   values <- seq(from = 1, to = num_columns, by = step)
-  #   for (n1 in 1:nrow(temp_junc_df)){
-  #   for (n2 in 1:nrow(comp_with_juncs)) {
-  #   comp_with_juncs[comp_with_juncs$junction_name == names(end_group)[a], c(6:ncol(comp_with_juncs))][n2,] <- temp_junc_df[n1,values]
-  #   }
-  #   }
-  # }
-  
-  
-# for (k in 1:length(end_group)){
-#   rownames(end_group[[k]]) <- paste(end_group[[k]]$AS_structure_ID, end_group[[k]]$sub_junction_ID)
-#   if (k > 1){
-#   if (ncol(end_group[[k]]) > ncol(end_group[[k-1]])){
-#   max_ncol <- as.numeric(max(ncol(end_group[[k]])))
-#   }
-#     else (max_ncol <- as.numeric(max(ncol(end_group[[k]]))))
-#   }
-# }
-
-# row_count <- 0
-# for (k in 1:length(end_group)){
-#   if (k > 1){
-#   row_count <- nrow(end_group[[k]])*nrow(end_group[[k-1]]) + row_count
-#   }
-# }
-# row_count_all <- row_count * length(end_group)
-
-# row_count <- unlist(lapply(end_group, nrow))
-
-# replicate_names <- list()
-# cleaned_junction_name <- list()
-# sub_junction_ID <- list()
-# 
-# for (k in 1:length(end_group)){
-# # Remove replicate names from junction names
-# replicate_names[[k]] <- unique(substring(names(end_group[[k]])[grep("^percentage_usage.", names(end_group[[k]]))], 17))
-#  
-# # Extract junction name
-# junction_name <- unique(substring(names(end_group[[k]])[grep("^multiplied percentage_usage.", names(end_group[[k]]))], 23))
-# 
-# # Remove replicate names from junction names
-# cleaned_junction_name[[k]] <- gsub("^usage\\.[A-Z0-9]+\\s", "", junction_name)
-#  
-# # Extract sub_junction_ID
-# sub_junction_ID[[k]] <- unique(end_group[[k]]$sub_junction_ID)
-# }
-
-
-#comp_with_juncs <- data.frame(matrix(nrow = row_count_all, ncol = (4 + length(grep(paste0("^", i), singletypes_withreps, value = TRUE)) + length(grep(paste0("^", j), singletypes_withreps, value = TRUE)))))
-# 
-  
-#col_number_list <- list()
-
-# rep_names_length <- as.numeric(length(grep(paste0("^", i), singletypes_withreps, value = TRUE)) + length(grep(paste0("^", j), singletypes_withreps, value = TRUE)))
-# # cleaned_col_names <- list()
-# # unique_cleaned_col_names <- list()
-
-#for (k in 1:length(end_group)){
- #col_number_list[[k]] <- ncol(end_group[[k]])-(2+rep_names_length)
-
-# col_names <- colnames(end_group[[k]])[(3+rep_names_length):ncol(end_group[[k]])]
-# cleaned_col_names <- c(cleaned_col_names, gsub("^multiplied percentage_usage\\.[A-Z0-9]+\\s", "", col_names))
-# unique_cleaned_col_names[[k]] <- unique(cleaned_col_names)
-# }
-
-### version 8-31:
-# create a new df that contains gene, AS_event_ID, junction combination names, and multiplication values for each junction:
-# comp_with_juncs <- data.frame(matrix(nrow = sum(unlist(col_number_list)/rep_names_length), ncol = (4 + length(grep(paste0("^", i), singletypes_withreps, value = TRUE)) + length(grep(paste0("^", j), singletypes_withreps, value = TRUE)))))
-# colnames(comp_with_juncs) <- c("Gene", "AS_event_ID", "junction_name", "AS_structure_ID", grep(paste0("^", i), singletypes_withreps, value = TRUE), grep(paste0("^", j), singletypes_withreps, value = TRUE))
-#    rep_names <- colnames(comp_with_juncs)[-c(1:4)]
-#    comp_with_juncs$Gene <- group_df$Gene[1]
-#    comp_with_juncs$AS_event_ID <- group_df$AS_event_ID[1]
-#    
-#    counter <- 1
-#    for (k in 1:length(end_group)){
-#      #col_number <- ncol(end_group[[k]]) - (2+length(rep_names))
-#      comp_with_juncs$AS_structure_ID[counter:(counter+nrow(end_group[[k]])-1)] <- rownames(end_group[[k]])
-#      #comp_with_juncs$`sub_junction_ID (corresponds to AS_structure_ID)`[counter:(counter+nrow(end_group[[k]])-1)] <- end_group[[k]]$sub_junction_ID
-#          #for (c in 1:col_number){
-#          comp_with_juncs$junction_name[counter:(counter+nrow(end_group[[k]])-1)] <- strsplit(colnames(end_group[[k]])[(3+length(rep_names)):ncol(end_group[[k]])], paste0("multiplied percentage_usage.", rep_names, " "))[[1]][2]  ### 8-31: [[1]][2] has to change. but change to what????
-#          ### 8-31 maybe just try to extract colnames and values directly from end_group[[k]]. don't worry about making a data frame ###
-#          counter <- counter + nrow(end_group[[k]])
-#      #}
-#    }
-#    
-#    ### 8-31: focus on this:
-#    end_group[[1]][,(3+length(rep_names)):ncol(end_group[[1]])]
-   
-   # rows_to_change <- 1
-   # for (k in 1:length(end_group)){
-   #  rows_to_change <- rows_to_change:(k*nrow(comp_with_juncs)/length(end_group))
-   #  comp_with_juncs$junction_name[rows_to_change] <- strsplit(colnames(end_group[[k]])[(k+2+length(rep_names)):ncol(end_group[[k]])], paste0("multiplied percentage_usage.", rep_names, " "))[[1]][2]
-   # }
-   
-# 
-#    comp_with_juncs$junction_name[1:(nrow(end_group[[k]])+nrow(end_group[[k]]))] <- rownames(end_group[[k]])
-#    comp_with_juncs$AS_structure_ID
-  
-  # # Create a custom function to find the number of junctions in an AS_structure_ID:
-  # count_junctions <- function(input_string) {
-  # words <- strsplit(input_string, "_")[[1]]
-  # junction_count <- sum(words == "Junction")
-  # return(junction_count)
-  # }
-  
-  ### 8-30: maybe try restructuring comp_with_juncs to make a bigger table that can accurately represent everything properly ###
-  
-  # for (a in 1:length(end_group)) {
-  #   temp_junc_df <- end_group[[a]][-c(1:(length(rep_names) + 2))]
-  #   num_columns <- ncol(temp_junc_df) ### pick up here on 8-31 ###
-  #   num_reps <- length(rep_names)
-  #   step <- num_columns / num_reps
-  #   values <- seq(from = 1, to = num_columns, by = step)
-  #   for (n1 in 1:nrow(temp_junc_df)){
-  #   for (n2 in 1:nrow(comp_with_juncs)) {
-  #   comp_with_juncs[comp_with_juncs$junction_name == names(end_group)[a], c(6:ncol(comp_with_juncs))][n2,] <- temp_junc_df[n1,values]
-  #   }
-  #   }
-  # }
-  
-  # Add the multiplied values into comp_with_juncs:
-  # for (a in names(sub_group)){
-  #   for (b in names(sub_group)){
-  #     if (a != b){
-  #       temp_junc_name <- comp_with_juncs$junction_name[comp_with_juncs$junction_name == paste(b, "x", a)][1]
-
-  
-#   for (a in 1:length(end_group)) {
-#   temp_junc_df <- end_group[[a]][-c(1:(length(rep_names) + 2))]
-# 
-#   # Extract the column numbers where a new replicate starts
-#   prev_replicate <- ""
-#   replicate_start_columns <- c()
-# 
-#   for (b in 1:length(colnames(temp_junc_df))) {
-#     current_col_name <- colnames(temp_junc_df)[b]
-#     current_replicate <- str_extract(current_col_name, "multiplied percentage_usage\\.(\\w+)")
-#     
-#     if (current_replicate != prev_replicate) {
-#       replicate_start_columns <- c(replicate_start_columns, b)
-#       prev_replicate <- current_replicate
-#     }
-#   }
-# 
-#   for (n in 1:nrow(temp_junc_df)) {
-#     # Extract the columns for the current replicate using the extracted column numbers
-#     cols_to_extract <- replicate_start_columns + (n - 1)
-#     
-#     # Extract the replicate name (e.g., ADL1) from current_replicate
-#     replicate_name <- str_match(current_replicate, "multiplied percentage_usage\\.(\\w+)")[, 2]
-#     
-#     # Find the corresponding column name in comp_with_juncs
-#     matching_col <- paste0(replicate_name, n)
-#     
-#     comp_with_juncs[comp_with_juncs$junction_name == names(end_group)[a], c(6:ncol(comp_with_juncs))][n,] <- temp_junc_df[n, cols_to_extract]
-#     comp_with_juncs[comp_with_juncs$junction_name == names(end_group)[a], matching_col] <- temp_junc_df[n, cols_to_extract[1]]
-#   }
-# }
 ```
 

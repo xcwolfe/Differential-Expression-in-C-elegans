@@ -1992,7 +1992,7 @@ for (q1 in seq_len(sub_group_length)) {
 }
 }
 
-*### Running these loops may be computationally difficult. We have decided to only examine composite events with 6 or fewer junctions, as the benefit of examining 7+ sub-junctions does not outweigh the computational cost. If you want to examine composite events with 7 or more junctions, you can use the following loop/template (which is similar to the previous loops)*
+### Running these loops may be computationally difficult. We have decided to only examine composite events with 6 or fewer junctions, as the benefit of examining 7+ sub-junctions does not outweigh the computational cost. If you want to examine composite events with 7 or more junctions, you can use the following loop/template (which is similar to the previous loops)
 
 # if (sub_group_length == 7){
 # for (q1 in seq_len(sub_group_length)) {

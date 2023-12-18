@@ -2384,3 +2384,164 @@ write.csv(mega_composite_matrix, file = "mega_composite_matrix.csv")
 write.csv(mega_composite_matrix_by_rep, file = "mega_composite_matrix_by_rep.csv")
 ```
 
+# Composite heatmap: Choose one gene and print all AS events/junctions for that gene
+```{r}
+# Create a new column for gene name:
+mega_composite_matrix$Gene <- sub(" .*", "", rownames(mega_composite_matrix))
+
+# Subset the data for rows of a given gene name:
+subset_matrix <- mega_composite_matrix[mega_composite_matrix$Gene == "unc-75",1:46]
+#subset_matrix <- subset_matrix[order(-subset_matrix[, "AVM"]), ]   # optional - order by a cell type of your choice
+
+concatenate_non_na <- function(x) paste(na.omit(x), collapse = "_")
+
+for (i in 1:nrow(subset_matrix)){
+elements <- unlist(strsplit(rownames(subset_matrix)[i], " ", fixed = TRUE))
+print(length(elements))
+if (length(elements) == 6){
+subset_matrix[i,"Gene"] <- elements[1]
+subset_matrix[i,"AS_event_ID"] <- elements[2]
+subset_matrix[i,"Junc_number_1"] <- elements[4]
+subset_matrix[i,"Junc_number_2"] <- elements[6]
+}
+if (length(elements) == 8){
+subset_matrix[i,"Gene"] <- elements[1]
+subset_matrix[i,"AS_event_ID"] <- elements[2]
+subset_matrix[i,"Junc_number_1"] <- elements[4]
+subset_matrix[i,"Junc_number_2"] <- elements[6]
+subset_matrix[i,"Junc_number_3"] <- elements[8]
+}
+if (length(elements) == 10){
+subset_matrix[i,"Gene"] <- elements[1]
+subset_matrix[i,"AS_event_ID"] <- elements[2]
+subset_matrix[i,"Junc_number_1"] <- elements[4]
+subset_matrix[i,"Junc_number_2"] <- elements[6]
+subset_matrix[i,"Junc_number_3"] <- elements[8]
+subset_matrix[i,"Junc_number_4"] <- elements[10]
+}
+if (length(elements) == 12){
+subset_matrix[i,"Gene"] <- elements[1]
+subset_matrix[i,"AS_event_ID"] <- elements[2]
+subset_matrix[i,"Junc_number_1"] <- elements[4]
+subset_matrix[i,"Junc_number_2"] <- elements[6]
+subset_matrix[i,"Junc_number_3"] <- elements[8]
+subset_matrix[i,"Junc_number_4"] <- elements[10]
+subset_matrix[i,"Junc_number_5"] <- elements[12]
+}
+if (length(elements) == 14){
+subset_matrix[i,"Gene"] <- elements[1]
+subset_matrix[i,"AS_event_ID"] <- elements[2]
+subset_matrix[i,"Junc_number_1"] <- elements[4]
+subset_matrix[i,"Junc_number_2"] <- elements[6]
+subset_matrix[i,"Junc_number_3"] <- elements[8]
+subset_matrix[i,"Junc_number_4"] <- elements[10]
+subset_matrix[i,"Junc_number_5"] <- elements[12]
+subset_matrix[i,"Junc_number_6"] <- elements[14]
+}
+}
+
+# Loop over each column and apply the concatenate function
+for (col in singletypes) {
+  subset_matrix[[paste0("collapsed_", col)]] <- apply(subset_matrix[, col, drop = FALSE], 1, concatenate_non_na)
+}
+
+### STOP: What is the max # of junctions for the gene name you chose? This will affect the following steps - read carefully! ###
+
+# Create a new data frame with collapsed values:
+collapsed_matrix <- subset_matrix[c("AS_event_ID", "Junc_number_1", "Junc_number_2", "Junc_number_3", "Junc_number_4", "Junc_number_5", "Junc_number_6", paste0("collapsed_", singletypes), "Gene")]   ## add on Junc_number_4, Junc_number_5, Junc_number_6 if applicable
+collapsed_matrix$Junc_number_3[is.na(collapsed_matrix$Junc_number_3)] <- "JXXX"   ## repeat this step for each number of unused junctions in your dataframe
+collapsed_matrix$Junc_number_4[is.na(collapsed_matrix$Junc_number_4)] <- "JXXX"
+collapsed_matrix$Junc_number_5[is.na(collapsed_matrix$Junc_number_5)] <- "JXXX"
+collapsed_matrix$Junc_number_6[is.na(collapsed_matrix$Junc_number_6)] <- "JXXX"
+
+# Use aggregate to combine collapsed values
+collapsed_matrix <- aggregate(. ~ AS_event_ID + Junc_number_1 + Junc_number_2 + Junc_number_3 + Junc_number_4 + Junc_number_5 + Junc_number_6 + Gene, data = collapsed_matrix, FUN = function(x) paste(unique(na.omit(x)), collapse = " "))   ## add on Junc_number_4, Junc_number_5, Junc_number_6 if applicable
+collapsed_matrix[, 9:ncol(collapsed_matrix)] <- apply(collapsed_matrix[, 9:ncol(collapsed_matrix)], 2, as.numeric)   ## change the column start based on your max # of junctions
+collapsed_matrix <- collapsed_matrix[, c(8, 1:7, 9:ncol(collapsed_matrix))]
+names(collapsed_matrix) <- sub("^collapsed_", "", names(collapsed_matrix))
+
+for (i in 1:nrow(collapsed_matrix)) {
+  if (collapsed_matrix$Junc_number_6[i] != "JXXX") {   # here, you will have to repeat the if else loop for every unused junction
+    rownames(collapsed_matrix)[i] <- paste(collapsed_matrix$AS_event_ID[i], collapsed_matrix$Junc_number_1[i], collapsed_matrix$Junc_number_2[i], collapsed_matrix$Junc_number_3[i], collapsed_matrix$Junc_number_4[i], collapsed_matrix$Junc_number_5[i], collapsed_matrix$Junc_number_6[i])
+  } 
+  else if (collapsed_matrix$Junc_number_5[i] != "JXXX" && collapsed_matrix$Junc_number_6[i] == "JXXX") {   
+    rownames(collapsed_matrix)[i] <- paste(collapsed_matrix$AS_event_ID[i], collapsed_matrix$Junc_number_1[i], collapsed_matrix$Junc_number_2[i], collapsed_matrix$Junc_number_3[i], collapsed_matrix$Junc_number_4[i], collapsed_matrix$Junc_number_5[i])
+  }
+  else if (collapsed_matrix$Junc_number_4[i] != "JXXX" && collapsed_matrix$Junc_number_5[i] == "JXXX") {  
+    rownames(collapsed_matrix)[i] <- paste(collapsed_matrix$AS_event_ID[i], collapsed_matrix$Junc_number_1[i], collapsed_matrix$Junc_number_2[i], collapsed_matrix$Junc_number_3[i], collapsed_matrix$Junc_number_4[i])
+  }
+  else if (collapsed_matrix$Junc_number_3[i] != "JXXX" && collapsed_matrix$Junc_number_4[i] == "JXXX") {  
+    rownames(collapsed_matrix)[i] <- paste(collapsed_matrix$AS_event_ID[i], collapsed_matrix$Junc_number_1[i], collapsed_matrix$Junc_number_2[i], collapsed_matrix$Junc_number_3[i])
+  } 
+  else {
+    rownames(collapsed_matrix)[i] <- paste(collapsed_matrix$AS_event_ID[i], collapsed_matrix$Junc_number_1[i], collapsed_matrix$Junc_number_2[i])
+  }
+}
+
+colors <- colorRampPalette(brewer.pal(6, "BuPu"))(250)
+
+# Split the data based on unique values in AS_event_ID
+unique_as_event_ids <- unique(collapsed_matrix$AS_event_ID)
+heatmaps <- list()
+
+for (as_event_id in unique_as_event_ids) {
+  subset_data <- subset(collapsed_matrix, AS_event_ID == as_event_id)
+  subset_heatmap <- collapsed_matrix[collapsed_matrix$AS_event_ID == as_event_id, ]
+  write.csv(subset_heatmap, paste0("heatmap ", subset_matrix$Gene[1], " ", gsub(" ", "_", as_event_id), ".csv"), row.names = TRUE)
+
+  
+## If your gene does not have a different number of junctions in a given AS_event_ID, you can run this simpler heatmap function:
+# heatmap <- pheatmap(
+#      subset_data[, 9:ncol(subset_data)],
+#      na_col = "#FFFFFF",
+#      border_color = "black",
+#      cluster_rows = F,
+#      cluster_cols = F,
+#      display_numbers = F,
+#      number_format = "%.0f",
+#      number_color = "black",
+#      fontsize = 7,
+#      show_rownames = T,
+#      show_colnames = T,
+#      angle_col = 90,
+#      col = colors,
+#      main = paste("Percent Usage of unc-75 Junctions by Cell Type")
+#    )
+#    heatmaps[[as_event_id]] <- heatmap
+
+  
+## ... otherwise you will have to separate each AS_event_ID heatmap into multiple heatmaps based on the number of junctions:
+# Declare "JXXX" values that are in columns 3 through X:
+junc_columns <- subset_data[, 3:8]
+
+# Count the number of "JXXX" occurrences in each row
+num_JXXX <- rowSums(junc_columns == "JXXX")
+
+# Create a list to store heatmaps
+heatmaps_list <- vector("list", length = max(num_JXXX) + 1)
+
+# Split data based on the number of "JXXX" occurrences
+split_data <- split(subset_data[, 9:ncol(subset_data)], num_JXXX)
+
+# Create a heatmap for each subset
+for (i in seq_along(split_data)) {
+  heatmap <- pheatmap(
+    split_data[[i]],
+    na_col = "#FFFFFF",
+    border_color = "black",
+    cluster_rows = FALSE,
+    cluster_cols = FALSE,
+    display_numbers = FALSE,
+    number_format = "%.0f",
+    number_color = "black",
+    fontsize = 7,
+    show_rownames = TRUE,
+    show_colnames = TRUE,
+    angle_col = 90,
+    col = colors,
+    main = paste("Percent Usage of unc-75 Junctions by Cell Type:", as_event_id, "Subset", i)
+  )
+  heatmaps_list[[i]] <- heatmap
+}
+}
+```

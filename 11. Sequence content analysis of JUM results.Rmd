@@ -1,5 +1,5 @@
 ---
-title: "Sequence content analysis of JUM results (for HOMER)"
+title: "Sequence content analysis of JUM results (for MEME)"
 output: html_document
 ---
 
@@ -30,94 +30,7 @@ singletypes <- c("ADL","AFD","AIM","AIN","AIY","ASEL","ASER","ASG","ASI","ASK","
 singletypes_withreps <- c("ADL1", "ADL2", "ADL3", "ADL4", "AFD1", "AFD2", "AFD3", "AFD4", "AFD5", "AIM1", "AIM2", "AIM3", "AIM4", "AIN1", "AIN2", "AIN3", "AIN4", "AIN5", "AIN6", "AIY1", "AIY2", "AIY3", "ASEL1", "ASEL2", "ASEL3", "ASER1", "ASER2", "ASER3", "ASER4", "ASG1", "ASG2", "ASG3", "ASG4", "ASI1", "ASI2", "ASI3", "ASI4", "ASK1", "ASK2", "ASK3", "ASK4", "AVA1", "AVA2", "AVA3", "AVA4", "AVA5", "AVA6", "AVE1", "AVE2", "AVE3", "AVG1", "AVG2", "AVG3", "AVH1", "AVH2", "AVH3", "AVH4", "AVK1", "AVK2", "AVK3", "AVK4", "AVL1", "AVL2", "AVL3", "AVM1", "AVM2", "AVM3", "AWA1", "AWA2", "AWA3", "AWA4", "AWB1", "AWB2", "AWB3", "AWB4", "AWB5", "AWC1", "AWC2", "AWC3", "AWC4", "BAG1", "BAG2", "BAG3", "BAG4", "CAN1", "CAN2", "CAN3", "DA1", "DA2", "DA3", "DA4", "DD1", "DD2", "DD3", "DD4", "DVC1", "DVC2", "DVC3", "DVC4", "I51", "I52", "I53", "I54", "IL11", "IL12", "IL13", "IL21", "IL22", "IL23", "IL24", "LUA1", "LUA2", "LUA3", "LUA4", "NSM1", "NSM2", "NSM3", "OLL1", "OLL2", "OLQ1", "OLQ2", "OLQ3", "PHA1", "PHA2", "PHA3", "PHA4", "PVC1", "PVC2", "PVC3", "PVC4", "PVC5", "PVD1", "PVD2", "PVM1", "PVM2", "RIA1", "RIA2", "RIA3", "RIA4", "RIA5", "RIA6", "RIC1", "RIC2", "RIC3", "RIC4", "RIM1", "RIM2", "RIM3", "RIM4", "RIS1", "RIS2", "RIS3", "RMD1", "RMD2", "RMD3", "RMD4", "RMD5", "SMB1", "SMB2", "SMB3", "SMB4", "SMB5", "SMD1", "SMD2", "SMD3", "SMD4", "VB1", "VB2", "VB3", "VB4", "VC1", "VC2", "VC3", "VC4", "VC5", "VC6", "VD1", "VD2", "VD3", "VD4")
 ```
 
-# Read JUM excel files created in 7. Cell type vs cell type heatmap script for JUM analysis.Rmd:
-```{r}
-setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
-
-for (i in singletypes){
-  for (j in c("A3S", "A5S", "intron"))
-  df <- deltaPSI_sums_list[[paste0(j, "_event_ID_", i, "_count.csv")]]
-  df <- df[order(-df[,4]),]
-  df <- df[df$`sum of all first deltaPSIs for AS_event_ID` > 5,]   ## change sum of all first deltaPSIs threshold here
-  result <- lapply(df[[paste0(j, "_event_ID")]], function(x) unlist(strsplit(x, split = "[_]")))
-  result <- lapply(result, function(x) x[x != ""])
-  
-  # Make the file for HOMER:
-  
-  # HOMER peak files should have at minimum 5 columns (separated by TABs, additional columns will be ignored):
-  # Column1: Unique Peak ID
-  # Column2: chromosome
-  # Column3: starting position
-  # Column4: ending position
-  # Column5: Strand (+/- or 0/1, where 0="+", 1="-")
-  
-  for (r in 1:nrow(df)){
-    if (r > 0){
-  df$chromosome[r] <- result[[r]][1]
-  df$start[r] <- result[[r]][3]
-  df$end[r] <- result[[r]][length(result[[1]])]
-  df$strand[r] <- result[[r]][2]
-    }
-  }
-  df <- df[,-c(2:4)]
-  colnames(df) <- c("Unique Peak ID", "chromosome", "starting position", "ending position", "Strand")
-  write.table(df, file = paste0(i, "_", j, "_HOMER.tsv"), sep = "\t", quote = F, row.names = F)
-}
-```
-
-# Chunk specifically for cassette exon events:
-```{r}
-setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
-
-  # Function to create new vectors
-  create_vectors <- function(vec) {
-  # Create two new vectors by extracting required values from input vector
-  new_vec1 <- c(vec[1], vec[2], vec[3], vec[4])
-  new_vec2 <- c(vec[1], vec[2], vec[5], vec[6])
-  
-  list(new_vec1, new_vec2)
-}
-
-
-for (i in singletypes){
-  df <- deltaPSI_sums_list[[paste0("cassette_event_ID_", i, "_count.csv")]]
-  df <- df[df$`sum of all first deltaPSIs for AS_event_ID` > 5,]   ## change sum of all first deltaPSIs threshold here  
-  df <- rbind(df, df)
-  df <- df[order(df$cassette_event_ID),]
-  result <- lapply(df$cassette_event_ID, function(x) unlist(strsplit(x, split = "[_]")))
-  result <- lapply(result, function(x) x[x != ""])
-
-  # Apply the create_vectors function to each element of the list
-  new_result <- lapply(result, create_vectors)
-  new_result <- new_result[-seq(2, length(new_result), by = 2)]
-  new_result <- unlist(new_result, recursive = FALSE)
-
-  
-  # Make the file for HOMER:
-  
-  # HOMER peak files should have at minimum 5 columns (separated by TABs, additional columns will be ignored):
-  # Column1: Unique Peak ID
-  # Column2: chromosome
-  # Column3: starting position
-  # Column4: ending position
-  # Column5: Strand (+/- or 0/1, where 0="+", 1="-")
-  
-  for (r in 1:nrow(df)){
-    if (r > 0){
-  df$chromosome[r] <- new_result[[r]][1]
-  df$start[r] <- new_result[[r]][3]
-  df$end[r] <- new_result[[r]][length(new_result[[1]])]
-  df$strand[r] <- new_result[[r]][2]
-    }
-  }
-  df <- df[,-c(2:4)]
-  colnames(df) <- c("Unique Peak ID", "chromosome", "starting position", "ending position", "Strand")
-  write.table(df, file = paste0(i, "_cassette_HOMER.tsv"), sep = "\t", quote = F, row.names = F)
-}
-```
-
-
-# Create .bed file which will be used for MEME:
+# Read JUM excel files created in 7. Cell type vs cell type heatmap script for JUM analysis.Rmd and create .bed file which will be used for MEME:
 ```{r}
 setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
 

@@ -626,9 +626,9 @@ MXE_deltaPSI_col_minus <- MXE_minus$deltaPSI   # Save the column for re-addition
 MXE_minus$deltaPSI <- NULL
 
 if (nrow(MXE_plus) > 0){
-# Create indices for the 2nd and 4th coordinates every 4 rows
-first_row_indices <- seq(2, nrow(MXE_plus), by = 4)  # Start from row 2 and increment by 4
-last_row_indices <- seq(4, nrow(MXE_plus), by = 4)  # Start from row 4 and increment by 4
+# Create indices for the 1st and 3rd coordinates every 4 rows
+first_row_indices <- seq(1, nrow(MXE_plus), by = 4)  # Start from row 2 and increment by 4
+last_row_indices <- seq(3, nrow(MXE_plus), by = 4)  # Start from row 4 and increment by 4
 
 for (m in percentage_usage_cols){
   
@@ -703,9 +703,9 @@ MXE_plus <- MXE_plus %>%
 if (nrow(MXE_plus) == 0) next
     
 if (nrow(MXE_minus) > 0){
-# Create indices for the 1st and 3rd coordinates every 4 rows
-first_row_indices <- seq(1, nrow(MXE_minus), by = 4)  # Start from row 1 and increment by 4
-last_row_indices <- seq(3, nrow(MXE_minus), by = 4)  # Start from row 3 and increment by 4
+# Create indices for the 2nd and 4th coordinates every 4 rows
+first_row_indices <- seq(2, nrow(MXE_minus), by = 4)  # Start from row 1 and increment by 4
+last_row_indices <- seq(4, nrow(MXE_minus), by = 4)  # Start from row 3 and increment by 4
 
 for (m in percentage_usage_cols){
   

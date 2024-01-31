@@ -2295,6 +2295,36 @@ for (i in singletypes) {
 composite_indiv_usage_by_rep <- Filter(function(x) !is.null(x), composite_indiv_usage_by_rep)
 ```
 
+# optional - eliminate all composite events that are not the max % usage for each A.S. event ID:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+composite_indiv_usage_combined_max <- vector("list", length(singletypes))
+names(composite_indiv_usage_combined_max) <- singletypes
+
+for (i in singletypes){
+composite_indiv_usage_combined_max[[i]] <- fread(paste0("combined_composite_usage_", i, ".csv"))
+
+setDT(composite_indiv_usage_combined_max[[i]])
+
+# Extract the AS_event_ID without J00x information:
+composite_indiv_usage_combined_max[[i]][, AS_event_ID_base := gsub("\\s\\d_Junction.*", "", AS_event_ID)]
+
+# Convert % usage column to numeric:
+composite_indiv_usage_combined_max[[i]][, paste0("average_", i)] <- convert_to_numeric(composite_indiv_usage_combined_max[[i]][, paste0("average_", i)])
+
+# Order the data by % usage in descending order:
+composite_indiv_usage_combined_max[[i]] <- composite_indiv_usage_combined_max[[i]][order(-paste0("average_", i))]
+
+# Keep only the row with the max % usage for each unique AS_event_ID_base:
+composite_indiv_usage_combined_max[[i]] <- composite_indiv_usage_combined_max[[i]][, .SD[which.max(paste0("average_", i))], by = AS_event_ID_base]
+
+# Remove the intermediate column AS_event_ID_base:
+composite_indiv_usage_combined_max[[i]][, AS_event_ID_base := NULL]
+
+write.csv(composite_indiv_usage_combined_max[[i]], file = paste0("composite_events_", i, "_max_%_usage_per_row.csv"))
+}
+```
 
 # Make a heatmap for all A.S. events represented by % usage for each cell type:
 ```{r}
@@ -2544,4 +2574,502 @@ for (i in seq_along(split_data)) {
   heatmaps_list[[i]] <- heatmap
 }
 }
+```
+
+# Sometimes RefSeq and WormBase gene names do not always align. Due to this inconsistency, we should read in an updated and correct gtf file (from WormBase):
+```{r}
+gtf <- fread("caenorhabditis_elegans.PRJNA13758.WBPS18.canonical_geneset.gtf")
+colnames(gtf) <- c("chr", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")
+# replace the combined attribute column with multiple columns that are more appropriate for naming:
+gtf$gene_id <- sub('.*gene_id "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_version <- sub('.*gene_version "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_biotype <- sub('.*gene_biotype "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_name <- sub('.*gene_name "(.*?)".*', '\\1', gtf$attribute)
+
+# Remove the original 'attribute' column:
+gtf <- gtf[, c("chr", "source", "feature", "start", "end", "score", "strand", "frame", "gene_id", "gene_version", "gene_biotype", "gene_name")]
+```
+
+# Extract the coordinates of each AS event. This will be used to produce the correct and updated gene names for AS events with more than one gene name:
+```{r}
+## A3S events:
+for (i in which(grepl(";", mega_A3S$Gene))) { 
+  as_event_id <- mega_A3S$AS_event_ID[i]
+
+  # Extract chromosome, strand, start, and end coordinates from the AS event ID:
+  as_parts <- unlist(strsplit(as_event_id, "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+  matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+  matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+  matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+  matching_gene_end <- matching_gene_end[1,]
+  ## consider if matching_gene_start$gene_name == matching_gene_end$gene_name, then paste gene_name
+  if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+  gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+  WB_gene_name <- paste0(matching_gene_start$gene_id, "; ", matching_gene_end$gene_id)
+  }
+  else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+  gene_name <- matching_gene_start$gene_name
+  WB_gene_name <- matching_gene_start$gene_id
+  }
+  else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+  gene_name <- matching_gene_end$gene_name
+  WB_gene_name <- matching_gene_end$gene_id
+  }
+  else {
+  gene_name <- NA
+  WB_gene_name <- NA
+  }
+
+  # Replace the original gene name with the updated one:
+  mega_A3S$Gene[i] <- gene_name
+  mega_A3S$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+  gene_name <- matching_gene$gene_name
+  WB_gene_name <- matching_gene$gene_id
+
+  # Replace the original gene name with the updated one:
+  mega_A3S$Gene[i] <- gene_name
+  mega_A3S$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+}
+
+# Don't forget to change the sequence name to match the correct and updated version!
+for (g in 1:nrow(mega_A3S)) {
+  gene_ids <- unlist(strsplit(as.character(mega_A3S$WormBase_Gene_ID[g]), "; "))
+  matching_sequence_names <- character(length(gene_ids))
+  
+  for (i in seq_along(gene_ids)) {
+    matching_row <- all_genes_conversion[all_genes_conversion$`WormBase Gene ID` == gene_ids[i], ]
+    if (nrow(matching_row) > 0) {
+      matching_sequence_names[i] <- matching_row$`Sequence Name`
+    }
+  }
+  mega_A3S$Sequence_Name[g] <- paste(matching_sequence_names, collapse = "; ")
+  rownames(mega_A3S)[g] <- paste(mega_A3S$Gene[g], mega_A3S$AS_event_ID[g])
+}
+
+# Save the new, corrected matrix as a .csv:
+write.csv(mega_A3S, file = "mega_A3S_matrix.csv")
+
+## A5S events:
+for (i in which(grepl(";", mega_A5S$Gene))) {
+  as_event_id <- mega_A5S$AS_event_ID[i]
+
+  # Extract chromosome, strand, start, and end coordinates from the AS event ID:
+  as_parts <- unlist(strsplit(as_event_id, "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+  matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+  matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+  matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+  matching_gene_end <- matching_gene_end[1,]
+  if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+  gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+  WB_gene_name <- paste0(matching_gene_start$gene_id, "; ", matching_gene_end$gene_id)
+  }
+  else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+  gene_name <- matching_gene_start$gene_name
+  WB_gene_name <- matching_gene_start$gene_id
+  }
+  else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+  gene_name <- matching_gene_end$gene_name
+  WB_gene_name <- matching_gene_end$gene_id
+  }
+  else {
+  gene_name <- NA
+  WB_gene_name <- NA
+  }
+
+  # Replace the original gene name with the updated one:
+  mega_A5S$Gene[i] <- gene_name
+  mega_A5S$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+  gene_name <- matching_gene$gene_name
+  WB_gene_name <- matching_gene$gene_id
+
+  # Replace the original gene name with the updated one:
+  mega_A5S$Gene[i] <- gene_name
+  mega_A5S$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+}
+
+# Don't forget to change the sequence name to match the correct and updated version!
+for (g in 1:nrow(mega_A5S)) {
+  gene_ids <- unlist(strsplit(as.character(mega_A5S$WormBase_Gene_ID[g]), "; "))
+  matching_sequence_names <- character(length(gene_ids))
+  
+  for (i in seq_along(gene_ids)) {
+    matching_row <- all_genes_conversion[all_genes_conversion$`WormBase Gene ID` == gene_ids[i], ]
+    if (nrow(matching_row) > 0) {
+      matching_sequence_names[i] <- matching_row$`Sequence Name`
+    }
+  }
+  mega_A5S$Sequence_Name[g] <- paste(matching_sequence_names, collapse = "; ")
+  rownames(mega_A5S)[g] <- paste(mega_A5S$Gene[g], mega_A5S$AS_event_ID[g])
+}
+
+# Save the new, corrected matrix as a .csv:
+write.csv(mega_A5S, file = "mega_A5S_matrix.csv")
+
+## Cassette events:
+for (i in which(grepl(";", mega_cassette$Gene))) {
+  as_event_id <- mega_cassette$AS_event_ID[i]
+
+  # Extract chromosome, strand, start, and end coordinates from the AS event ID:
+  as_parts <- unlist(strsplit(as_event_id, "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+  matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+  matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+  matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+  matching_gene_end <- matching_gene_end[1,]
+  if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+  gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+  WB_gene_name <- paste0(matching_gene_start$gene_id, "; ", matching_gene_end$gene_id)
+  }
+  else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+  gene_name <- matching_gene_start$gene_name
+  WB_gene_name <- matching_gene_start$gene_id
+  }
+  else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+  gene_name <- matching_gene_end$gene_name
+  WB_gene_name <- matching_gene_end$gene_id
+  }
+  else {
+  gene_name <- NA
+  WB_gene_name <- NA
+  }
+
+  # Replace the original gene name with the updated one:
+  mega_cassette$Gene[i] <- gene_name
+  mega_cassette$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+  gene_name <- matching_gene$gene_name
+  WB_gene_name <- matching_gene$gene_id
+
+  # Replace the original gene name with the updated one:
+  mega_cassette$Gene[i] <- gene_name
+  mega_cassette$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+}
+
+# Don't forget to change the sequence name to match the correct and updated version!
+for (g in 1:nrow(mega_cassette)) {
+  gene_ids <- unlist(strsplit(as.character(mega_cassette$WormBase_Gene_ID[g]), "; "))
+  matching_sequence_names <- character(length(gene_ids))
+  
+  for (i in seq_along(gene_ids)) {
+    matching_row <- all_genes_conversion[all_genes_conversion$`WormBase Gene ID` == gene_ids[i], ]
+    if (nrow(matching_row) > 0) {
+      matching_sequence_names[i] <- matching_row$`Sequence Name`
+    }
+  }
+  mega_cassette$Sequence_Name[g] <- paste(matching_sequence_names, collapse = "; ")
+  rownames(mega_cassette)[g] <- paste(mega_cassette$Gene[g], mega_cassette$AS_event_ID[g])
+}
+
+# Save the new, corrected matrix as a .csv:
+write.csv(mega_cassette, file = "mega_cassette_matrix.csv")
+
+# ## Composite events:
+# for (i in which(grepl(";", mega_composite$Gene))) {
+#   as_event_id <- mega_composite$AS_event_ID[i]
+# 
+#   # Extract chromosome, strand, start, and end coordinates from the AS event ID:
+#   as_parts <- unlist(strsplit(as_event_id, "_"))
+#   chr_var <- as_parts[1]
+#   strand_var <- as_parts[2]
+#   start_var <- as.numeric(as_parts[3])
+#   end_var <- as.numeric(as_parts[length(as_parts)])
+# 
+#   # Find the corresponding gene in the GTF dataframe:
+#   matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+# 
+#   # Extract gene name:
+#   gene_name <- matching_gene$gene_name
+#   WB_gene_name <- matching_gene$gene_id
+#   
+#   # Replace the original gene name with the updated one:
+#   mega_composite$Gene[i] <- gene_name
+#   mega_composite$WormBase_Gene_ID[i] <- WB_gene_name
+# }
+# 
+# # Don't forget to change the sequence name to match the correct and updated version!
+#  for (g in 1:nrow(mega_composite)) {
+#     matching_row <- all_genes_conversion[all_genes_conversion$Gene == mega_composite$Gene[g], ]
+#       mega_composite$Sequence_Name[g] <- matching_row$`Sequence Name`
+#       rownames(mega_composite)[g] <- paste(mega_composite$Gene[g], mega_composite$AS_event_ID[g])
+#  }
+# 
+# # Save the new, corrected matrix as a .csv:
+# write.csv(mega_composite, file = "mega_composite_matrix.csv")
+
+## Intron retention events:
+for (i in which(grepl(";", mega_intron$Gene))) {
+  as_event_id <- mega_intron$AS_event_ID[i]
+
+  # Extract chromosome, strand, start, and end coordinates from the AS event ID:
+  as_parts <- unlist(strsplit(as_event_id, "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+  matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+  matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+  matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+  matching_gene_end <- matching_gene_end[1,]
+  if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+  gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+  WB_gene_name <- paste0(matching_gene_start$gene_id, "; ", matching_gene_end$gene_id)
+  }
+  else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+  gene_name <- matching_gene_start$gene_name
+  WB_gene_name <- matching_gene_start$gene_id
+  }
+  else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+  gene_name <- matching_gene_end$gene_name
+  WB_gene_name <- matching_gene_end$gene_id
+  }
+  else {
+  gene_name <- NA
+  WB_gene_name <- NA
+  }
+
+  # Replace the original gene name with the updated one:
+  mega_intron$Gene[i] <- gene_name
+  mega_intron$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+  gene_name <- matching_gene$gene_name
+  WB_gene_name <- matching_gene$gene_id
+
+  # Replace the original gene name with the updated one:
+  mega_intron$Gene[i] <- gene_name
+  mega_intron$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+}
+
+# Don't forget to change the sequence name to match the correct and updated version!
+for (g in 1:nrow(mega_intron)) {
+  gene_ids <- unlist(strsplit(as.character(mega_intron$WormBase_Gene_ID[g]), "; "))
+  matching_sequence_names <- character(length(gene_ids))
+  
+  for (i in seq_along(gene_ids)) {
+    matching_row <- all_genes_conversion[all_genes_conversion$`WormBase Gene ID` == gene_ids[i], ]
+    if (nrow(matching_row) > 0) {
+      matching_sequence_names[i] <- matching_row$`Sequence Name`
+    }
+  }
+  mega_intron$Sequence_Name[g] <- paste(matching_sequence_names, collapse = "; ")
+  rownames(mega_intron)[g] <- paste(mega_intron$Gene[g], mega_intron$AS_event_ID[g])
+}
+
+# Save the new, corrected matrix as a .csv:
+write.csv(mega_intron, file = "mega_intron_matrix.csv")
+
+## MXE events:
+for (i in which(grepl(";", mega_MXE$Gene))) {
+  as_event_id <- mega_MXE$AS_event_ID[i]
+
+  # Extract chromosome, strand, start, and end coordinates from the AS event ID:
+  as_parts <- unlist(strsplit(as_event_id, "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+  matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+  matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+  matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+  matching_gene_end <- matching_gene_end[1,]
+  if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+  gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+  WB_gene_name <- paste0(matching_gene_start$gene_id, "; ", matching_gene_end$gene_id)
+  }
+  else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+  gene_name <- matching_gene_start$gene_name
+  WB_gene_name <- matching_gene_start$gene_id
+  }
+  else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+  gene_name <- matching_gene_end$gene_name
+  WB_gene_name <- matching_gene_end$gene_id
+  }
+  else {
+  gene_name <- NA
+  WB_gene_name <- NA
+  }
+
+  # Replace the original gene name with the updated one:
+  mega_MXE$Gene[i] <- gene_name
+  mega_MXE$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+  gene_name <- matching_gene$gene_name
+  WB_gene_name <- matching_gene$gene_id
+
+  # Replace the original gene name with the updated one:
+  mega_MXE$Gene[i] <- gene_name
+  mega_MXE$WormBase_Gene_ID[i] <- WB_gene_name
+  }
+}
+
+# Don't forget to change the sequence name to match the correct and updated version!
+for (g in 1:nrow(mega_MXE)) {
+  gene_ids <- unlist(strsplit(as.character(mega_MXE$WormBase_Gene_ID[g]), "; "))
+  matching_sequence_names <- character(length(gene_ids))
+  
+  for (i in seq_along(gene_ids)) {
+    matching_row <- all_genes_conversion[all_genes_conversion$`WormBase Gene ID` == gene_ids[i], ]
+    if (nrow(matching_row) > 0) {
+      matching_sequence_names[i] <- matching_row$`Sequence Name`
+    }
+  }
+  mega_MXE$Sequence_Name[g] <- paste(matching_sequence_names, collapse = "; ")
+  rownames(mega_MXE)[g] <- paste(mega_MXE$Gene[g], mega_MXE$AS_event_ID[g])
+}
+
+# Save the new, corrected matrix as a .csv:
+write.csv(mega_MXE, file = "mega_MXE_matrix.csv")
+```
+
+# unc-31 plots:
+```{r}
+data_frame_unc31 <- data.frame(`Cell Type` = names(mega_cassette_matrix[1058,]), `Percent Usage` = mega_cassette_matrix[1058,])
+
+# Barplots:
+ggplot(data_frame_unc31, aes(x = Cell.Type, y = Percent.Usage, fill = factor(Percent.Usage))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rainbow(46)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Percent Usage of unc-31 for All Cell Types",
+       x = "Cell Type",
+       y = "Percent Usage of unc-31") +
+  guides(fill = FALSE)  
+
+ggplot(data_frame_unc31, aes(x = reorder(Cell.Type, -Percent.Usage), y = Percent.Usage, fill = factor(Percent.Usage))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = rainbow(46)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Percent Usage of unc-31 for All Cell Types",
+       x = "Cell Type",
+       y = "Percent Usage of unc-31") +
+  guides(fill = FALSE)
+
+data_frame_unc31 <- data.frame(`Cell Type` = names(mega_cassette_matrix_by_rep[1058,]), `Percent Usage` = mega_cassette_matrix_by_rep[1058,])
+
+data_frame_unc31$`Cell Type` <- sub("\\d+", "", data_frame_unc31$Cell.Type)
+
+data_frame_unc31$`Cell Type`[100:110] <- c("I5", "I5", "I5", "I5","IL1", "IL1", "IL1", "IL2","IL2", "IL2", "IL2")
+
+colnames(data_frame_unc31)[1] <- c("Replicate")
+data_frame_unc31 <- na.omit(data_frame_unc31)
+
+# Boxplots:
+ggplot(data_frame_unc31, aes(x = `Cell Type`, y = Percent.Usage)) +
+  geom_boxplot(fill = "lightblue") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Percent Usage for unc-31",
+       x = "Cell Type",
+       y = "Percent Usage") +
+  guides(fill = FALSE)
+
+ggplot(data_frame_unc31, aes(x = `Cell Type`, y = Percent.Usage)) +
+  stat_boxplot(fill = NA, color = "black", outlier.colour = "black", outlier.shape = NA) +
+  geom_jitter(position = position_jitter(width = 0.3), color = "dodgerblue", alpha = 1.2) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Percent Usage for unc-31 Cassette Event",
+       x = "Cell Type",
+       y = "Percent Usage") +
+  guides(fill = FALSE)
+
+ggplot(data_frame_unc31, aes(x = `Cell Type`, y = Percent.Usage, color = `Cell Type`)) +
+  stat_boxplot(fill = NA, color = "black", outlier.colour = "black", outlier.shape = NA) +
+  geom_jitter(position = position_jitter(width = 0.3), alpha = 1.2) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Percent Usage for unc-31 Cassette Event",
+       x = "Cell Type",
+       y = "Percent Usage") +
+  guides(fill = FALSE)
+
+# Strip plots:
+# ggplot(data_frame_unc31, aes(x = `Cell Type`, y = Percent.Usage, color = `Cell Type`)) +
+#   geom_jitter(position = position_jitter(width = 0.1), alpha = 1.7) +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7.5)) +
+#   labs(title = "Strip Plot for unc-31 Cassette Event",
+#        x = "Cell Type",
+#        y = "Percent Usage") +
+#   guides(fill = FALSE)
+
+# create a dataframe of the median percentage usage values of each cell type
+summary_stats <- data_frame_unc31 %>%
+  group_by(`Cell Type`) %>%
+  summarise(median = median(Percent.Usage),
+            SEM = sd(Percent.Usage) / sqrt(n()))
+
+# get the order of cell types based on median values:
+order_levels <- summary_stats$`Cell Type`[order(-summary_stats$median)]
+
+# reorder the cell types:
+data_frame_unc31$`Cell Type` <- factor(data_frame_unc31$`Cell Type`, levels = order_levels)
+
+# Plot:
+p <- ggplot(data_frame_unc31, aes(x = `Cell Type`, y = Percent.Usage, color = `Cell Type`)) +
+  geom_jitter(position = position_jitter(width = 0.1), alpha = 1, size = 0.55) +
+  geom_crossbar(data = summary_stats, aes(x = `Cell Type`, y = median, ymin = median - SEM, ymax = median + SEM), width = 0.5, color = "black") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7.5)) +
+  labs(title = "Percent Inclusion of unc-31 Cassette Event",
+       x = "Cell Type",
+       y = "Percent Inclusion") +
+  guides(fill = FALSE) +
+  theme(legend.position = "none")
+
+print(p)
+ggsave("unc-31_plot.svg", plot = p)
 ```

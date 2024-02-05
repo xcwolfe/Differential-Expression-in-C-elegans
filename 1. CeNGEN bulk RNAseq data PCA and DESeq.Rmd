@@ -76,7 +76,6 @@ print(sample_names)
 ```{r}
 #bulkData <- read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
 ```
-```
 
 # Transform your bulk RNA-seq data:
 ```{r}

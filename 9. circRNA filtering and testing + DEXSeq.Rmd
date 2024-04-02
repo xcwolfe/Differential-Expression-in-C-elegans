@@ -335,7 +335,7 @@ my.Circ.ratioplot <- function(Circ,Linear,CircCoordinates = None,plotrow='1',siz
 
 # Circ.ratioplot:
 ```{r}
-for (j in 1:nrow(test$summary_table)){
+for (j in rownames(test_summary_table_ordered[test_summary_table_ordered$sig_p < 0.05,])){
  my.Circ.ratioplot(CircRNACount_filtered_combined,
                 LinearCount_filtered_combined_0_as_fraction,
                 CircCoordinates_filtered_combined,

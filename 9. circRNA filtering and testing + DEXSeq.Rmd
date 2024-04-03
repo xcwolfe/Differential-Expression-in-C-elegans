@@ -333,19 +333,224 @@ my.Circ.ratioplot <- function(Circ,Linear,CircCoordinates = None,plotrow='1',siz
 }
 ```
 
+
+# Read in an updated and correct gtf file (from WormBase):
+```{r}
+gtf <- fread("caenorhabditis_elegans.PRJNA13758.WBPS18.canonical_geneset.gtf")
+colnames(gtf) <- c("chr", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")
+# replace the combined attribute column with multiple columns that are more appropriate for naming:
+gtf$gene_id <- sub('.*gene_id "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_version <- sub('.*gene_version "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_biotype <- sub('.*gene_biotype "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_name <- sub('.*gene_name "(.*?)".*', '\\1', gtf$attribute)
+
+# Remove the original 'attribute' column:
+gtf <- gtf[, c("chr", "source", "feature", "start", "end", "score", "strand", "frame", "gene_id", "gene_version", "gene_biotype", "gene_name")]
+```
+
+# Extract the coordinates of each Circ event. This will be used to produce the correct and updated gene names for CircRNA coordinates with more than one gene name:
+```{r}
+for (i in seq_len(nrow(CircCoordinates_filtered_combined))) {
+  
+  # Extract chromosome, strand, start, and end coordinates from the Coordinates data frame:
+  chr_var <- CircCoordinates_filtered_combined$Chr[i]
+  strand_var <- CircCoordinates_filtered_combined$Strand[i]
+  start_var <- as.numeric(CircCoordinates_filtered_combined$Start[i])
+  end_var <- as.numeric(CircCoordinates_filtered_combined$End[i])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+    matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+    matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+    matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+    matching_gene_end <- matching_gene_end[1,]
+    if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+      gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+    }
+    else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+      gene_name <- matching_gene_start$gene_name
+    }
+    else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+      gene_name <- matching_gene_end$gene_name
+    }
+    else {
+      gene_name <- "not_annotated"
+    }
+
+    # Replace the original gene name with the updated one:
+    CircCoordinates_filtered_combined$Gene[i] <- gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+    gene_name <- matching_gene$gene_name
+
+    # Replace the original gene name with the updated one:
+    CircCoordinates_filtered_combined$Gene[i] <- gene_name
+  }
+}
+
+for (i in seq_len(nrow(CircRNACount_filtered_combined))) {
+  
+  # Extract chromosome, start, and end coordinates from the data frame:
+  chr_var <- CircRNACount_filtered_combined$Chr[i]
+  start_var <- as.numeric(CircRNACount_filtered_combined$Start[i])
+  end_var <- as.numeric(CircRNACount_filtered_combined$End[i])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+    matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+    matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+    matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+    matching_gene_end <- matching_gene_end[1,]
+    if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+      gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+    }
+    else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+      gene_name <- matching_gene_start$gene_name
+    }
+    else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+      gene_name <- matching_gene_end$gene_name
+    }
+    else {
+      gene_name <- "not_annotated"
+    }
+
+    # Replace the original gene name with the updated one:
+    CircRNACount_filtered_combined$Gene[i] <- gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+    gene_name <- matching_gene$gene_name
+
+    # Replace the original gene name with the updated one:
+    CircRNACount_filtered_combined$Gene[i] <- gene_name
+  }
+}
+
+for (i in seq_len(nrow(LinearCount_filtered_combined_0_as_fraction))) {
+  
+  # Extract chromosome, start, and end coordinates from the data frame:
+  chr_var <- LinearCount_filtered_combined_0_as_fraction$Chr[i]
+  start_var <- as.numeric(LinearCount_filtered_combined_0_as_fraction$Start[i])
+  end_var <- as.numeric(LinearCount_filtered_combined_0_as_fraction$End[i])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+    matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+    matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+    matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+    matching_gene_end <- matching_gene_end[1,]
+    if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+      gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+    }
+    else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+      gene_name <- matching_gene_start$gene_name
+    }
+    else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+      gene_name <- matching_gene_end$gene_name
+    }
+    else {
+      gene_name <- "not_annotated"
+    }
+
+    # Replace the original gene name with the updated one:
+    LinearCount_filtered_combined_0_as_fraction$Gene[i] <- gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+    gene_name <- matching_gene$gene_name
+
+    # Replace the original gene name with the updated one:
+    LinearCount_filtered_combined_0_as_fraction$Gene[i] <- gene_name
+  }
+}
+
+for (i in seq_len(nrow(test_summary_table_ordered))) {
+  
+  # Extract chromosome, strand, start, and end coordinates from the Coordinates data frame:
+  chr_var <- test_summary_table_ordered$Chr[i]
+  strand_var <- test_summary_table_ordered$Strand[i]
+  start_var <- as.numeric(test_summary_table_ordered$Start[i])
+  end_var <- as.numeric(test_summary_table_ordered$End[i])
+
+  # Find the corresponding gene in the GTF dataframe:
+  matching_gene <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var & end >= end_var)
+  
+  if (nrow(matching_gene) == 0){
+    matching_gene_start <- subset(gtf, chr == chr_var & feature == "gene" & start <= start_var)
+    matching_gene_end <- subset(gtf, chr == chr_var & feature == "gene" & end >= end_var)
+    matching_gene_start <- matching_gene_start[nrow(matching_gene_start),]
+    matching_gene_end <- matching_gene_end[1,]
+    if (matching_gene_start$end >= start_var & matching_gene_end$start <= end_var){
+      gene_name <- paste0(matching_gene_start$gene_name, "; ", matching_gene_end$gene_name)
+    }
+    else if (matching_gene_start$end >= start_var & matching_gene_end$start >= end_var){
+      gene_name <- matching_gene_start$gene_name
+    }
+    else if (matching_gene_start$end <= start_var & matching_gene_end$start <= end_var){
+      gene_name <- matching_gene_end$gene_name
+    }
+    else {
+      gene_name <- "not_annotated"
+    }
+
+    # Replace the original gene name with the updated one:
+    test_summary_table_ordered$Gene[i] <- gene_name
+  }
+  
+  if (nrow(matching_gene) > 0){
+    gene_name <- matching_gene$gene_name
+
+    # Replace the original gene name with the updated one:
+    test_summary_table_ordered$Gene[i] <- gene_name
+  }
+}
+```
+
+# Align and order all the dataframes with each other so we plot them correctly:
+```{r}
+test_p_summary_table <- test_summary_table_ordered[test_summary_table_ordered$sig_p < 0.05,]
+#test_p_summary_table <- test$summary_table[test$summary_table$sig_p < 0.05,]
+
+matching_rows <- rownames(test_p_summary_table)
+
+matching_features <- test_p_summary_table[matching_rows, c("Chr", "Start", "End", "Gene")]
+
+matching_rows <- match(paste(matching_features$Chr, matching_features$Start, matching_features$End, matching_features$Gene), paste(CircRNACount_filtered_combined$Chr, CircRNACount_filtered_combined$Start, CircRNACount_filtered_combined$End, CircRNACount_filtered_combined$Gene))
+
+# Subset and reorder
+subset_CircRNACount <- CircRNACount_filtered_combined[matching_rows, ]
+subset_LinearCount <- LinearCount_filtered_combined_0_as_fraction[matching_rows, ]
+subset_CircRNACount <- subset_CircRNACount[order(subset_CircRNACount[,1],subset_CircRNACount[,2],subset_CircRNACount[,3]),]
+subset_LinearCount <- subset_LinearCount[order(subset_LinearCount[,1],subset_LinearCount[,2],subset_LinearCount[,3]),]
+subset_test <- test_p_summary_table[order(test_p_summary_table[,1],test_p_summary_table[,2],test_p_summary_table[,3]),]
+rownames(subset_CircRNACount) <- NULL
+rownames(subset_LinearCount) <- NULL
+rownames(subset_test) <- NULL
+```
+
 # Circ.ratioplot:
 ```{r}
-for (j in rownames(test_summary_table_ordered[test_summary_table_ordered$sig_p < 0.05,])){
- my.Circ.ratioplot(CircRNACount_filtered_combined,
-                LinearCount_filtered_combined_0_as_fraction,
-                CircCoordinates_filtered_combined,
-                plotrow = j,
-                size = 14,
-                groupindicator1 = c(rep(singletypes, times = sapply(singletypes, function(x) sum(grepl(paste0("^", x), singletypes_withreps))))),
-                lab_legend = "groupindicator1",
-                gene_column = 4
-                )
-}
+## remember that these bar graphs will represent Circ and Linear counts, not necessarily the ratio mean from test$summary_table:
+## the ratio mean from test$summary_table and subset_test EXCLUDES NA values
+## we changed all linear NA values to 0.00001 in order to generate these graphs
+for (j in rownames(subset_test)){
+my.Circ.ratioplot(subset_CircRNACount[,-ncol(subset_CircRNACount)],   ## the last column of CircRNACount_filtered_combined is the "gene" column we just created 2 chunks ago
+                 subset_LinearCount[,-ncol(subset_LinearCount)],
+                 subset_CircRNACount[,c(1:3, ncol(subset_CircRNACount))],
+                 plotrow = j,
+                 size = 14,
+                 groupindicator1 = c(rep(singletypes, times = sapply(singletypes, function(x) sum(grepl(paste0("^", x), singletypes_withreps))))),
+                 lab_legend = "groupindicator1",
+                 gene_column = 4
+                 )
+ }
 ```
 
 # Save your work:

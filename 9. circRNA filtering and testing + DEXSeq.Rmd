@@ -553,6 +553,38 @@ my.Circ.ratioplot(subset_CircRNACount[,-ncol(subset_CircRNACount)],   ## the las
  }
 ```
 
+# Circ.ratioplot plots the true Circ and Linear values as opposed to the ratio means values for each cell type. Here is a ggplot function if you actually want to plot the ratio means:
+```{r}
+for (i in 1:nrow(subset_test)) {
+  row_data <- subset_test[i,]
+  
+  ratio_columns <- grepl("ratio_mean", names(row_data))
+  row_df <- data.frame(Ratio_Type = names(row_data)[ratio_columns],
+                       Ratio_Mean = unlist(row_data[ratio_columns]))
+  
+  ratio_names <- c(singletypes)
+  
+# Create a separate plot for each row
+ p <- ggplot(row_df, aes(x = Ratio_Type, y = Ratio_Mean)) +
+  geom_bar(stat = "identity", aes(fill = Ratio_Type), color = "black", size = 1) +
+  scale_x_discrete(labels = setNames(ratio_names, row_df$Ratio_Type)) +  # Set x-axis labels
+  scale_fill_discrete(labels = ratio_names[!is.nan(row_df$Ratio_Mean)]) +  # Set legend labels for non-NaN values
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(axis.text.y = element_text(size = 8)) +
+  theme(legend.title = element_blank()) +
+  theme(text = element_text(size = 9)) +
+  theme(legend.text = element_text(size = 8)) +
+  theme(plot.title = element_text(size = 10)) +
+  scale_y_continuous(labels = percent_format(scale = 100), expand = c(0, 0)) +  # Format y-axis as percentage
+  ggtitle(paste("Annotation: ", row_data$Gene, "\nChr ", row_data$Chr, ":", row_data$Start, "-", row_data$End, sep = "")) +
+  ylab("Percentage of Circular RNA vs All RNA") +
+  theme(axis.title.x = element_blank())
+  
+  print(p)
+}
+```
+
 # Save your work:
 ```{r}
 write.csv(test, file = "CircRNA test results.csv")

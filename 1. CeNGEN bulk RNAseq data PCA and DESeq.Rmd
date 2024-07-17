@@ -103,7 +103,6 @@ list(sort(t_PCA$rotation[,3], decreasing = FALSE)[1:10])
 
 # Make your cts object and run DESeq:
 ```{r}
-#cts <- read.table("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv", header=TRUE, sep=",", row.names=1)
 cts <- count_matrix
 # make a condition table
 condition = read.table("experimental_conditions_46_neurons.csv", header = TRUE, sep=",", row.names=1)

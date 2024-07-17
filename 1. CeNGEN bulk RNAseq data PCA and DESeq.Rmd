@@ -72,14 +72,8 @@ print(count_matrix)
 print(sample_names)
 ```
 
-# If you already have a count matrix from another source as a .csv, load it here:
-```{r}
-#bulkData <- read.csv("Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv")
-```
-
 # Transform your bulk RNA-seq data:
 ```{r}
-#t_PCA <- prcomp(t(bulkData[,2:161])) # I had 160 total samples, so I am  using columns 2:161 for my principal component analysis
 t_PCA <- prcomp(t(count_matrix))
 ```
 

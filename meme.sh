@@ -1,12 +1,12 @@
-# Running MEME on HPC:
+# Running MEME on HPCC:
 
-Download MEME and associated scripts using installation guidelines found on https://meme-suite.org/meme/doc/download.html and then unpack MEME using guidelines on https://meme-suite.org/meme/doc/install.html?man_type=web
+## Download MEME and associated scripts using installation guidelines found on https://meme-suite.org/meme/doc/download.html and then unpack MEME using guidelines on https://meme-suite.org/meme/doc/install.html?man_type=web
 
-MEME command lines using AVM cassette deltaPSIs > 5 in discriminative mode:
+## MEME command lines (example using AVM cassette deltaPSIs > 5) in discriminative mode:
 
 ```
 $ export PATH=$HOME/meme/bin:$HOME/meme/libexec/meme-5.5.4:$PATH
-$ module load gcc bedtools2/2.30.0-g4wcw34
+$ module load bedtools/
 ```
 ```
 $ bed2fasta -s -both -o AVM_cassette_MEME.tsv.fa AVM_cassette_MEME.tsv /work/users/zwolfe/genome/Caenorhabditis_elegans.WBcel235.dna.toplevel.fa

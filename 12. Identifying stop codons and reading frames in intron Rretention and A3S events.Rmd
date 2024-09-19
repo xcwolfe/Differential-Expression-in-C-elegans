@@ -1,0 +1,1582 @@
+---
+title: "Identifying Stop Codons in Intron Retention Events"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(backports)
+library(dplyr)
+# if (!require("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# 
+# BiocManager::install("Biostrings")
+# BiocManager::install("GenomicFeatures")
+# BiocManager::install("rtracklayer")
+# BiocManager::install("txdbmaker")
+# BiocManager::install("BSgenome.Celegans.UCSC.ce11")
+library(Biostrings)
+library(GenomicFeatures)
+library(rtracklayer)
+library(txdbmaker)
+library(RColorBrewer)
+```
+
+# Read in an updated and correct gtf file (from WormBase):
+```{r}
+gtf <- fread("caenorhabditis_elegans.PRJNA13758.WBPS18.canonical_geneset.gtf")
+colnames(gtf) <- c("chr", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")
+# replace the combined attribute column with multiple columns that are more appropriate for naming:
+gtf$gene_id <- sub('.*gene_id "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_version <- sub('.*gene_version "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_biotype <- sub('.*gene_biotype "(.*?)".*', '\\1', gtf$attribute)
+gtf$gene_name <- sub('.*gene_name "(.*?)".*', '\\1', gtf$attribute)
+
+# Remove the original 'attribute' column:
+gtf <- gtf[, c("chr", "source", "feature", "start", "end", "score", "strand", "frame", "gene_id", "gene_version", "gene_biotype", "gene_name")]
+```
+
+## Dismantle the coordinates from IR events:
+# First, make sure there is an AS event ID column in the intron uniqueness index with a column relating to frame shifting/preserving:
+```{r}
+intron_sums_heatmap$AS_event_ID <- sapply(strsplit(rownames(intron_sums_heatmap), " "), `[`, 2)
+for (i in 1:nrow(intron_sums_heatmap)){
+elements <- unlist(strsplit(intron_sums_heatmap$AS_event_ID[i], "_"))
+shift <- print(as.numeric(elements[4])-as.numeric(elements[3]) + 1)
+if (shift %% 3 == 0){
+  intron_sums_heatmap$shift_or_preserve[i] <- "preserve"
+}
+else intron_sums_heatmap$shift_or_preserve[i] <- "shift"
+}
+```
+
+# Extract coordinates:
+```{r}
+# initialize vector of start and end coordinates:
+intron_coordinates <- data.frame(AS_event_ID = character(), chr = character(), strand = character(), start = numeric(), end = numeric(), shift_or_preserve = character(), stringsAsFactors = FALSE)
+for (i in 1:nrow(intron_sums_heatmap)){
+  # extract chromosome, strand, start, and end coordinates from the AS event ID:
+  as_parts <- unlist(strsplit(intron_sums_heatmap$AS_event_ID[i], "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+  
+  intron_coordinates[i,1] <- intron_sums_heatmap$AS_event_ID[i]
+  intron_coordinates[i,2] <- chr_var
+  intron_coordinates[i,3] <- strand_var
+  intron_coordinates[i,4] <- start_var +1   # have to add +1 because of how JUM outputs AS_event_IDs
+  intron_coordinates[i,5] <- end_var +1
+  intron_coordinates[i,6] <- intron_sums_heatmap$shift_or_preserve[i]
+}
+```
+
+# save the intron_coordinates data frame as a .tsv so we can use it in UNIX functions:
+```{r}
+write_tsv(intron_coordinates, file = "intron_coordinates.tsv")
+```
+
+# Once you have run extract_nucleotides_from_fasta.sh, upload the resulting .tsv:
+```{r}
+intron_sequences <- read_tsv("intron_sequences.tsv", col_names = F)
+colnames(intron_sequences) <- c("AS_event_ID", "sequence")
+intron_sequences <- as.data.frame(intron_sequences)
+```
+
+# reformat:
+```{r}
+intron_coordinates <- as.data.frame(intron_coordinates)
+intron_gene_names <- sapply(strsplit(rownames(intron_sums_heatmap), " "), `[`, 1)
+# create a named vector of gene names with AS_event_ID as the names
+gene_name_vector <- setNames(intron_gene_names, intron_sums_heatmap$AS_event_ID)
+ 
+# add the gene names and sequences to intron_coordinates by matching AS_event_ID
+intron_coordinates$gene_name <- gene_name_vector[intron_coordinates$AS_event_ID]
+intron_coordinates$sequence <- intron_sequences[,2]
+
+intron_coordinates <- intron_coordinates %>%
+  filter(end-start >= 3)
+```
+
+# Looks like the strand information did not pass through the .bed reformatting in UNIX. Let's account for this now by reversing sequences for all negative stranded events, pasting the reverse complement, then re-counting the start and stop codons:
+```{r}
+complement_map <- c(A = "T", T = "A", G = "C", C = "G")
+for (i in 1:nrow(intron_coordinates)) {
+  if (intron_coordinates$strand[i] == "-") {
+    intron_coordinates$sequence[i] <- paste(rev(complement_map[strsplit(intron_coordinates$sequence[i], NULL)[[1]]]), collapse = "")
+  }
+}
+```
+
+# find upstream features using gtf instead of gff's phase column:
+```{r}
+# modify gtf so that each exon inherits the frame of the CDS immediately below it:
+gtf_exon <- gtf
+for (i in 1:(nrow(gtf_exon) - 1)) {
+  # check if the current row is an exon and the next row is a CDS with the same strand and chromosome
+  if (gtf_exon$feature[i] == "exon" && gtf_exon$feature[i + 1] == "CDS" &&
+      gtf_exon$chr[i] == gtf_exon$chr[i + 1] && gtf_exon$strand[i] == gtf_exon$strand[i + 1]) {
+    # assign the frame value from the CDS to the exon
+    gtf_exon$frame[i] <- gtf_exon$frame[i + 1]
+  }
+}
+gtf_exon <- gtf_exon[gtf_exon$feature == "exon" | gtf_exon$feature == "start_codon",]
+# also ensure we are only selecting protein-coding exons:
+gtf_exon <- gtf_exon[gtf_exon$gene_biotype == "protein_coding",]
+
+# create a gtf of excluively coding regions:
+gtf_CDS <- gtf[gtf$feature == "CDS",]
+```
+
+# subtract 1 from the start and end coordinates of every exon in gtf_exon and every intron in intron_coordinates:
+## this is so that WormBase and IGV are in agreement with UCSC and JUM on where coordinates start and end.
+### we still had to adjust coordinates earlier in order to get the proper nucleotide sequences, which are still correct
+```{r}
+# only run these gtf lines immediately after importing and creating gtf_exon:
+# gtf_exon$start <- gtf_exon$start - 1
+# gtf_exon$end <- gtf_exon$end - 1
+# 
+# gtf_CDS$start <- gtf_CDS$start - 1
+# gtf_CDS$end <- gtf_CDS$end - 1
+
+intron_coordinates$start <- intron_coordinates$start - 1
+intron_coordinates$end <- intron_coordinates$end - 1
+```
+
+# find upstream exons of each IR event using modified gtf:
+```{r}
+find_upstream_exon_details <- function(intron_chr, intron_start, intron_end, intron_strand, gtf_exon) {
+ if (intron_strand != "*") {
+  subset_features <- gtf_exon[gtf_exon$chr == intron_chr & gtf_exon$strand == intron_strand, ]    # chr == * is impacted by this
+ }
+
+  if (intron_strand == "+") {
+    # Positive strand: Find features that end before the intron starts
+    upstream_features <- subset_features %>% filter(end <= intron_start)
+  } else if (intron_strand == "-") {
+    # Negative strand: Find features that start after the intron ends
+    upstream_features <- subset_features %>% filter(start >= intron_end)
+  } else {
+    # any other case (*): Find features that end before the intron starts
+    upstream_features <- subset_features %>% filter(end <= intron_start)
+  }
+
+  if (nrow(upstream_features) > 0) {
+    if (intron_strand == "-") {
+      # For negative strand, get the upstream feature with the minimum start coordinate
+      upstream_feature <- upstream_features[which.min(upstream_features$start), ]
+    } else {
+      # For positive strand, get the upstream feature with the maximum end coordinate
+      upstream_feature <- upstream_features[which.max(upstream_features$end), ]
+    }
+    # Check if there is a start_codon contained within the selected upstream feature
+    start_codon <- subset_features %>% filter(feature == "start_codon", 
+                                              start >= upstream_feature$start, 
+                                              end <= upstream_feature$end)
+    
+    if (nrow(start_codon) > 0) {
+      if (intron_strand == "+") {
+        # Modify the start coordinate of the exon to the start of the start_codon
+        upstream_feature$start <- min(start_codon$start)
+      } else if (intron_strand == "-") {
+        # Modify the end coordinate of the exon to the end of the start_codon
+        upstream_feature$end <- max(start_codon$end)
+      }
+      upstream_feature$frame <- start_codon$frame[1]   ### it doesn't matter which start codon frame is selected to represent the frame of the new upstream feature; all start codons with the same coordinate will always be represented in the same frame
+    }
+    
+    # Calculate length of the upstream feature:
+    feature_length <- upstream_feature$end - upstream_feature$start + 1
+    
+    # calculate distance between upstream feature and intron:   ## see lines below where we calculate this properly
+    if (intron_strand == "+") {
+      distance_to_intron <- intron_start - upstream_feature$end
+    } else if (intron_strand == "-") {
+      distance_to_intron <- upstream_feature$start - intron_end
+    } else {
+      distance_to_intron <- intron_start - upstream_feature$end
+    }
+    # Return phase (frame), feature length, distance, start, and end:
+    return(list(phase = upstream_feature$frame, length = feature_length, distance = distance_to_intron, start = upstream_feature$start, end = upstream_feature$end))
+  } else {
+    return(list(phase = NA, length = NA, distance = NA, start = NA, end = NA))   # This will return NA if no upstream feature is found
+  }
+}
+```
+
+# Apply the function to each intron using mapply:
+```{r}
+upstream_feature_details <- mapply(function(chr, start, end, strand) {
+  find_upstream_exon_details(chr, start, end, strand, gtf_exon)
+}, intron_coordinates$chr, intron_coordinates$start, intron_coordinates$end, intron_coordinates$strand, SIMPLIFY = FALSE)
+
+# extract phase, length, and start/end from the list
+intron_coordinates$upstream_feature_phase <- sapply(upstream_feature_details, `[[`, "phase")
+intron_coordinates$upstream_feature_length <- sapply(upstream_feature_details, `[[`, "length")
+intron_coordinates$upstream_feature_start <- sapply(upstream_feature_details, `[[`, "start")
+intron_coordinates$upstream_feature_end <- sapply(upstream_feature_details, `[[`, "end")
+
+# now we can properly calculate distance between upstream exon and intron (- 1 since intron immediately adjacent to exon is 1 nt away):
+for (i in 1:nrow(intron_coordinates)){
+if (intron_coordinates$strand[i] == "+"){
+  intron_coordinates$distance_to_intron[i] <- as.numeric(intron_coordinates$start[i] - intron_coordinates$upstream_feature_end[i] - 1)
+  }
+  if (intron_coordinates$strand[i] == "*"){
+  intron_coordinates$distance_to_intron[i] <- as.numeric(intron_coordinates$start[i] - intron_coordinates$upstream_feature_end[i] - 1)
+  }
+  if (intron_coordinates$strand[i] == "-"){
+  intron_coordinates$distance_to_intron[i] <- as.numeric(intron_coordinates$upstream_feature_start[i] - intron_coordinates$end[i] - 1)
+  }
+}
+```
+
+## if the distance_to_intron is non-zero, that means there is either a non-exon coding sequence adjacent to the exon, the sequence is unannotated, and/or there is a disagreement between the sequencing results and the reference transcriptome. We should eliminate these IR events (for now):
+```{r}
+intron_coordinates <- intron_coordinates[intron_coordinates$distance_to_intron == 0,]
+intron_coordinates <- intron_coordinates[!is.na(intron_coordinates$upstream_feature_phase),]
+```
+
+# calculate phase of IR event using math from intron_coordinates:
+```{r}
+# initialize a new column in intron_coordinates for the phase of IR event
+intron_coordinates$phase_of_intron <- NA
+
+# define a function to calculate the phase_of_intron:
+calculate_phase <- function(phase, length) {
+  phase <- as.numeric(phase)
+
+  if (is.na(phase)) {
+    return(NA)
+  }
+  if (phase == 0) {
+    remainder <- (length %% 3)
+    return(remainder %% 3)
+  } else if (phase == 1) {
+    remainder <- (length %% 3) - 1
+    return(remainder %% 3)
+  } else if (phase == 2) {
+    remainder <- (length %% 3) - 2
+    return(remainder %% 3)
+  }
+}
+```
+
+# implement the calculate_phase function:
+```{r}
+intron_coordinates$phase_of_intron <- mapply(function(upstream_phase, length) {
+  upstream_phase_numeric <- as.numeric(upstream_phase)
+
+  if (is.na(upstream_phase_numeric)) {
+    return(NA)
+  }
+
+  length_div_3 <- length %% 3
+
+  if (upstream_phase == "0" && length_div_3 == 0) {
+    return(0)
+  } else if (upstream_phase == "1" && length_div_3 == 0) {
+    return(2)
+  } else if (upstream_phase == "2" && length_div_3 == 0) {
+    return(1)
+  } else {
+    return(calculate_phase(upstream_phase, length))
+  }
+}, intron_coordinates$upstream_feature_phase, intron_coordinates$upstream_feature_length)
+```
+
+# count the total start and stop codons with the reversed negative-stranded sequences:
+```{r}
+# function to count total codons in a sequence:
+count_codons <- function(sequence, pattern) {
+  count <- 0
+  for (i in 1:(nchar(sequence) - 2)) {
+    codon <- substring(sequence, i, i + 2)
+    if (codon == pattern) {
+      count <- count + 1
+    }
+  }
+  count
+}
+
+# apply count_codons function to each sequence
+intron_coordinates <- intron_coordinates %>% mutate(
+  total_number_of_start_codons = sapply(sequence, count_codons, pattern = "ATG"),
+  total_number_of_stop_codons = sapply(sequence, count_codons, pattern = "TAA") +
+                          sapply(sequence, count_codons, pattern = "TAG") +
+                          sapply(sequence, count_codons, pattern = "TGA"))
+```
+
+# We need to find where the frames within each intron actually start - otherwise we may be observing overlapping codons and assuming they are all start or stop codons. Let's diagnose it frame-by-frame:
+```{r}
+# function to count codons directly from a shortened sequence:
+count_codons <- function(sequence, pattern){
+  positions <- seq(1, nchar(sequence) - 2, by = 3)
+  codons <- substring(sequence, positions, positions + 2)
+  sum(codons == pattern)
+}
+```
+
+# now we just need to calculate the number of stop codons from the correct phase:
+```{r}
+# add phase to intron_coordinates:
+intron_coordinates$phase_of_intron <- as.character(intron_coordinates$phase_of_intron)
+# initialize the true_stop_codon_counts column
+intron_coordinates$true_start_codon_counts <- NA
+intron_coordinates$true_stop_codon_counts <- NA
+
+# cut off sequences by X characters depending on frame, then fetch correct stop codon counts:
+for (i in 1:nrow(intron_coordinates)) {
+  if (is.na(intron_coordinates$phase_of_intron[i])) {
+    intron_coordinates$true_start_codon_counts[i] <- NA
+    intron_coordinates$true_stop_codon_counts[i] <- NA
+  } else {
+  sequence <- intron_coordinates$sequence[i]
+
+  if (intron_coordinates$phase_of_intron[i] == 1) {
+    sequence <- substr(sequence, 3, nchar(sequence))  # Remove first 2 characters
+  } else if (intron_coordinates$phase_of_intron[i] == 2) {
+    sequence <- substr(sequence, 2, nchar(sequence))  # Remove first character
+  }
+    intron_coordinates$true_start_codon_counts[i] <- count_codons(sequence, pattern = "ATG")
+    intron_coordinates$true_stop_codon_counts[i] <-
+      count_codons(sequence, pattern = "TAA") +
+      count_codons(sequence, pattern = "TAG") +
+      count_codons(sequence, pattern = "TGA")
+    }
+  }
+```
+
+# save intron_coordinates, show Adam how results are the same counting codons at the end as opposed to in the middle of the pipeline:
+```{r}
+write.csv(intron_coordinates, file = "All_IR_events_with_stop_codon_counts.csv", row.names = F, quote = F)
+```
+
+# redo stats and plots with newly incorporated frame data:
+```{r}
+phase_0 <- intron_coordinates[intron_coordinates$phase_of_intron == 0,]
+phase_1 <- intron_coordinates[intron_coordinates$phase_of_intron == 1,]
+phase_2 <- intron_coordinates[intron_coordinates$phase_of_intron == 2,]
+#phase_. <- intron_coordinates[intron_coordinates$frame == ".",]
+
+# Phase 0 (first reading frame):
+  start_column <- "true_start_codon_counts"
+  stop_column <- "true_stop_codon_counts"
+  
+  print(paste("Frame 1"))
+  print(paste("mean number of start codons in all IR events:", round(mean(phase_0[[start_column]], na.rm = T), 3)))
+  print(paste("mean number of stop codons in all IR events:", round(mean(phase_0[[stop_column]], na.rm = T), 3)))
+  print(paste("median number of start codons in all IR events:", median(phase_0[[start_column]], na.rm = T)))
+  print(paste("median number of stop codons in all IR events:", median(phase_0[[stop_column]], na.rm = T)))
+  print(paste("max number of start codons in all IR events:", max(phase_0[[start_column]], na.rm = T)))
+  print(paste("max number of stop codons in all IR events:", max(phase_0[[stop_column]], na.rm = T)))
+
+  print(paste("mean number of start codons in frame-preserving IR events:", round(mean(phase_0[[start_column]][phase_0$shift_or_preserve == "preserve"], na.rm = T), 3)))
+  print(paste("mean number of stop codons in frame-preserving IR events:", round(mean(phase_0[[stop_column]][phase_0$shift_or_preserve == "preserve"], na.rm = T), 3)))
+  print(paste("median number of start codons in frame-preserving IR events:", median(phase_0[[start_column]][phase_0$shift_or_preserve == "preserve"], na.rm = T)))
+  print(paste("median number of stop codons in frame-preserving IR events:", median(phase_0[[stop_column]][phase_0$shift_or_preserve == "preserve"], na.rm = T)))
+
+  print(paste("mean number of start codons in frame-shifting IR events:", round(mean(phase_0[[start_column]][phase_0$shift_or_preserve == "shift"], na.rm = T), 3)))
+  print(paste("mean number of stop codons in frame-shifting IR events:", round(mean(phase_0[[stop_column]][phase_0$shift_or_preserve == "shift"], na.rm = T), 3)))
+  print(paste("median number of start codons in frame-shifting IR events:", median(phase_0[[start_column]][phase_0$shift_or_preserve == "shift"], na.rm = T)))
+  print(paste("median number of stop codons in frame-shifting IR events:", median(phase_0[[stop_column]][phase_0$shift_or_preserve == "shift"], na.rm = T)))
+  cat("\n")
+  
+# Phase 1 (second reading frame):
+  start_column <- "true_start_codon_counts"
+  stop_column <- "true_stop_codon_counts"
+  
+  print(paste("Frame 2"))
+  print(paste("mean number of start codons in all IR events:", round(mean(phase_1[[start_column]], na.rm = T), 3)))
+  print(paste("mean number of stop codons in all IR events:", round(mean(phase_1[[stop_column]], na.rm = T), 3)))
+  print(paste("median number of start codons in all IR events:", median(phase_1[[start_column]], na.rm = T)))
+  print(paste("median number of stop codons in all IR events:", median(phase_1[[stop_column]], na.rm = T)))
+  print(paste("max number of start codons in all IR events:", max(phase_1[[start_column]], na.rm = T)))
+  print(paste("max number of stop codons in all IR events:", max(phase_1[[stop_column]], na.rm = T)))
+
+  print(paste("mean number of start codons in frame-preserving IR events:", round(mean(phase_1[[start_column]][phase_1$shift_or_preserve == "preserve"], na.rm = T), 3)))
+  print(paste("mean number of stop codons in frame-preserving IR events:", round(mean(phase_1[[stop_column]][phase_1$shift_or_preserve == "preserve"], na.rm = T), 3)))
+  print(paste("median number of start codons in frame-preserving IR events:", median(phase_1[[start_column]][phase_1$shift_or_preserve == "preserve"], na.rm = T)))
+  print(paste("median number of stop codons in frame-preserving IR events:", median(phase_1[[stop_column]][phase_1$shift_or_preserve == "preserve"], na.rm = T)))
+
+  print(paste("mean number of start codons in frame-shifting IR events:", round(mean(phase_1[[start_column]][phase_1$shift_or_preserve == "shift"], na.rm = T), 3)))
+  print(paste("mean number of stop codons in frame-shifting IR events:", round(mean(phase_1[[stop_column]][phase_1$shift_or_preserve == "shift"], na.rm = T), 3)))
+  print(paste("median number of start codons in frame-shifting IR events:", median(phase_1[[start_column]][phase_1$shift_or_preserve == "shift"], na.rm = T)))
+  print(paste("median number of stop codons in frame-shifting IR events:", median(phase_1[[stop_column]][phase_1$shift_or_preserve == "shift"], na.rm = T)))
+  cat("\n")
+  
+# Phase 2 (third reading frame):
+  start_column <- "true_start_codon_counts"
+  stop_column <- "true_stop_codon_counts"
+  
+  print(paste("Frame 1"))
+  print(paste("mean number of start codons in all IR events:", round(mean(phase_2[[start_column]], na.rm = T), 3)))
+  print(paste("mean number of stop codons in all IR events:", round(mean(phase_2[[stop_column]], na.rm = T), 3)))
+  print(paste("median number of start codons in all IR events:", median(phase_2[[start_column]], na.rm = T)))
+  print(paste("median number of stop codons in all IR events:", median(phase_2[[stop_column]], na.rm = T)))
+  print(paste("max number of start codons in all IR events:", max(phase_2[[start_column]], na.rm = T)))
+  print(paste("max number of stop codons in all IR events:", max(phase_2[[stop_column]], na.rm = T)))
+
+  print(paste("mean number of start codons in frame-preserving IR events:", round(mean(phase_2[[start_column]][phase_2$shift_or_preserve == "preserve"], na.rm = T), 3)))
+  print(paste("mean number of stop codons in frame-preserving IR events:", round(mean(phase_2[[stop_column]][phase_2$shift_or_preserve == "preserve"], na.rm = T), 3)))
+  print(paste("median number of start codons in frame-preserving IR events:", median(phase_2[[start_column]][phase_2$shift_or_preserve == "preserve"], na.rm = T)))
+  print(paste("median number of stop codons in frame-preserving IR events:", median(phase_2[[stop_column]][phase_2$shift_or_preserve == "preserve"], na.rm = T)))
+
+  print(paste("mean number of start codons in frame-shifting IR events:", round(mean(phase_2[[start_column]][phase_2$shift_or_preserve == "shift"], na.rm = T), 3)))
+  print(paste("mean number of stop codons in frame-shifting IR events:", round(mean(phase_2[[stop_column]][phase_2$shift_or_preserve == "shift"], na.rm = T), 3)))
+  print(paste("median number of start codons in frame-shifting IR events:", median(phase_2[[start_column]][phase_2$shift_or_preserve == "shift"], na.rm = T)))
+  print(paste("median number of stop codons in frame-shifting IR events:", median(phase_2[[stop_column]][phase_2$shift_or_preserve == "shift"], na.rm = T)))
+  cat("\n")
+```
+
+# which IR events have no start or stop codons inside the intron?
+```{r}
+intron_coordinates %>% filter(true_start_codon_counts == 0 & true_stop_codon_counts == 0)
+```
+
+```{r}
+stats <- data.frame(Frame = integer(),  Metric = character(),  Value = double(),  Category = character())
+
+# Calculate statistics for each frame and append to the stats dataframe
+for (frame in 1:3) {
+  df  <- get(paste0("phase_", (frame-1)))
+  start_column <- "true_start_codon_counts"
+  stop_column <- "true_stop_codon_counts"
+  
+  stats <- stats %>%
+    add_row(Frame = frame, Metric = "START codons", Value = mean(df[[start_column]], na.rm = T), Category = "All IR events") %>%
+    add_row(Frame = frame, Metric = "STOP codons", Value = mean(df[[stop_column]], na.rm = T), Category = "All IR events") %>%
+    add_row(Frame = frame, Metric = "START codons", Value = mean(df[[start_column]][df$shift_or_preserve == "preserve"], na.rm = T), Category = "Frame-preserving IR events") %>%
+    add_row(Frame = frame, Metric = "STOP codons", Value = mean(df[[stop_column]][df$shift_or_preserve == "preserve"], na.rm = T), Category = "Frame-preserving IR events") %>%
+    add_row(Frame = frame, Metric = "START codons", Value = mean(df[[start_column]][df$shift_or_preserve == "shift"], na.rm = T), Category = "Frame-shifting IR events") %>%
+    add_row(Frame = frame, Metric = "STOP codons", Value = mean(df[[stop_column]][df$shift_or_preserve == "shift"], na.rm = T), Category = "Frame-shifting IR events")
+}
+
+color_mapping <- c(
+  "All IR events Mean # of START codons" = "purple3",
+  "All IR events Mean # of STOP codons" = "red1",
+  "Frame-preserving IR events Mean # of START codons" = "#99CCFF",
+  "Frame-preserving IR events Mean # of STOP codons" = "darkblue",
+  "Frame-shifting IR events Mean # of START codons" = "lightyellow",
+  "Frame-shifting IR events Mean # of STOP codons" = "gold4"
+)
+
+stats$color <- color_mapping[interaction(stats$Category, stats$Metric)]
+legend_mapping <- setNames(
+  c("All IR events Mean # of START codons",
+    "All IR events Mean # of STOP codons",
+    "Frame-preserving IR events Mean # of START codons",
+    "Frame-preserving IR events Mean # of STOP codons",
+    "Frame-shifting IR events Mean # of START codons",
+    "Frame-shifting IR events Mean # of STOP codons"),
+  unique(stats$Category)
+)
+
+# Plot with correct colors and updated legend
+ggplot(stats, aes(x = Metric, y = Value, fill = Category)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Frame, scales = "fixed", labeller = as_labeller(c(`1` = "Frame 1", `2` = "Frame 2", `3` = "Frame 3"))) +
+  theme_minimal() +
+  labs(title = "Start and Stop Codon Means by Frame",
+       x = "",
+       y = "Mean number of codons",
+       fill = "Category") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        plot.title = element_text(face = "bold")) +
+  scale_fill_manual(values = stats$color) +
+  guides(fill = guide_legend(title = "Category"))
+```
+
+# t-test, is there a significant difference in codon means between frame shifts and frame preservations?
+```{r}
+# initialize list to store t-test results for frame-by-frame analysis:
+t_test_results <- list()
+
+t_test_start <- t.test(true_start_codon_counts ~ shift_or_preserve, data = intron_coordinates[intron_coordinates$shift_or_preserve %in% c("shift", "preserve"), ])
+t_test_stop <- t.test(true_stop_codon_counts ~ shift_or_preserve, data = intron_coordinates[intron_coordinates$shift_or_preserve %in% c("shift", "preserve"), ])
+t_test_results[[paste0("All frames (start codons)")]] <- t_test_start
+t_test_results[[paste0("All frames (stop codons)")]] <- t_test_stop
+
+for (frame in 1:3){
+  df  <- get(paste0("phase_", (frame-1)))
+  start_col <- "true_start_codon_counts"
+  frame_data <- df[df$shift_or_preserve %in% c("shift", "preserve"), ]
+  t_test <- t.test(frame_data[[start_col]] ~ frame_data$shift_or_preserve)
+  t_test_results[[paste0("Frame ", frame, " (start codons)")]] <- t_test
+  stop_col <- "true_stop_codon_counts"
+  frame_data <- df[df$shift_or_preserve %in% c("shift", "preserve"), ]
+  t_test <- t.test(frame_data[[stop_col]] ~ frame_data$shift_or_preserve)
+  t_test_results[[paste0("Frame ", frame, " (stop codons)")]] <- t_test
+}
+t_test_results
+```
+
+# bin IR events by presence/absence of stop codon + frame shifting/preserving:
+```{r}
+intron_split <- intron_coordinates[,!(names(intron_coordinates) %in% c("sequence","total_number_of_start_codons","total_number_of_stop_codons","distance_to_intron"))]
+write.csv(intron_split, "All_IR_events_start_stop_counts_in_phase.csv", quote = F, row.names = F)
+intron_split <- intron_split[!is.na(intron_split$true_stop_codon_counts),]
+# What fraction of introns are frame preserving vs shifting?
+noquote(paste0(round(nrow(intron_split[intron_split$shift_or_preserve == "preserve",])/nrow(intron_split)*100, 2), "% of introns are frame-preserving"))
+noquote(paste0(round(nrow(intron_split[intron_split$shift_or_preserve == "shift",])/nrow(intron_split)*100, 2), "% of introns are frame-shifting"))
+# What fraction of introns are stop-codon containing vs lacking?
+intron_split <- intron_split %>% mutate(stop_presence = ifelse(true_stop_codon_counts >= 1, 1, 0))
+noquote(paste0(round(nrow(intron_split[intron_split$stop_presence == 1,])/nrow(intron_split)*100, 2), "% of introns contain at least 1 stop codon"))
+
+# What fraction of introns are completely coding in potential, i.e. neither frameshifting nor containing stop codons?
+intron_split_preserve_presence <- intron_split[intron_split$shift_or_preserve == "preserve" & intron_split$true_stop_codon_counts >= 1,]
+intron_split_preserve_absence <- intron_split[intron_split$shift_or_preserve == "preserve" & intron_split$true_stop_codon_counts < 1,] ## this df contains all completely coded introns
+intron_split_shift_presence <- intron_split[intron_split$shift_or_preserve == "shift" & intron_split$true_stop_codon_counts >= 1,]
+intron_split_shift_absence <- intron_split[intron_split$shift_or_preserve == "shift" & intron_split$true_stop_codon_counts < 1,]
+noquote(paste0(round(nrow(intron_split_preserve_absence)/nrow(intron_split)*100, 2), "% of introns are completely coding in potential"))
+
+write.csv(intron_split_preserve_absence, "frame_preserving_IR_events_without_stop_codons.csv", quote = F, row.names = F)
+```
+
+# make a pie chart including the results above:
+```{r}
+shift_count <- nrow(intron_split[intron_split$shift_or_preserve == "shift",])   # frame-shifting events
+preserve_with_stop <- nrow(intron_split[intron_split$shift_or_preserve == "preserve" & intron_split$true_stop_codon_counts >= 1,])   # frame-preserving events with a stop codon
+preserve_without_stop <- nrow(intron_split[intron_split$shift_or_preserve == "preserve" & intron_split$true_stop_codon_counts < 1,])   # frame-preserving events without a stop codon
+
+values <- c(
+  nrow(intron_split[intron_split$shift_or_preserve == "shift",]),
+  nrow(intron_split_preserve_presence),
+  nrow(intron_split_preserve_absence)
+)
+
+piepercent <- round(100 * values / sum(values), 2)
+
+pie_data <- data.frame(
+  category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
+  value = values,
+  percentage = piepercent
+)
+
+# Get all colors in the Pastel1 palette
+pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
+selected_colors <- pastel1_colors[3:5]
+
+p <- ggplot(pie_data, aes(x = "", y = value, fill = category)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("Retained Intron Coding Potential Distribution")), fill = "Frame Type") +
+  geom_text(aes(label = paste0(percentage, "%")), position = position_stack(vjust = 0.5), size = 4.8) +
+  scale_fill_manual(values = selected_colors) +
+  theme_void()
+print(p)
+```
+
+# make a histogram of which genes are represented in IR events:
+```{r}
+intron_sums_heatmap_for_histogram <- mega_intron
+intron_sums_heatmap_for_histogram <- intron_sums_heatmap_for_histogram[intron_sums_heatmap_for_histogram$Gene != "NONE",]
+
+gene_counts <- intron_sums_heatmap_for_histogram %>%
+  group_by(Gene) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+intron_summary <- gene_counts %>%
+  group_by(count) %>%
+  summarise(number_of_genes = n())
+
+intron_summary <- intron_summary %>%
+  mutate(count_category = if_else(count > 10, "> 10", as.character(count))) %>%
+  group_by(count_category) %>%
+  summarise(number_of_genes = sum(number_of_genes)) %>%
+  ungroup()
+
+intron_summary <- intron_summary %>%
+  mutate(count_category = factor(count_category, levels = c(as.character(sort(as.numeric(unique(count_category)[-which(unique(count_category) == "> 10")]))), "> 10")))
+
+num_colors <- length(unique(intron_summary$count_category))
+
+ggplot(intron_summary, aes(x = count_category, y = number_of_genes, fill = count_category)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Number of Retained Introns per Gene", y = "Number of Genes", title = "Distribution of Number of Retained Introns per Gene") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Paired", n = num_colors) +
+  theme(legend.position = "none")
+
+ggplot(intron_summary, aes(x = count_category, y = number_of_genes)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Number of Retained Introns per Gene", y = "Number of Genes", title = "Distribution of Number of Retained Introns per Gene") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_fill_brewer(palette = "Paired", n = num_colors) +
+  theme(legend.position = "none")
+
+ggplot(gene_counts, aes(x = count, y = reorder(Gene, count), fill = Gene)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Gene Name", title = "Number of IR Events per Gene") +
+  theme_minimal() +
+  theme(legend.position = "none") 
+
+ggplot(gene_counts[1:20,], aes(x = count, y = reorder(Gene, count), fill = Gene)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Gene Name", title = "Number of IR Events per Gene (Top 20)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+genes_with_one_row <- gene_counts %>%
+  filter(count == 1)
+```
+
+# let's do some similar analyses with A3S events:
+## Dismantle the coordinates from A3S events:
+# First, make sure there is an AS event ID column in the A3S uniqueness index with a column relating to frame shifting/preserving:
+```{r}
+A3S_sums_heatmap$AS_event_ID <- sapply(strsplit(rownames(A3S_sums_heatmap), " "), `[`, 2)
+for (i in 1:nrow(A3S_sums_heatmap)){
+elements <- unlist(strsplit(A3S_sums_heatmap$AS_event_ID[i], "_"))
+if (elements[2] == "-"){
+  shift <- print(as.numeric(elements[4])-as.numeric(elements[3]))
+}
+else shift <- print(as.numeric(elements[5])-as.numeric(elements[4]))
+A3S_sums_heatmap$distance_between_splice_sites[i] <- shift
+
+if (shift %% 3 == 0){
+  A3S_sums_heatmap$shift_or_preserve[i] <- "preserve"
+}
+else A3S_sums_heatmap$shift_or_preserve[i] <- "shift"
+}
+```
+
+# How many of the alternative 3' splice sites are divisible by 3?
+```{r}
+nrow(A3S_sums_heatmap[A3S_sums_heatmap$shift_or_preserve == "preserve",])/nrow(A3S_sums_heatmap)
+noquote(paste0(round(nrow(A3S_sums_heatmap[A3S_sums_heatmap$shift_or_preserve == "preserve",])/nrow(A3S_sums_heatmap) * 100, 2), "% of A3'SS gaps are divisible by 3"))
+```
+
+# What is the distance distribution (histogram, or strip plot, etc.) - display distance between the two alternative 3' splice sites
+```{r}
+A3S_sums_heatmap$distance_capped <- ifelse(A3S_sums_heatmap$distance_between_splice_sites > 2000, 
+                                           2000, 
+                                           A3S_sums_heatmap$distance_between_splice_sites)
+
+ggplot(A3S_sums_heatmap, aes(x = distance_capped)) +
+  geom_histogram(binwidth = 100, fill = "gray", color = "black") +
+  labs(title = "Histogram of Distances Between 3' Splice Sites",
+       x = "Distance Between Splice Sites",
+       y = "Frequency") +
+  scale_x_continuous(breaks = c(seq(0, 2000, by = 100)),
+                     labels = c(seq(0, 1900, by = 100), ">2000")) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Prevent scientific notation
+options(scipen = 999)
+
+breaks <- c(0, 3, 6, seq(9, 54, by = 9), seq(60, 266, by = 30), seq(300, 2000, by = 100))
+
+# Create custom labels for each bin using dashes
+labels <- paste0(breaks[-length(breaks)] + 1, "-", breaks[-1])
+labels[1] <- "0-3"  # Manually set the first bin's label
+
+# Bin the data based on the custom breaks and add ">2000" for values exceeding 2000
+A3S_sums_heatmap$distance_bins <- cut(A3S_sums_heatmap$distance_between_splice_sites,
+                                      breaks = c(breaks, Inf),
+                                      right = TRUE, 
+                                      include.lowest = TRUE,
+                                      labels = c(labels, ">2000"))
+
+ggplot(A3S_sums_heatmap, aes(x = distance_bins)) +
+  geom_bar(fill = "gray", color = "black") +
+  labs(title = "Histogram of Distances Between 3' Splice Sites (nucletodies)",
+       x = "Distance Between Splice Sites",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Prevent scientific notation
+options(scipen = 999)
+
+breaks <- c(seq(0, 45, by = 9), seq(54, 264, by = 30), seq(300, 2000, by = 100))
+
+# Create custom labels for each bin using dashes
+labels <- paste0(breaks[-length(breaks)] + 1, "-", breaks[-1])
+labels[1] <- "0-9"  # Manually set the first bin's label
+
+# Bin the data based on the custom breaks and add ">2000" for values exceeding 2000
+A3S_sums_heatmap$distance_bins <- cut(A3S_sums_heatmap$distance_between_splice_sites,
+                                      breaks = c(breaks, Inf),
+                                      right = TRUE, 
+                                      include.lowest = TRUE,
+                                      labels = c(labels, ">2000"))
+
+ggplot(A3S_sums_heatmap, aes(x = distance_bins)) +
+  geom_bar(fill = "gray", color = "black") +
+  labs(title = "Histogram of Distances Between 3' Splice Sites (nucletodies)",
+       x = "Distance Between Splice Sites",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Among the frame-preserving alternative 3' splice sites, how many encode premature stop codons?
+# Extract coordinates:
+```{r}
+# initialize vector of start and end coordinates:
+A3S_coordinates <- data.frame(AS_event_ID = character(), chr = character(), strand = character(), start = numeric(), end = numeric(), five_prime_splice_site = numeric(), shift_or_preserve = character(), distance_between_splice_sites = numeric(), stringsAsFactors = FALSE)
+for (i in 1:nrow(A3S_sums_heatmap)){
+  # extract chromosome, strand, start, and end coordinates from the AS event ID:
+  as_parts <- unlist(strsplit(A3S_sums_heatmap$AS_event_ID[i], "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  mid_var <- as.numeric(as_parts[4])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+  
+  A3S_coordinates[i,1] <- A3S_sums_heatmap$AS_event_ID[i]
+  A3S_coordinates[i,2] <- chr_var
+  A3S_coordinates[i,3] <- strand_var
+  if (strand_var == "-"){
+  A3S_coordinates[i,4] <- start_var +1   # have to add +1 because of how JUM outputs AS_event_IDs
+  A3S_coordinates[i,5] <- mid_var +1
+  A3S_coordinates[i,6] <- end_var +1
+  }
+  else {
+  A3S_coordinates[i,4] <- mid_var +1   # have to add +1 because of how JUM outputs AS_event_IDs
+  A3S_coordinates[i,5] <- end_var +1
+  A3S_coordinates[i,6] <- start_var +1
+  }
+  A3S_coordinates[i,7] <- A3S_sums_heatmap$shift_or_preserve[i]
+  A3S_coordinates[i,8] <- A3S_sums_heatmap$distance_between_splice_sites[i]
+}
+```
+
+# save the A3S_coordinates data frame as a .tsv so we can use it in UNIX functions:
+```{r}
+write_tsv(A3S_coordinates, file = "A3S_coordinates.tsv")
+```
+
+# Once you have run extract_nucleotides_from_fasta.sh, upload the resulting .tsv:
+```{r}
+A3S_sequences <- read_tsv("A3S_sequences.tsv", col_names = F)
+A3S_sequences <- A3S_sequences %>%
+  dplyr::mutate(row_num = dplyr::row_number()) %>%
+  dplyr::group_by(pair_id = (row_num + 1) %/% 2) %>%
+  dplyr::summarize(
+    AS_event_ID = str_remove(X1[1], "^>"),
+    Sequence = X1[2]) %>% dplyr::ungroup()
+
+A3S_sequences <- A3S_sequences[,!(names(A3S_sequences) %in% c("pair_id"))]
+colnames(A3S_sequences) <- c("AS_event_ID", "sequence")
+A3S_sequences <- as.data.frame(A3S_sequences)
+```
+
+# reformat:
+```{r}
+A3S_coordinates <- as.data.frame(A3S_coordinates)
+A3S_gene_names <- sapply(strsplit(rownames(A3S_sums_heatmap), " "), `[`, 1)
+# create a named vector of gene names with AS_event_ID as the names
+gene_name_vector <- setNames(A3S_gene_names, A3S_sums_heatmap$AS_event_ID)
+ 
+# add the gene names and sequences to A3S_coordinates by matching AS_event_ID
+A3S_coordinates$gene_name <- gene_name_vector[A3S_coordinates$AS_event_ID]
+A3S_coordinates$sequence <- A3S_sequences[,2]
+```
+
+# Reverse sequences for all negative stranded events, paste the reverse complement, then re-count the start and stop codons:
+```{r}
+complement_map <- c(A = "T", T = "A", G = "C", C = "G")
+for (i in 1:nrow(A3S_coordinates)) {
+  if (A3S_coordinates$strand[i] == "-") {
+    A3S_coordinates$sequence[i] <- paste(rev(complement_map[strsplit(A3S_coordinates$sequence[i], NULL)[[1]]]), collapse = "")
+  }
+}
+```
+
+# subtract 1 from the start and end coordinates of every exon in gtf_exon and every coordinate in A3S_coordinates:
+## this is so that WormBase and IGV are in agreement with UCSC and JUM on where coordinates start and end.
+### we still had to adjust coordinates earlier in order to get the proper nucleotide sequences, which are still correct
+```{r}
+A3S_coordinates$start <- A3S_coordinates$start - 1
+A3S_coordinates$end <- A3S_coordinates$end - 1
+A3S_coordinates$five_prime_splice_site <- A3S_coordinates$five_prime_splice_site - 1
+
+## also get rid of the first nt of each sequence:
+for (i in 1:nrow(A3S_coordinates)) {
+  A3S_coordinates$sequence[i] <- substr(A3S_coordinates$sequence[i], 2, nchar(A3S_coordinates$sequence[i]))
+}
+```
+
+# find upstream exons of each A3S event using modified gtf:
+```{r}
+find_exon_details <- function(A3S_chr, A3S_start, A3S_end, A3S_five_prime_splice_site, A3S_strand, gtf_exon) {
+  if (A3S_strand != "*") {
+    # Subset features based on chromosome and strand
+    subset_features <- gtf_exon[gtf_exon$chr == A3S_chr & gtf_exon$strand == A3S_strand, ]
+  }
+  
+  # Ensure 'subset_features' is defined
+  if (exists("subset_features")) {
+    features <- subset_features
+  } else {
+    features <- gtf_exon  # Fallback, though this case might not be necessary
+  }
+  
+  # Filter features adjacent to A3S_start
+  start_features <- features %>%
+    filter(end == A3S_start - 1 | end == A3S_start + 1 | start == A3S_start - 1 | start == A3S_start + 1)
+  
+  # Filter features adjacent to A3S_end
+  end_features <- features %>%
+    filter(start == A3S_end - 1 | start == A3S_end + 1 | end == A3S_end - 1 | end == A3S_end + 1)
+  
+  # Filter features adjacent to 5' splice site
+  upstream_features <- features %>%
+    filter(start == A3S_five_prime_splice_site - 1 | start == A3S_five_prime_splice_site + 1 | end == A3S_five_prime_splice_site - 1 | end == A3S_five_prime_splice_site + 1)
+  
+  # Initialize result list
+  result <- list(start_phase = NA, start_length = NA, start_feature_start = NA, start_feature_end = NA,
+                 end_phase = NA, end_length = NA, end_feature_start = NA, end_feature_end = NA,
+                 upstream_phase = NA, upstream_length = NA, upstream_feature_start = NA, upstream_feature_end = NA)
+  
+  # Process start_features if available
+  if (nrow(start_features) > 0) {
+    start_feature <- start_features[which.max(start_features$end), ]
+    
+    # Check if there is a start_codon contained within the selected feature
+    start_codon <- subset_features %>% filter(feature == "start_codon",
+                                              start >= start_feature$start,
+                                              end <= start_feature$end)
+
+    if (nrow(start_codon) > 0) {
+      if (A3S_strand == "+") {
+        # Modify the start coordinate of the exon to the start of the start_codon
+        start_feature$start <- min(start_codon$start)
+      } else if (A3S_strand == "-") {
+        # Modify the end coordinate of the exon to the end of the start_codon
+        start_feature$end <- max(start_codon$end)
+      }
+      start_feature$frame <- start_codon$frame[1]
+    }
+    
+    start_feature_length <- start_feature$end - start_feature$start + 1
+    
+    # Update start feature details in the result
+    result$start_phase <- start_feature$frame
+    result$start_length <- start_feature_length
+    result$start_feature_start <- start_feature$start
+    result$start_feature_end <- start_feature$end
+  }
+  
+  # Process end_features if available
+  if (nrow(end_features) > 0) {
+    end_feature <- end_features[which.min(end_features$start), ]
+    
+    # Check if there is a start_codon contained within the selected feature
+    start_codon <- subset_features %>% filter(feature == "start_codon",
+                                              start >= end_feature$start,
+                                              end <= end_feature$end)
+
+    if (nrow(start_codon) > 0) {
+      if (A3S_strand == "+") {
+        # Modify the start coordinate of the exon to the start of the start_codon
+        end_feature$start <- min(start_codon$start)
+      } else if (A3S_strand == "-") {
+        # Modify the end coordinate of the exon to the end of the start_codon
+        end_feature$end <- max(start_codon$end)
+      }
+      end_feature$frame <- start_codon$frame[1]
+    }
+    
+    end_feature_length <- end_feature$end - end_feature$start + 1
+    
+    # Update end feature details in the result
+    result$end_phase <- end_feature$frame
+    result$end_length <- end_feature_length
+    result$end_feature_start <- end_feature$start
+    result$end_feature_end <- end_feature$end
+  }
+  
+  # Process start_features if available
+  if (nrow(upstream_features) > 0) {
+    upstream_feature <- upstream_features[which.max(upstream_features$end), ]
+    
+    # Check if there is a start_codon contained within the selected feature
+    start_codon <- subset_features %>% filter(feature == "start_codon",
+                                              start >= upstream_feature$start,
+                                              end <= upstream_feature$end)
+
+    if (nrow(start_codon) > 0) {
+      if (A3S_strand == "+") {
+        # Modify the start coordinate of the exon to the start of the start_codon
+        upstream_feature$start <- min(start_codon$start)
+      } else if (A3S_strand == "-") {
+        # Modify the end coordinate of the exon to the end of the start_codon
+        upstream_feature$end <- max(start_codon$end)
+      }
+      upstream_feature$frame <- start_codon$frame[1]
+    }
+    
+    upstream_feature_length <- upstream_feature$end - upstream_feature$start + 1
+    
+    # Update upstream feature details in the result
+    result$upstream_phase <- upstream_feature$frame
+    result$upstream_length <- upstream_feature_length
+    result$upstream_feature_start <- upstream_feature$start
+    result$upstream_feature_end <- upstream_feature$end
+  }
+  return(result)
+}
+```
+
+# Apply the function to each A3S event using mapply:
+```{r}
+feature_details <- mapply(function(chr, start, end, five_prime_splice_site, strand) {
+  find_exon_details(chr, start, end, five_prime_splice_site, strand, gtf_exon)
+}, A3S_coordinates$chr, A3S_coordinates$start, A3S_coordinates$end, A3S_coordinates$five_prime_splice_site, A3S_coordinates$strand, SIMPLIFY = FALSE)
+
+# extract phase, length, and start/end from the list
+A3S_coordinates$start_feature_phase <- sapply(feature_details, `[[`, "start_phase")
+A3S_coordinates$start_feature_length <- sapply(feature_details, `[[`, "start_length")
+A3S_coordinates$start_feature_start <- sapply(feature_details, `[[`, "start_feature_start")
+A3S_coordinates$start_feature_end <- sapply(feature_details, `[[`, "start_feature_end")
+
+A3S_coordinates$end_feature_phase <- sapply(feature_details, `[[`, "end_phase")
+A3S_coordinates$end_feature_length <- sapply(feature_details, `[[`, "end_length")
+A3S_coordinates$end_feature_start <- sapply(feature_details, `[[`, "end_feature_start")
+A3S_coordinates$end_feature_end <- sapply(feature_details, `[[`, "end_feature_end")
+
+A3S_coordinates$upstream_feature_phase <- sapply(feature_details, `[[`, "upstream_phase")
+A3S_coordinates$upstream_feature_length <- sapply(feature_details, `[[`, "upstream_length")
+A3S_coordinates$upstream_feature_start <- sapply(feature_details, `[[`, "upstream_feature_start")
+A3S_coordinates$upstream_feature_end <- sapply(feature_details, `[[`, "upstream_feature_end")
+```
+
+# filter unexpected results:
+```{r}
+# Which rows have no immediate upstream OR downstream features?
+na_rows <- A3S_coordinates[is.na(A3S_coordinates$start_feature_length) & is.na(A3S_coordinates$end_feature_length) & is.na(A3S_coordinates$upstream_feature_length),]
+# dot_rows <- A3S_coordinates[(A3S_coordinates$start_feature_phase == "." & A3S_coordinates$end_feature_phase == ".") | (A3S_coordinates$start_feature_phase == "." & is.na(A3S_coordinates$end_feature_phase)) | (is.na(A3S_coordinates$start_feature_phase) & A3S_coordinates$end_feature_phase == "."),]
+dot_rows <- A3S_coordinates[(A3S_coordinates$upstream_feature_phase == "." & 
+    A3S_coordinates$start_feature_phase == "." & 
+    A3S_coordinates$end_feature_phase == ".") |
+  (is.na(A3S_coordinates$upstream_feature_phase) & 
+    A3S_coordinates$start_feature_phase == "." & 
+    A3S_coordinates$end_feature_phase == ".") |
+  (A3S_coordinates$upstream_feature_phase == "." & 
+    A3S_coordinates$start_feature_phase == "." & 
+    is.na(A3S_coordinates$end_feature_phase)) |
+  (A3S_coordinates$upstream_feature_phase == "." & 
+    is.na(A3S_coordinates$start_feature_phase) & 
+    A3S_coordinates$end_feature_phase == ".") |
+  (is.na(A3S_coordinates$upstream_feature_phase) & 
+    A3S_coordinates$start_feature_phase == "." & 
+    is.na(A3S_coordinates$end_feature_phase)) |
+  (is.na(A3S_coordinates$upstream_feature_phase) & 
+    is.na(A3S_coordinates$start_feature_phase) & 
+    A3S_coordinates$end_feature_phase == ".") |
+  (A3S_coordinates$upstream_feature_phase == "." & 
+    is.na(A3S_coordinates$start_feature_phase) & 
+    is.na(A3S_coordinates$end_feature_phase)),]
+dot_rows <- dot_rows[!is.na(dot_rows$AS_event_ID),]
+noquote(paste0(nrow(na_rows), " A3S events containing no annotated exons immediately adjacent to either 3' splice site"))
+noquote(paste0(nrow(dot_rows), " A3S events containing at least 1 annotated exon immediately adjacent to either 3' splice site, but no phase information for any exon"))
+noquote(paste0(nrow(na_rows) + nrow(dot_rows), " A3S events where the phase of both splice sites cannot be determined"))
+unique_gene_names <- unique(c(na_rows$gene_name, dot_rows$gene_name))
+noquote(paste0("Gene names for which the phase of both splice sites cannot be determined: ", list(unique_gene_names)))
+
+# Find rows where start_feature_phase is not equal to end_feature_phase
+mismatch_rows <- A3S_coordinates[A3S_coordinates$start_feature_phase != A3S_coordinates$end_feature_phase, ]
+mismatch_rows <- mismatch_rows[!is.na(mismatch_rows$start_feature_phase) & !is.na(mismatch_rows$end_feature_phase),]
+mismatch_rows <- mismatch_rows[mismatch_rows$start_feature_phase != "." & mismatch_rows$end_feature_phase != ".",]
+noquote(paste0(nrow(mismatch_rows), " A3S events where start_feature_phase is not equal to end_feature_phase"))
+mismatch_rows
+```
+
+## We should eliminate A3S events for which neither adjacent exon can be determined (for now):
+```{r}
+A3S_coordinates <- anti_join(A3S_coordinates, na_rows)
+```
+
+# next we will calculate the undeterminable phases of 3' splice sites based on the phases of their pair (if possible) by incorporating the distance between the splice sites:
+```{r}
+calculate_phase <- function(phase, length) {
+  phase <- as.numeric(phase)
+
+  if (is.na(phase)) {
+    return(NA)
+  }
+  if (phase == 0) {
+    remainder <- (length %% 3)
+    return(remainder %% 3)
+  } else if (phase == 1) {
+    remainder <- (length %% 3) - 1
+    return(remainder %% 3)
+  } else if (phase == 2) {
+    remainder <- (length %% 3) - 2
+    return(remainder %% 3)
+  }
+}
+
+# this loop only applies to frame-preserving events:
+for (i in 1:nrow(A3S_coordinates)){
+  if (A3S_coordinates$shift_or_preserve[i] == "preserve"){
+  if (is.na(A3S_coordinates$start_feature_phase[i]) | A3S_coordinates$start_feature_phase[i] == "." & !is.na(A3S_coordinates$end_feature_phase[i]) & A3S_coordinates$end_feature_phase[i] != ".") {
+    # if (A3S_coordinates$strand[i] == "+"){
+      A3S_coordinates$start_feature_phase[i] <- mapply(function(end_phase, length) {
+  end_phase_numeric <- as.numeric(end_phase)
+
+  length_div_3 <- length %% 3
+
+  if (end_phase == "0" && length_div_3 == 0) {
+    return(0)
+  } else if (end_phase == "1" && length_div_3 == 0) {
+    return(2)
+  } else if (end_phase == "2" && length_div_3 == 0) {
+    return(1)
+  } else {
+    return(calculate_phase(end_phase, length))
+  }
+      }, A3S_coordinates$end_feature_phase[i], A3S_coordinates$distance_between_splice_sites[i])
+  }
+  if (is.na(A3S_coordinates$end_feature_phase[i]) | A3S_coordinates$end_feature_phase[i] == "." & !is.na(A3S_coordinates$start_feature_phase[i]) & A3S_coordinates$start_feature_phase[i] != ".") {
+      A3S_coordinates$end_feature_phase[i] <- mapply(function(start_phase, length) {
+  start_phase_numeric <- as.numeric(start_phase)
+
+  length_div_3 <- length %% 3
+
+  if (start_phase == "0" && length_div_3 == 0) {
+    return(0)
+  } else if (start_phase == "1" && length_div_3 == 0) {
+    return(2)
+  } else if (start_phase == "2" && length_div_3 == 0) {
+    return(1)
+  } else {
+    return(calculate_phase(start_phase, length))
+  }
+      }, A3S_coordinates$start_feature_phase[i], A3S_coordinates$distance_between_splice_sites[i])
+   }
+  }
+}
+```
+
+# calculate phase based on upstream exon:
+```{r}
+# initialize a phase_of_3SS_gap column:
+A3S_coordinates$phase_of_3SS_gap <- NA
+
+calculate_phase <- function(phase, length, distance) {
+  phase <- as.numeric(phase)
+  
+  if (is.na(phase) || phase == ".") {
+    return(NA)
+  }
+  if (phase == 0) {
+    remainder <- length %% 3
+    return(remainder %% 3)
+  } else if (phase == 1) {
+    remainder <- (length %% 3) - 1
+    return(remainder %% 3)
+  } else if (phase == 2) {
+    remainder <- (length %% 3) - 2
+    return(remainder %% 3)
+  }
+}
+
+# this loop only applies to frame-shifting events:
+for (i in 1:nrow(A3S_coordinates)) {
+  if (A3S_coordinates$shift_or_preserve[i] == "shift"){
+    
+    A3S_coordinates$phase_of_3SS_gap[i] <- mapply(function(phase, length) {
+      upstream_phase_numeric <- as.numeric(phase)
+      
+      if (is.na(upstream_phase_numeric)) {
+        return(NA)
+      }
+      
+      length_div_3 <- length %% 3
+      
+      if (phase == "0" && length_div_3 == 0) {
+        return(0)
+      } else if (phase == "1" && length_div_3 == 0) {
+        return(1)
+      } else if (phase == "2" && length_div_3 == 0) {
+        return(2)
+      } else {
+        return(calculate_phase(phase, length))
+      }
+    }, A3S_coordinates$upstream_feature_phase[i], A3S_coordinates$upstream_feature_length[i])
+  }
+}
+```
+
+# count the total start and stop codons with the reversed negative-stranded sequences:
+```{r}
+# function to count total codons in a sequence:
+count_codons <- function(sequence, pattern) {
+  count <- 0
+  for (i in 1:(nchar(sequence) - 2)) {
+    codon <- substring(sequence, i, i + 2)
+    if (codon == pattern) {
+      count <- count + 1
+    }
+  }
+  count
+}
+
+# apply count_codons function to each sequence
+A3S_coordinates <- A3S_coordinates %>% mutate(
+  total_number_of_start_codons = sapply(sequence, count_codons, pattern = "ATG"),
+  total_number_of_stop_codons = sapply(sequence, count_codons, pattern = "TAA") +
+                          sapply(sequence, count_codons, pattern = "TAG") +
+                          sapply(sequence, count_codons, pattern = "TGA"))
+```
+
+# We need to find where the frames within each A3S actually start - otherwise we may be observing overlapping codons and assuming they are all start or stop codons. Let's diagnose it frame-by-frame:
+```{r}
+# function to count codons directly from a shortened sequence:
+count_codons <- function(sequence, pattern){
+  positions <- seq(1, nchar(sequence) - 2, by = 3)
+  codons <- substring(sequence, positions, positions + 2)
+  sum(codons == pattern)
+}
+```
+
+# now we just need to calculate the number of stop codons from the correct phase:
+```{r}
+# add phase to A3S_coordinates:
+A3S_coordinates$start_feature_phase <- as.character(A3S_coordinates$start_feature_phase)
+A3S_coordinates$end_feature_phase <- as.character(A3S_coordinates$end_feature_phase)
+# initialize the true_stop_codon_counts column
+A3S_coordinates$lower_coord_start_codon_counts <- NA
+A3S_coordinates$lower_coord_stop_codon_counts <- NA
+A3S_coordinates$upper_coord_start_codon_counts <- NA
+A3S_coordinates$upper_coord_stop_codon_counts <- NA
+A3S_coordinates$true_start_codon_counts <- NA
+A3S_coordinates$true_stop_codon_counts <- NA
+
+# cut off sequences by X characters depending on frame, then fetch correct stop codon counts:
+# this loop only applies to frame-preserving events:
+for (i in 1:nrow(A3S_coordinates)) {
+  if (A3S_coordinates$shift_or_preserve[i] == "preserve"){
+  if (is.na(A3S_coordinates$start_feature_phase[i]) | A3S_coordinates$start_feature_phase[i] == ".") {
+    A3S_coordinates$lower_coord_start_codon_counts[i] <- NA
+    A3S_coordinates$lower_coord_stop_codon_counts[i] <- NA
+  } else {
+  sequence <- A3S_coordinates$sequence[i]
+
+  if (A3S_coordinates$start_feature_phase[i] == 1) {
+    sequence <- substr(sequence, 2, nchar(sequence))  # Remove first character
+  } else if (A3S_coordinates$start_feature_phase[i] == 2) {
+    sequence <- substr(sequence, 3, nchar(sequence))  # Remove first 2 characters
+  }
+    if (sequence == "" | nchar(sequence) < 3) {
+    A3S_coordinates$lower_coord_start_codon_counts[i] <- 0
+    A3S_coordinates$lower_coord_stop_codon_counts[i] <- 0
+  } else {
+    A3S_coordinates$lower_coord_start_codon_counts[i] <- count_codons(sequence, pattern = "ATG")
+    A3S_coordinates$lower_coord_stop_codon_counts[i] <-
+      count_codons(sequence, pattern = "TAA") +
+      count_codons(sequence, pattern = "TAG") +
+      count_codons(sequence, pattern = "TGA")
+  }
+ }
+  
+  if (is.na(A3S_coordinates$end_feature_phase[i]) | A3S_coordinates$end_feature_phase[i] == ".") {
+    A3S_coordinates$upper_coord_start_codon_counts[i] <- NA
+    A3S_coordinates$upper_coord_stop_codon_counts[i] <- NA
+  } else {
+  sequence <- A3S_coordinates$sequence[i]
+
+  if (A3S_coordinates$end_feature_phase[i] == 1) {
+    sequence <- substr(sequence, 2, nchar(sequence))  # Remove first character
+  } else if (A3S_coordinates$end_feature_phase[i] == 2) {
+    sequence <- substr(sequence, 3, nchar(sequence))  # Remove first 2 characters
+  }
+    if (sequence == "" | nchar(sequence) < 3) {
+    A3S_coordinates$upper_coord_start_codon_counts[i] <- 0
+    A3S_coordinates$upper_coord_stop_codon_counts[i] <- 0
+    } else {
+    A3S_coordinates$upper_coord_start_codon_counts[i] <- count_codons(sequence, pattern = "ATG")
+    A3S_coordinates$upper_coord_stop_codon_counts[i] <-
+      count_codons(sequence, pattern = "TAA") +
+      count_codons(sequence, pattern = "TAG") +
+      count_codons(sequence, pattern = "TGA")
+    }
+   }
+  }
+  # this loop only applies to frame-shifting events:
+  if (A3S_coordinates$shift_or_preserve[i] == "shift"){
+    if (!is.na(A3S_coordinates$phase_of_3SS_gap[i])){
+    sequence <- A3S_coordinates$sequence[i]
+
+  if (A3S_coordinates$phase_of_3SS_gap[i] == 1) {
+    sequence <- substr(sequence, 3, nchar(sequence))  # Remove first 2 characters
+  } else if (A3S_coordinates$phase_of_3SS_gap[i] == 2) {
+    sequence <- substr(sequence, 2, nchar(sequence))  # Remove first character
+  }
+    if (sequence == "" | nchar(sequence) < 3) {
+    A3S_coordinates$true_start_codon_counts[i] <- 0
+    A3S_coordinates$true_stop_codon_counts[i] <- 0
+  } else {
+    A3S_coordinates$true_start_codon_counts[i] <- count_codons(sequence, pattern = "ATG")
+    A3S_coordinates$true_stop_codon_counts[i] <-
+      count_codons(sequence, pattern = "TAA") +
+      count_codons(sequence, pattern = "TAG") +
+      count_codons(sequence, pattern = "TGA")
+      }
+    }
+  }
+}
+```
+
+# up to this point, our frame-preserving A3S events have 2 exons with 2 phases and thus give our A3S events 2 separate start and stop codon counts. It's time to differentiate the positive and negative stranded events so we have a clear phase and start/stop codon count for each 3'SS gap:
+```{r}
+A3S_coordinates_backup <- A3S_coordinates
+for (i in 1:nrow(A3S_coordinates)){
+  # this loop only applies to frame-preserving events:
+  if (A3S_coordinates$shift_or_preserve[i] == "preserve"){
+  if (A3S_coordinates$strand[i] == "+"){
+    A3S_coordinates$phase_of_3SS_gap[i] <- A3S_coordinates$start_feature_phase[i]
+    A3S_coordinates$true_start_codon_counts[i] <- A3S_coordinates$lower_coord_start_codon_counts[i]
+    A3S_coordinates$true_stop_codon_counts[i] <- A3S_coordinates$lower_coord_stop_codon_counts[i]
+  }
+  if (A3S_coordinates$strand[i] == "-"){
+   A3S_coordinates$phase_of_3SS_gap[i] <- A3S_coordinates$end_feature_phase[i]
+   A3S_coordinates$true_start_codon_counts[i] <- A3S_coordinates$upper_coord_start_codon_counts[i]
+   A3S_coordinates$true_stop_codon_counts[i] <- A3S_coordinates$upper_coord_stop_codon_counts[i]
+  }
+  }
+}
+A3S_coordinates <- A3S_coordinates[,!names(A3S_coordinates) %in% c("total_number_of_start_codons", "total_number_of_stop_codons", "upper_coord_start_codon_counts", "lower_coord_start_codon_counts", "upper_coord_stop_codon_counts", "lower_coord_stop_codon_counts")]
+```
+
+# We only want to analyze frame-preserving events from this point forward. Make a new dataframe containing only frame-preserving A3S gaps:
+```{r}
+A3S_coordinates_preserve <- A3S_coordinates[A3S_coordinates$shift_or_preserve == "preserve",]
+A3S_coordinates_shift <- A3S_coordinates[A3S_coordinates$shift_or_preserve == "shift",]
+```
+
+# finally, filter for A3S events that are ONLY differential in OLL (!= 0 in A3S_sums_heatmap):
+```{r}
+A3S_coordinates_OLL_preserve <- A3S_coordinates_preserve[A3S_coordinates_preserve$AS_event_ID %in% A3S_sums_heatmap$AS_event_ID[A3S_sums_heatmap$OLL != 0],]
+A3S_coordinates_OLL_preserve <- A3S_coordinates_OLL_preserve[,!names(A3S_coordinates_OLL_preserve) %in% c("start_feature_phase","start_feature_length","start_feature_start","start_feature_end","end_feature_phase","end_feature_length","end_feature_start","end_feature_end","upstream_feature_phase","upstream_feature_length","upstream_feature_start","upstream_feature_end")]
+write.csv(A3S_coordinates_OLL_preserve, file = "A3S_coordinates_nonzero_in_OLL_frame-preserving.csv", row.names = F)
+
+A3S_coordinates_OLL_shift <- A3S_coordinates_shift[A3S_coordinates_shift$AS_event_ID %in% A3S_sums_heatmap$AS_event_ID[A3S_sums_heatmap$OLL != 0],]
+A3S_coordinates_OLL_shift <- A3S_coordinates_OLL_shift[,!names(A3S_coordinates_OLL_shift) %in% c("start_feature_phase","start_feature_length","start_feature_start","start_feature_end","end_feature_phase","end_feature_length","end_feature_start","end_feature_end","upstream_feature_phase","upstream_feature_length","upstream_feature_start","upstream_feature_end")]
+write.csv(A3S_coordinates_OLL_shift, file = "A3S_coordinates_nonzero_in_OLL.csv_frame-shifting.csv", row.names = F)
+```
+
+# make a pie chart including the A3S results above:
+```{r}
+shift_count <- nrow(A3S_coordinates_shift)   # frame-shifting events
+shift_count_OLL <- nrow(A3S_coordinates_OLL_shift)
+preserve_with_stop <- nrow(A3S_coordinates[A3S_coordinates$shift_or_preserve == "preserve" & A3S_coordinates$true_stop_codon_counts >= 1,])   # frame-preserving events with a stop codon
+preserve_without_stop <- nrow(A3S_coordinates[A3S_coordinates$shift_or_preserve == "preserve" & A3S_coordinates$true_stop_codon_counts < 1,])   # frame-preserving events without a stop codon
+preserve_with_stop_OLL <- nrow(A3S_coordinates_OLL_preserve[A3S_coordinates_OLL_preserve$shift_or_preserve == "preserve" & A3S_coordinates_OLL_preserve$true_stop_codon_counts >= 1,])   # frame-preserving events with a stop codon
+preserve_without_stop_OLL <- nrow(A3S_coordinates_OLL_preserve[A3S_coordinates_OLL_preserve$shift_or_preserve == "preserve" & A3S_coordinates_OLL_preserve$true_stop_codon_counts < 1,])   # frame-preserving events without a stop codon
+
+values <- c(shift_count,preserve_with_stop,preserve_without_stop)
+
+piepercent <- round(100 * values / sum(values), 2)
+
+pie_data <- data.frame(
+  category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
+  value = values,
+  percentage = piepercent
+)
+
+# Get all colors in the Pastel1 palette
+pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
+selected_colors <- pastel1_colors[3:5]
+
+p <- ggplot(pie_data, aes(x = "", y = value, fill = category)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("3' Splice Site Gap Coding Potential Distribution")), fill = "Frame Type") +
+  geom_text(aes(label = paste0(percentage, "%")), position = position_stack(vjust = 0.5), size = 4.8) +
+  scale_fill_manual(values = selected_colors) +
+  theme_void()
+print(p)
+
+values <- c(shift_count_OLL,preserve_with_stop_OLL,preserve_without_stop_OLL)
+
+piepercent <- round(100 * values / sum(values), 2)
+
+pie_data <- data.frame(
+  category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
+  value = values,
+  percentage = piepercent
+)
+
+# Get all colors in the Pastel1 palette
+pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
+selected_colors <- pastel1_colors[3:5]
+
+p <- ggplot(pie_data, aes(x = "", y = value, fill = category)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("3' Splice Site Gap Coding Potential Distribution (OLL-specific)")), fill = "Frame Type") +
+  geom_text(aes(label = paste0(percentage, "%")), position = position_stack(vjust = 0.5), size = 4.8) +
+  scale_fill_manual(values = selected_colors) +
+  theme_void()
+print(p)
+```
+
+# do the same thing, but only for 3'SS gaps under 180 nts:
+```{r}
+A3S_coordinates_180_shift <- A3S_coordinates_shift[A3S_coordinates_shift$distance_between_splice_sites <= 180,]
+A3S_coordinates_180_preserve <- A3S_coordinates_preserve[A3S_coordinates_preserve$distance_between_splice_sites <= 180,]
+shift_count <- nrow(A3S_coordinates_180_shift)   # frame-shifting events
+A3S_coordinates_180_OLL_shift <- A3S_coordinates_OLL_shift[A3S_coordinates_OLL_shift$distance_between_splice_sites <= 180,]
+A3S_coordinates_180_OLL_preserve <- A3S_coordinates_OLL_preserve[A3S_coordinates_OLL_preserve$distance_between_splice_sites <= 180,]
+shift_count_OLL <- nrow(A3S_coordinates_180_OLL_shift)
+preserve_with_stop <- nrow(A3S_coordinates[A3S_coordinates$shift_or_preserve == "preserve" & A3S_coordinates$true_stop_codon_counts >= 1 & A3S_coordinates$distance_between_splice_sites <= 180,])   # frame-preserving events with a stop codon
+preserve_without_stop <- nrow(A3S_coordinates[A3S_coordinates$shift_or_preserve == "preserve" & A3S_coordinates$true_stop_codon_counts < 1 & A3S_coordinates$distance_between_splice_sites <= 180,])   # frame-preserving events without a stop codon
+alternative_last_exons <- nrow(A3S_coordinates[A3S_coordinates$distance_between_splice_sites > 180,])
+preserve_with_stop_OLL <- nrow(A3S_coordinates_OLL_preserve[A3S_coordinates_OLL_preserve$shift_or_preserve == "preserve" & A3S_coordinates_OLL_preserve$true_stop_codon_counts >= 1 & A3S_coordinates_OLL_preserve$distance_between_splice_sites <= 180,])   # frame-preserving events with a stop codon
+preserve_without_stop_OLL <- nrow(A3S_coordinates_OLL_preserve[A3S_coordinates_OLL_preserve$shift_or_preserve == "preserve" & A3S_coordinates_OLL_preserve$true_stop_codon_counts < 1 & A3S_coordinates_OLL_preserve$distance_between_splice_sites <= 180,])   # frame-preserving events without a stop codon
+alternative_last_exons_OLL <- nrow(A3S_coordinates_OLL_shift[A3S_coordinates_OLL_shift$distance_between_splice_sites > 180,]) + nrow(A3S_coordinates_OLL_preserve[A3S_coordinates_OLL_preserve$distance_between_splice_sites > 180,])
+
+values <- c(shift_count,preserve_with_stop,preserve_without_stop)
+
+piepercent <- round(100 * values / sum(values), 2)
+
+pie_data <- data.frame(
+  category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
+  value = values,
+  percentage = piepercent)
+
+# Get all colors in the Pastel1 palette
+pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
+selected_colors <- pastel1_colors[3:5]
+
+p <- ggplot(pie_data, aes(x = "", y = value, fill = category)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("3' Splice Site Gap (180 nts or less) Coding Potential Distribution")), fill = "Frame Type") +
+  geom_text(aes(label = paste0(percentage, "%")), position = position_stack(vjust = 0.5), size = 4.8) +
+  scale_fill_manual(values = selected_colors) +
+  theme_void()
+print(p)
+
+values <- c(shift_count_OLL,preserve_with_stop_OLL,preserve_without_stop_OLL)
+
+piepercent <- round(100 * values / sum(values), 2)
+
+pie_data <- data.frame(
+  category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
+  value = values,
+  percentage = piepercent
+)
+
+# Get all colors in the Pastel1 palette
+pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
+selected_colors <- pastel1_colors[3:5]
+
+p <- ggplot(pie_data, aes(x = "", y = value, fill = category)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("3' Splice Site Gap (180 nts or less) Coding Potential Distribution (OLL-specific)")), fill = "Frame Type") +
+  geom_text(aes(label = paste0(percentage, "%")), position = position_stack(vjust = 0.5), size = 4.8) +
+  scale_fill_manual(values = selected_colors) +
+  theme_void()
+print(p)
+
+### alternative last exons pie charts: ###
+
+values <- c(shift_count,preserve_with_stop, preserve_without_stop,alternative_last_exons)
+
+piepercent <- round(100 * values / sum(values), 2)
+
+pie_data <- data.frame(
+  category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon", "Alternative last exons"),
+  value = values,
+  percentage = piepercent)
+
+# Get all colors in the Pastel1 palette
+pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
+selected_colors <- pastel1_colors[c(6,3:5)]
+
+p <- ggplot(pie_data, aes(x = "", y = value, fill = category)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("3' Splice Site Gap (180 nts or less) Coding Potential Distribution")), fill = "Frame Type") +
+  geom_text(aes(label = paste0(percentage, "%")), position = position_stack(vjust = 0.5), size = 4.8) +
+  scale_fill_manual(values = selected_colors) +
+  theme_void()
+print(p)
+
+values <- c(shift_count_OLL,preserve_with_stop_OLL,preserve_without_stop_OLL,alternative_last_exons_OLL)
+
+piepercent <- round(100 * values / sum(values), 2)
+
+pie_data <- data.frame(
+  category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon", "Alternative last exons"),
+  value = values,
+  percentage = piepercent
+)
+
+# select colors in the Pastel1 palette
+pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
+selected_colors <- pastel1_colors[c(6,3:5)]
+
+p <- ggplot(pie_data, aes(x = "", y = value, fill = category)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("3' Splice Site Gap (180 nts or less) Coding Potential Distribution (OLL-specific)")), fill = "Frame Type") +
+  geom_text(aes(label = paste0(percentage, "%")), position = position_stack(vjust = 0.5), size = 4.8) +
+  scale_fill_manual(values = selected_colors) +
+  theme_void()
+print(p)
+```
+
+# make a histogram of which genes are represented in A3S events:
+```{r}
+A3S_sums_heatmap_for_histogram <- mega_A3S
+A3S_sums_heatmap_for_histogram <- A3S_sums_heatmap_for_histogram[A3S_sums_heatmap_for_histogram$Gene != "NONE",]
+
+gene_counts <- A3S_sums_heatmap_for_histogram %>%
+  group_by(Gene) %>%
+  dplyr::summarise(count = n()) %>%
+  arrange(desc(count))
+
+A3S_summary <- gene_counts %>%
+  group_by(count) %>%
+  dplyr::summarise(number_of_genes = n())
+
+A3S_summary <- A3S_summary %>%
+  mutate(count_category = if_else(count > 5, "> 5", as.character(count))) %>%
+  group_by(count_category) %>%
+  dplyr::summarise(number_of_genes = sum(number_of_genes)) %>%
+  ungroup()
+
+A3S_summary <- A3S_summary %>%
+  mutate(count_category = factor(count_category, levels = c(as.character(sort(as.numeric(unique(count_category)[-which(unique(count_category) == "> 5")]))), "> 5")))
+
+num_colors <- length(unique(A3S_summary$count_category))
+
+ggplot(A3S_summary, aes(x = count_category, y = number_of_genes, fill = count_category)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Number of A3S Events per Gene", y = "Number of Genes", title = "Distribution of Number of A3S Events per Gene") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Paired", n = num_colors) +
+  theme(legend.position = "none")
+
+ggplot(A3S_summary, aes(x = count_category, y = number_of_genes)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Number of A3S Events per Gene", y = "Number of Genes", title = "Distribution of Number of A3S Events per Gene") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_fill_brewer(palette = "Paired", n = num_colors) +
+  theme(legend.position = "none")
+
+ggplot(gene_counts, aes(x = count, y = reorder(Gene, count), fill = Gene)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Gene Name", title = "Number of A3S Events per Gene") +
+  theme_minimal() +
+  theme(legend.position = "none") 
+
+ggplot(gene_counts[1:20,], aes(x = count, y = reorder(Gene, count), fill = Gene)) +
+  geom_bar(stat = "identity") +
+  labs(y = "Gene Name", title = "Number of A3S Events per Gene (Top 20)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+genes_with_one_row <- gene_counts %>%
+  filter(count == 1)
+```
+
+### UUUCAG motifs:
+# extract the sequences +/- 10 nts from each 3' splice site using extract_buffer_nucleotides_from_fasta.txt:
+```{r}
+# resulting file name is A3S_sequences_10.tsv:
+A3S_motif <- read_tsv("A3S_sequences_10.tsv", col_names = F)
+A3S_motif$AS_event_ID <- A3S_sums_heatmap$AS_event_ID
+colnames(A3S_motif) <- c("Start sequence", "End sequence", "AS_event_ID")
+A3S_motif <- as.data.frame(A3S_motif)
+```
+
+# Add start and end coordinates, as well as other details, to the motif dataframe:
+```{r}
+for (i in 1:nrow(A3S_motif)){
+  as_parts <- unlist(strsplit(A3S_motif$AS_event_ID[i], "_"))
+  chr_var <- as_parts[1]
+  strand_var <- as_parts[2]
+  start_var <- as.numeric(as_parts[3])
+  mid_var <- as.numeric(as_parts[4])
+  end_var <- as.numeric(as_parts[length(as_parts)])
+
+  A3S_motif[i,4] <- chr_var
+  A3S_motif[i,5] <- strand_var
+  if (strand_var == "-"){
+  A3S_motif[i,6] <- start_var
+  A3S_motif[i,7] <- mid_var
+  A3S_motif[i,8] <- end_var
+  A3S_motif[i,9] <- mid_var
+  A3S_motif[i,10] <- start_var
+  }
+  else {
+  A3S_motif[i,6] <- mid_var
+  A3S_motif[i,7] <- end_var
+  A3S_motif[i,8] <- start_var
+  A3S_motif[i,9] <- mid_var
+  A3S_motif[i,10] <- end_var
+  }
+}
+
+A3S_motif[,1:3] <- A3S_motif[,c(3,1,2)]
+colnames(A3S_motif) <- c("AS_event_ID", "start_sequence", "end_sequence", "chr", "strand", "start", "end", "five_prime_splice_site", "upstream_3_splice_site", "downstream_3_splice_site")
+```
+
+# if the AS event is negative stranded, reverse the sequence and get complement:
+```{r}
+complement_map <- c(A = "T", T = "A", G = "C", C = "G")
+for (i in 1:nrow(A3S_motif)) {
+  if (A3S_motif$strand[i] == "-") {
+    A3S_motif$start_sequence[i] <- paste(rev(complement_map[strsplit(A3S_motif$start_sequence[i], NULL)[[1]]]), collapse = "")
+    A3S_motif$end_sequence[i] <- paste(rev(complement_map[strsplit(A3S_motif$end_sequence[i], NULL)[[1]]]), collapse = "")
+  }
+}
+```
+
+# make a .tsv for both the start and end sequences so we can feed them into a motif generator:
+```{r}
+for (i in 1:nrow(A3S_motif)){
+  if (A3S_motif$strand[i] == "-"){
+    A3S_motif$upstream_sequence[i] <- A3S_motif$end_sequence[i]
+    A3S_motif$downstream_sequence[i] <- A3S_motif$start_sequence[i]
+    A3S_motif$upstream_sequence[i] <- substr(A3S_motif$upstream_sequence[i], 2, nchar(A3S_motif$upstream_sequence[i]))   ### cut off the first nt for negative stranded sequences
+    A3S_motif$downstream_sequence[i] <- substr(A3S_motif$downstream_sequence[i], 2, nchar(A3S_motif$downstream_sequence[i]))
+  }
+  if (A3S_motif$strand[i] == "+"){
+    A3S_motif$upstream_sequence[i] <- A3S_motif$start_sequence[i]
+    A3S_motif$downstream_sequence[i] <- A3S_motif$end_sequence[i]
+    A3S_motif$upstream_sequence[i] <- substr(A3S_motif$upstream_sequence[i], 1, nchar(A3S_motif$upstream_sequence[i]) - 1)   ### cut off the last nt for positive stranded sequences
+    A3S_motif$downstream_sequence[i] <- substr(A3S_motif$downstream_sequence[i], 1, nchar(A3S_motif$downstream_sequence[i]) - 1)
+
+  }
+}
+
+write_tsv(data.frame(A3S_motif$upstream_sequence), file = "A3S_upstream_sequences.tsv", col_names = F)
+write_tsv(data.frame(A3S_motif$downstream_sequence), file = "A3S_downstream_sequences.tsv", col_names = F)
+```
+
+# Do the same thing (make a dataframe) for just AS events unique to OLL:
+```{r}
+matching_rows <- A3S_motif$AS_event_ID %in% A3S_sums_heatmap$AS_event_ID[A3S_sums_heatmap$OLL != 0]
+A3S_OLL_motif <- A3S_motif[matching_rows,]
+```
+
+# make the .tsvs for AS events unique to OLL:
+```{r}
+write_tsv(data.frame(A3S_OLL_motif$upstream_sequence), file = "A3S_OLL_upstream_sequences.tsv", col_names = F)
+write_tsv(data.frame(A3S_OLL_motif$downstream_sequence), file = "A3S_OLL_downstream_sequences.tsv", col_names = F)
+```

@@ -162,6 +162,31 @@ plotPCA(vsd, intgroup="type")
 normalized_counts_assay <- assay(vsd)
 ```
 
+# PCA plot using ggplot (this is the same format - ggplot - as the PCAs of AS events we will make in the future):
+```{r}
+pca_data <- prcomp(t(assay(vsd)))
+pca_var_perc <- pca_data$sdev^2 / sum(pca_data$sdev^2) * 100
+pca_df <- data.frame(
+  PC1 = pca_data$x[,1],
+  PC2 = pca_data$x[,2],
+  CellType = rownames(colData(vsd)),
+  condition = colData(vsd)$condition
+)
+
+ggplot(pca_df, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA by Neuron Type (DESeq results)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+```
+
 # Heatmaps of DESeq data:
 ```{r}
 select <- order(rowMeans(counts(dds,normalized=TRUE)),

@@ -482,6 +482,189 @@ pheatmap(logSums_gene_table[1:30,],
          main = "Sum of All log2FoldChange Values for Most Dysregulated Genes in One Cell Type vs All Other Cell Types")
 ```
 
+# Heatmap for ASK:
+```{r}
+# temporarily re-order logSums_gene_table by ASK:
+logSums_gene_table <- logSums_gene_table[order(unlist(logSums_gene_table[,10]), decreasing = TRUE),]
+
+# Define the specific range for the gene matrix
+min_matrix <- min(logSums_gene_table[1:30,])
+max_matrix <- max(logSums_gene_table[1:30,])
+
+# Define the breaks for the gene matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(logSums_gene_table[1:30,])/30)), seq(0, max_matrix, by = max(logSums_gene_table[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("white", "white", "lightyellow","lightyellow", "khaki1", "khaki1", "gold", "gold2", "darkgoldenrod1", "darkorange1"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Define breaks
+breaks <- c(seq(min_matrix, 0, length.out = 25), seq(0, max_matrix, length.out = 25)[-1])
+breaks <- unique(breaks)
+
+# Define colors
+colors_neg <- colorRampPalette(c("darkorchid4", "deepskyblue", "cyan", "darkslategray1","white"))(25)
+colors_pos <- colorRampPalette(c("white", "lightyellow", "khaki1", "khaki1", "gold", "gold", "darkgoldenrod1", "darkorange1"))(25)
+
+# Adjust color for zero to be white
+colors <- c(colors_neg, "#FFFFFF", colors_pos)
+
+# Create the heatmap
+p <- pheatmap(logSums_gene_table[1:30,],
+         border_color = "black",
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 7,
+         fontsize_row = 9.5,
+         fontsize_col = 9.5,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors,
+         breaks = breaks,
+         main = "Uniqueness Index for Most Dysregulated Genes in One Cell Type vs All Other Cell Types (Sorted by ASK)")
+
+print(p)
+```
+
+# invert for a gene-centric uniqueness index:
+```{r}
+# temporarily re-order logSums_gene_table by mec-2:
+gene_centric_logSums_gene_table <- t(logSums_gene_table)
+gene_centric_logSums_gene_table <- gene_centric_logSums_gene_table[order(unlist(gene_centric_logSums_gene_table[,2029]), decreasing = TRUE),]
+
+# Define the specific range for the gene matrix
+min_matrix <- min(gene_centric_logSums_gene_table[,c(772,2029,2035,2695,4703,5075,5085,5105,5626,6567,7128,16695)])
+max_matrix <- max(gene_centric_logSums_gene_table[,c(772,2029,2035,2695,4703,5075,5085,5105,5626,6567,7128,16695)])
+
+# Define the breaks for the gene matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(gene_centric_logSums_gene_table[,c(772,2029,2035,2695,4703,5075,5085,5105,5626,6567,7128,16695)])/12)), seq(0, max_matrix, by = max(gene_centric_logSums_gene_table[,c(772,2029,2035,2695,4703,5075,5085,5105,5626,6567,7128,16695)])/12), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("white", "white", "lightyellow","lightyellow", "khaki1", "khaki1", "gold", "gold2", "darkgoldenrod1", "darkorange1"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Define breaks
+breaks <- c(seq(min_matrix, 0, length.out = 25), seq(0, max_matrix, length.out = 25)[-1])
+breaks <- unique(breaks)
+
+# Define colors
+colors_neg <- colorRampPalette(c("darkorchid4", "deepskyblue", "cyan", "darkslategray1","white"))(25)
+colors_pos <- colorRampPalette(c("white", "lightyellow", "khaki1", "khaki1", "gold", "gold", "darkgoldenrod1", "darkorange1"))(25)
+
+# Adjust color for zero to be white
+colors <- c(colors_neg, "#FFFFFF", colors_pos)
+
+# Create the heatmap
+p <- pheatmap(gene_centric_logSums_gene_table[,c(772,2029,2035,2695,4703,5075,5085,5105,5626,6567,7128,16695)],
+         border_color = "black",
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 7,
+         fontsize_row = 7,
+         fontsize_col = 9.5,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors,
+         breaks = breaks,
+         main = "Uniqueness Index for Most Representative Cell Types of One Gene (mec-2) vs Other Selected Genes")
+print(p)
+```
+
+# do the same for all genes in a loop:
+```{r}
+for (i in c(772,1562,2029,2035,2695,4703,5075,5085,5105,5626,6567,7128,16695)){
+gene_centric_logSums_gene_table <- gene_centric_logSums_gene_table[order(unlist(gene_centric_logSums_gene_table[,i]), decreasing = TRUE),]
+
+# Define the specific range for the gene matrix
+min_matrix <- min(gene_centric_logSums_gene_table[,i])
+max_matrix <- max(gene_centric_logSums_gene_table[,i])
+
+# Define the breaks for the gene matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(gene_centric_logSums_gene_table[,i]))), seq(0, max_matrix, by = max(gene_centric_logSums_gene_table[,i])), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("white", "white", "lightyellow","lightyellow", "khaki1", "khaki1", "gold", "gold2", "darkgoldenrod1", "darkorange1"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+# Define breaks
+breaks <- c(seq(min_matrix, 0, length.out = 25), seq(0, max_matrix, length.out = 25)[-1])
+breaks <- unique(breaks)
+
+# Define colors
+colors_neg <- colorRampPalette(c("darkorchid4", "deepskyblue", "cyan", "darkslategray1","white"))(25)
+colors_pos <- colorRampPalette(c("white", "lightyellow", "khaki1", "khaki1", "gold", "gold", "darkgoldenrod1", "darkorange1"))(25)
+
+# Adjust color for zero to be white
+colors <- c(colors_neg, "#FFFFFF", colors_pos)
+
+# force a matrix of the single column to plot
+single_col_matrix <- as.matrix(gene_centric_logSums_gene_table[, i])
+rownames(single_col_matrix) <- rownames(gene_centric_logSums_gene_table)
+
+p <- pheatmap(single_col_matrix,
+         border_color = "black",
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         show_rownames = T,
+         fontsize = 7,
+         fontsize_row = 7,
+         fontsize_col = 9.5,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors,
+         breaks = breaks,
+         cellwidth = 45,
+         main = paste0("Uniqueness Index for ", colnames(gene_centric_logSums_gene_table)[i]))
+print(p)
+}
+```
+
+# save the gene-centric uniqueness index as a .csv:
+```{r}
+write.csv(gene_centric_logSums_gene_table, file = "gene_centric_uniqueness_index.csv", row.names = T)
+```
+
 # Check relative expression of AFD compared to other cell types:
 ```{r}
 colSums(logSums_gene_table)["AFD"]/nrow(logSums_gene_table)
@@ -499,9 +682,7 @@ ggplot(data = data.frame(expression_value_gene), aes(x = expression_value_gene[,
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-
 # Which Genes have the highest value overall in a single cell?
-# Report: which Gene, what is the value, and which cell?
 ```{r}
 log2foldchange_summary_df <- data.frame()
 

@@ -1,7 +1,7 @@
 # Differential Expression in *C. elegans*
-This repository contains the scripts, commands, and input files necessary to analyze differential gene, RNA-binding protein, and A.S. expression in *C. elegans* (as of April 2024).
+This repository contains the scripts, commands, and input files necessary to analyze differential gene, RNA-binding protein, and A.S. expression in *C. elegans* (as of September 2024).
 
-I have ordered the R scripts in chronological order (1-11). I recommend running all scripts in this order to generate the correct files and file types.
+I have ordered the R scripts in chronological order (1-12). I recommend running all scripts in this order to generate the correct files and file types.
 
 You can run STAR and JUM.md any time before R script #6 (JUM file automation.R), although I would recommend running it as soon as possible. If you are starting this pipeline with .fastq or .fastq.gz files, you *have* to run STAR and HTSeq before the first script.
 
@@ -15,7 +15,7 @@ Zachery Wolfe, Ph.D.
 
 Postdoctoral Researcher
 
-Southern Methodist University
+University of California, Riverside
 
-zwolfe@smu.edu
+zacheryw@ucr.edu
 

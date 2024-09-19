@@ -1994,6 +1994,77 @@ pheatmap(MXE_sums_heatmap[1:30, ],
          main = "Sum of All First ΔPSI Values for MXE Events in Each Cell Type")
 ```
 
+# detect pan-neuronal genes:
+```{r}
+# these pan-neuronal genes were described by Stefanakis et al. 2015:
+pan_genes <- c("nsf-1", "rab-3", "ric-4", "snb-1", "unc-64", "sng-1", "snt-1", "unc-10", "unc-18", "ehs-1", "unc-11", "unc-57", "snn-1", "unc-104", "syd-2", "egl-3", "egl-21", "ric-19", "unc-31", "unc-108", "maco-1", "rgef-1", "tbb-1")
+
+# number of cells in which pan-neuronal genes are expressed in the single-cell data:
+pan_sc <- single_cell_data[single_cell_data$gene_name %in% pan_genes,]
+
+pan_sc$count <- rowSums(pan_sc[,3:ncol(pan_sc)] != 0)
+median(pan_sc$count)
+
+A3S_sums_heatmap_pan <- A3S_sums_heatmap[A3S_sums_heatmap$single_cell_expression_count >= median(pan_sc$count),]
+A5S_sums_heatmap_pan <- A5S_sums_heatmap[A5S_sums_heatmap$single_cell_expression_count >= median(pan_sc$count),]
+cassette_sums_heatmap_pan <- cassette_sums_heatmap[cassette_sums_heatmap$single_cell_expression_count >= median(pan_sc$count),]
+composite_sums_heatmap_pan <- composite_sums_heatmap[composite_sums_heatmap$single_cell_expression_count >= median(pan_sc$count),]
+intron_sums_heatmap_pan <- intron_sums_heatmap[intron_sums_heatmap$single_cell_expression_count >= median(pan_sc$count),]
+MXE_sums_heatmap_pan <- MXE_sums_heatmap[MXE_sums_heatmap$single_cell_expression_count >= median(pan_sc$count),]
+
+combined_pan_heatmap <- rbind(A3S_sums_heatmap_pan, A5S_sums_heatmap_pan, cassette_sums_heatmap_pan, composite_sums_heatmap_pan, intron_sums_heatmap_pan, MXE_sums_heatmap_pan)
+unique(combined_pan_heatmap$gene)
+#combined_pan_heatmap <- combined_pan_heatmap[,-48]
+
+# sort the pan-neuronal heatmap by absolute value rowMaxs:
+maxs <- rowMaxs(abs(as.matrix(combined_pan_heatmap[1:length(singletypes)])))
+combined_pan_heatmap <- cbind(combined_pan_heatmap[1:length(singletypes)], maxs)
+combined_pan_heatmap <- combined_pan_heatmap[order(unlist(combined_pan_heatmap[,47]), decreasing = TRUE),]
+combined_pan_heatmap <- combined_pan_heatmap[,-47]
+```
+
+# plot the pan-neuronal heatmap:
+```{r}
+# Define the specific range for the intron matrix
+min_matrix <- min(combined_pan_heatmap[1:30,])
+max_matrix <- max(combined_pan_heatmap[1:30,])
+
+# Define the breaks for the intron matrix
+breaks_matrix <- c(seq(min_matrix, 0, by = abs(min(combined_pan_heatmap[1:30,])/30)), seq(0, max_matrix, by = max(combined_pan_heatmap[1:30,])/30), 0.001)
+breaks_matrix[breaks_matrix == 0] <- 0.001  # Set 0 as a small positive value to represent white
+breaks_matrix <- unique(breaks_matrix)
+
+# Calculate the number of breaks for negative and positive values separately
+n_breaks_neg <- sum(breaks_matrix < 0)
+n_breaks_pos <- length(breaks_matrix) - n_breaks_neg
+
+# Generate the color palette for negative values in the matrix using colorRampPalette
+colors_neg <- colorRampPalette(c("darkblue", "dodgerblue3", "dodgerblue1", "lightblue", "white"))(n = n_breaks_neg)
+
+# Generate the color palette for positive values in the matrix using colorRampPalette
+colors_pos <- colorRampPalette(c("lightyellow", "khaki", "orange", "darkorange"))(n = n_breaks_pos)
+
+# Combine the color palettes for negative and positive values
+colors_matrix <- c(colors_neg, colors_pos)
+
+# Create the heatmap
+pheatmap(combined_pan_heatmap[1:30, ],
+         border_color = "black",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         display_numbers = FALSE,
+         number_format = "%.2f",
+         number_color = "black",
+         fontsize = 7,
+         fontsize_number = 6,
+         angle_col = 90,
+         col = colors_matrix,
+         breaks = breaks_matrix,
+         main = "Sum of All First ΔPSI Values for AS Events of Pan-Neuronal Genes in Each Cell Type")
+```
+
 # Plots for AS events:
 ```{r}
 setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
@@ -2021,6 +2092,374 @@ ggplot(data = read.csv("A3S_event_ID_ASG_count.csv"), aes(x = Freq, y = A3S_even
   labs(title = "Frequency of A3S Events in ASG cells", x = "Count", y = "") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 0, vjust = 0.3), legend.position = "none")
+```
+
+# Are A3S event coordinates multiples of 3? Frame shifting vs frame preservation
+```{r}
+A3S_sums_heatmap$AS_event_ID <- sapply(strsplit(rownames(A3S_sums_heatmap), " "), `[`, 2)
+for (i in 1:nrow(A3S_sums_heatmap)){
+elements <- unlist(strsplit(A3S_sums_heatmap$AS_event_ID[i], "_"))
+if (elements[2] == "+"){    ### if positive-stranded AS event, extract last 2 coordinates of AS event
+shift <- print(as.numeric(elements[5])-as.numeric(elements[4]))
+if (shift %% 3 == 0){
+  A3S_sums_heatmap$shift_or_preserve[i] <- "preserve"
+}
+else A3S_sums_heatmap$shift_or_preserve[i] <- "shift"
+}
+if (elements[2] == "-"){    ### if negative-stranded AS event, extract first 2 coordinates of AS event
+shift <- print(as.numeric(elements[4])-as.numeric(elements[3]))
+if (shift %% 3 == 0){
+  A3S_sums_heatmap$shift_or_preserve[i] <- "preserve"
+}
+else A3S_sums_heatmap$shift_or_preserve[i] <- "shift"
+}
+}
+
+shift_percentage <- sum(A3S_sums_heatmap$shift_or_preserve == "shift") / nrow(A3S_sums_heatmap) * 100
+print(noquote(paste0(shift_percentage, "% of all alternative 3' splice sites are frame-shifting")))
+preserve_percentage <- sum(A3S_sums_heatmap$shift_or_preserve == "preserve") / nrow(A3S_sums_heatmap) * 100
+print(noquote(paste0(preserve_percentage, "% of all alternative 3' splice sites are frame-preserving")))
+
+# OLL A3S investigation:
+filtered_df <- subset(A3S_sums_heatmap, OLL > 0)
+
+shift_percentage <- sum(filtered_df$shift_or_preserve == "shift") / nrow(filtered_df) * 100
+print(noquote(paste0(shift_percentage, "% of alternative 3' splice sites in OLL are frame-shifting")))
+preserve_percentage <- sum(filtered_df$shift_or_preserve == "preserve") / nrow(filtered_df) * 100
+print(noquote(paste0(preserve_percentage, "% of alternative 3' splice sites in OLL are frame-preserving")))
+
+elements_list <- unlist(filtered_df$AS_event_ID)
+
+# Initialize a vector to store the nt differences
+diff_values <- numeric(length(elements_list))
+
+for (i in 1:length(elements_list)) {
+  elements <- elements_list[[i]]
+  elements <- unlist(strsplit(elements, "_"))
+  if (elements[2] == "+") {
+    result <- as.numeric(elements[5]) - as.numeric(elements[4])
+  } else if (elements[2] == "-") {
+    result <- as.numeric(elements[4]) - as.numeric(elements[3])
+  }
+  diff_values[i] <- result
+}
+
+# stats:
+median_diff <- median(diff_values)
+max_diff <- max(diff_values)
+min_diff <- min(diff_values)
+
+print(noquote(paste("The median size difference in significant alternative 3' splice sites in OLL neurons is:", median_diff, "nucleotides")))
+print(noquote(paste("The maximum size difference in significant alternative 3' splice sites in OLL neurons is:", max_diff, "nucleotides")))
+print(noquote(paste("The minimum size difference in significant alternative 3' splice sites in OLL neurons is:", min_diff, "nucleotides")))
+```
+
+# how about retained introns?
+```{r}
+intron_sums_heatmap$AS_event_ID <- sapply(strsplit(rownames(intron_sums_heatmap), " "), `[`, 2)
+for (i in 1:nrow(intron_sums_heatmap)){
+elements <- unlist(strsplit(intron_sums_heatmap$AS_event_ID[i], "_"))
+shift <- print(as.numeric(elements[4])-as.numeric(elements[3]))
+if (shift %% 3 == 0){
+  intron_sums_heatmap$shift_or_preserve[i] <- "preserve"
+}
+else intron_sums_heatmap$shift_or_preserve[i] <- "shift"
+}
+
+#### this script continues in "12. Identifying stop codons and reading frames in intron retention and A3S events.Rmd"
+```
+
+# PCAs of different splice types:
+```{r}
+### A3S events:
+mega_A3S_PCA <- sapply(mega_A3S[,5:50], function(x) as.numeric(gsub("%", "", x)))
+mega_A3S_PCA <- mega_A3S_PCA[rowSums(is.na(mega_A3S_PCA)) != ncol(mega_A3S_PCA), ]
+
+for(i in 1:ncol(mega_A3S_PCA)) {
+  mega_A3S_PCA[is.na(mega_A3S_PCA[,i]), i] <- mean(mega_A3S_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_A3S_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of A3S Events (upstreamness)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### A5S events:
+mega_A5S_PCA <- sapply(mega_A5S[,5:50], function(x) as.numeric(gsub("%", "", x)))
+mega_A5S_PCA <- mega_A5S_PCA[rowSums(is.na(mega_A5S_PCA)) != ncol(mega_A5S_PCA), ]
+
+for(i in 1:ncol(mega_A5S_PCA)) {
+  mega_A5S_PCA[is.na(mega_A5S_PCA[,i]), i] <- mean(mega_A5S_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_A5S_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of A5S Events (upstreamness)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### cassette events:
+mega_cassette_PCA <- sapply(mega_cassette[,5:50], function(x) as.numeric(gsub("%", "", x)))
+mega_cassette_PCA <- mega_cassette_PCA[rowSums(is.na(mega_cassette_PCA)) != ncol(mega_cassette_PCA), ]
+
+for(i in 1:ncol(mega_cassette_PCA)) {
+  mega_cassette_PCA[is.na(mega_cassette_PCA[,i]), i] <- mean(mega_cassette_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_cassette_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of Cassette Events",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### composite events:
+mega_composite_PCA <- sapply(mega_composite[,5:50], function(x) as.numeric(gsub("%", "", x)))
+mega_composite_PCA <- mega_composite_PCA[rowSums(is.na(mega_composite_PCA)) != ncol(mega_composite_PCA), ]
+
+for(i in 1:ncol(mega_composite_PCA)) {
+  mega_composite_PCA[is.na(mega_composite_PCA[,i]), i] <- mean(mega_composite_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_composite_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of Composite Events",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### intron events:
+mega_intron_PCA <- sapply(mega_intron[,5:50], function(x) as.numeric(gsub("%", "", x)))
+mega_intron_PCA <- mega_intron_PCA[rowSums(is.na(mega_intron_PCA)) != ncol(mega_intron_PCA), ]
+
+for(i in 1:ncol(mega_intron_PCA)) {
+  mega_intron_PCA[is.na(mega_intron_PCA[,i]), i] <- mean(mega_intron_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_intron_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of Intron Retention Events",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### MXE events:
+mega_MXE_PCA <- sapply(mega_MXE[,5:50], function(x) as.numeric(gsub("%", "", x)))
+mega_MXE_PCA <- mega_MXE_PCA[rowSums(is.na(mega_MXE_PCA)) != ncol(mega_MXE_PCA), ]
+
+for(i in 1:ncol(mega_MXE_PCA)) {
+  mega_MXE_PCA[is.na(mega_MXE_PCA[,i]), i] <- mean(mega_MXE_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_MXE_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of MXE Events (upstreamness)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### All AS events combined:
+all_datasets <- list(mega_A3S, mega_A5S, mega_cassette, mega_composite, mega_intron, mega_MXE)
+combined_data <- do.call(rbind, all_datasets)
+
+# Convert necessary columns to numeric, replacing '%' and handling NA values
+mega_ALL_PCA <- sapply(combined_data[, 5:50], function(x) as.numeric(gsub("%", "", x)))
+
+mega_ALL_PCA <- mega_ALL_PCA[rowSums(is.na(mega_ALL_PCA)) != ncol(mega_ALL_PCA), ]
+
+for(i in 1:ncol(mega_ALL_PCA)) {
+  mega_ALL_PCA[is.na(mega_ALL_PCA[,i]), i] <- mean(mega_ALL_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_ALL_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of ALL AS Events Combined",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### All AS events combined (minus composite events):
+all_datasets <- list(mega_A3S, mega_A5S, mega_cassette, mega_intron, mega_MXE)
+combined_data <- do.call(rbind, all_datasets)
+
+# Convert necessary columns to numeric, replacing '%' and handling NA values
+mega_ALL_PCA <- sapply(combined_data[, 5:50], function(x) as.numeric(gsub("%", "", x)))
+
+mega_ALL_PCA <- mega_ALL_PCA[rowSums(is.na(mega_ALL_PCA)) != ncol(mega_ALL_PCA), ]
+
+for(i in 1:ncol(mega_ALL_PCA)) {
+  mega_ALL_PCA[is.na(mega_ALL_PCA[,i]), i] <- mean(mega_ALL_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_ALL_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "type"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of ALL AS Events Combined (minus composite events)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
 ```
 
 # Combine every cell type for each A.S. event into one data frame to get the "most interesting" A.S. events in all comparisons:
@@ -2232,4 +2671,75 @@ ggplot(data = MXE_events_dataframe, aes(x = Freq, y = Gene, fill = Gene)) +
   labs(title = "Frequency of MXE Events in All Cells", x = "Count", y = "") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 0, vjust = 0.3), legend.position = "none")
+```
+
+
+# Pie charts:
+```{r}
+setwd("E:/Zach Wolfe's JUM analysis/JUM_results")
+
+for (i in singletypes){
+A3S_event_ID_count <- fread(paste0("A3S_event_ID_", i, "_count.csv"))
+A5S_event_ID_count <- fread(paste0("A5S_event_ID_", i, "_count.csv"))
+cassette_event_ID_count <- fread(paste0("cassette_event_ID_", i, "_count.csv"))
+composite_event_ID_count <- fread(paste0("composite_event_ID_", i, "_count.csv"))
+intron_event_ID_count <- fread(paste0("intron_event_ID_", i, "_count.csv"))
+MXE_event_ID_count <- fread(paste0("MXE_event_ID_", i, "_count.csv"))
+
+values <- c(nrow(A3S_event_ID_count), nrow(A5S_event_ID_count), nrow(cassette_event_ID_count), nrow(composite_event_ID_count), nrow(intron_event_ID_count), nrow(MXE_event_ID_count))
+
+piepercent <- round(100*values/sum(values), 2)
+pie_df <- data.frame(piepercent, AStype = c("A3S events", "A5S events", "Cassette exon events", "Composite events", "Intron retention events", "MXE events"))
+
+ggplot(pie_df, aes(x = " ", y = piepercent, fill = c("A3S events", "A5S events", "Cassette exon events", "Composite events", "Intron retention events", "MXE events"))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = paste0("Percentage of A.S. Events in Comparisons with ", i), fill = "A.S. Type") +
+  geom_text(aes(label = paste0(round(piepercent, 2), "%")), position = position_stack(vjust = 0.5), size = 3.5) +
+  scale_fill_manual(values = c("cadetblue1", "brown2", "darkolivegreen3", "violet", "gold1", "hotpink4")) +
+  theme_void()
+}
+
+A3S_event_ID_count <- fread(paste0("JUM_A3SADLvsOLL.csv"))
+A5S_event_ID_count <- fread(paste0("JUM_A5SADLvsOLL.csv"))
+cassette_event_ID_count <- fread(paste0("JUM_cassetteADLvsOLL.csv"))
+composite_event_ID_count <- fread(paste0("JUM_compositeADLvsOLL.csv"))
+intron_event_ID_count <- fread(paste0("JUM_intronADLvsOLL.csv"))
+MXE_event_ID_count <- fread(paste0("JUM_MXEADLvsOLL.csv"))
+
+values <- c(nrow(A3S_event_ID_count), nrow(A5S_event_ID_count), nrow(cassette_event_ID_count), nrow(composite_event_ID_count), nrow(intron_event_ID_count), nrow(MXE_event_ID_count))
+
+piepercent <- round(100*values/sum(values), 2)
+pie_df <- data.frame(piepercent, AStype = c("A3S events", "A5S events", "Cassette exon events", "Composite events", "Intron retention events", "MXE events"))
+
+ggplot(pie_df, aes(x = " ", y = piepercent, fill = c("A3S events", "A5S events", "Cassette exon events", "Composite events", "Intron retention events", "MXE events"))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = "Percentage of A.S. Event Types in ADL vs OLL", fill = "A.S. Type") +
+  geom_text(aes(label = paste0(round(piepercent, 2), "%")), position = position_stack(vjust = 0.5), size = 3.5) +
+  scale_fill_manual(values = c("cadetblue1", "brown2", "darkolivegreen3", "violet", "gold1", "hotpink4")) +
+  theme_void()
+
+# For all A.S. events combined:
+A3S_event_ID_count <- nrow(A3S_events_dataframe[A3S_events_dataframe$Freq > 5,])
+A5S_event_ID_count <- nrow(A5S_events_dataframe[A5S_events_dataframe$Freq > 5,])
+cassette_event_ID_count <- nrow(cassette_events_dataframe[cassette_events_dataframe$Freq > 5,])
+composite_event_ID_count <- nrow(composite_events_dataframe[composite_events_dataframe$Freq > 5,])
+intron_event_ID_count <- nrow(intron_events_dataframe[intron_events_dataframe$Freq > 5,])
+MXE_event_ID_count <- nrow(MXE_events_dataframe[MXE_events_dataframe$Freq > 5,])
+
+values <- c(A3S_event_ID_count, A5S_event_ID_count, cassette_event_ID_count, composite_event_ID_count, intron_event_ID_count, MXE_event_ID_count)
+
+piepercent <- round(100*values/sum(values), 2)
+pie_df <- data.frame(piepercent, AStype = c("A3S events", "A5S events", "Cassette exon events", "Composite events", "Intron retention events", "MXE events"))
+
+colors <- brewer.pal(n = 6, name = "Pastel1")
+
+ggplot(pie_df, aes(x = " ", y = piepercent, fill = c("A3S events", "A5S events", "Cassette exon events", "Composite events", "Intron retention events", "MXE events"))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0, direction = -1) +
+  labs(title = bquote(bold("Percentage of A.S. Event Types (frequency > 5) in All Comparisons Combined")), fill = "A.S. Type", ) +
+  geom_text(aes(label = paste0(round(piepercent, 2), "%")), position = position_stack(vjust = 0.55), size = 4.8) +
+  scale_fill_manual(values = colors) +
+  theme_void()
 ```

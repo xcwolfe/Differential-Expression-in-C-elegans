@@ -2972,6 +2972,300 @@ for (g in 1:nrow(mega_MXE)) {
 write.csv(mega_MXE, file = "mega_MXE_matrix.csv")
 ```
 
+# PCAs of different splice types:
+```{r}
+condition$replicate <- rownames(condition)
+### A3S events:
+mega_A3S_PCA <- sapply(mega_A3S_matrix_by_rep[,5:ncol(mega_A3S_matrix_by_rep)], function(x) as.numeric(gsub("%", "", x)))
+mega_A3S_PCA <- mega_A3S_PCA[rowSums(is.na(mega_A3S_PCA)) != ncol(mega_A3S_PCA), ]
+
+for(i in 1:ncol(mega_A3S_PCA)) {
+  mega_A3S_PCA[is.na(mega_A3S_PCA[,i]), i] <- mean(mega_A3S_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_A3S_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of A3S Events (upstreamness)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### A5S events:
+mega_A5S_PCA <- sapply(mega_A5S_matrix_by_rep[,5:ncol(mega_A5S_matrix_by_rep)], function(x) as.numeric(gsub("%", "", x)))
+mega_A5S_PCA <- mega_A5S_PCA[rowSums(is.na(mega_A5S_PCA)) != ncol(mega_A5S_PCA), ]
+
+for(i in 1:ncol(mega_A5S_PCA)) {
+  mega_A5S_PCA[is.na(mega_A5S_PCA[,i]), i] <- mean(mega_A5S_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_A5S_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of A5S Events (upstreamness)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### cassette events:
+mega_cassette_PCA <- sapply(mega_cassette_matrix_by_rep[,5:ncol(mega_cassette_matrix_by_rep)], function(x) as.numeric(gsub("%", "", x)))
+mega_cassette_PCA <- mega_cassette_PCA[rowSums(is.na(mega_cassette_PCA)) != ncol(mega_cassette_PCA), ]
+
+for(i in 1:ncol(mega_cassette_PCA)) {
+  mega_cassette_PCA[is.na(mega_cassette_PCA[,i]), i] <- mean(mega_cassette_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_cassette_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of Cassette Events",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### composite events:
+mega_composite_PCA <- sapply(mega_composite_matrix_by_rep[,5:ncol(mega_composite_matrix_by_rep)], function(x) as.numeric(gsub("%", "", x)))
+mega_composite_PCA <- mega_composite_PCA[rowSums(is.na(mega_composite_PCA)) != ncol(mega_composite_PCA), ]
+
+for(i in 1:ncol(mega_composite_PCA)) {
+  mega_composite_PCA[is.na(mega_composite_PCA[,i]), i] <- mean(mega_composite_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_composite_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of Composite Events",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### intron events:
+mega_intron_PCA <- sapply(mega_intron_matrix_by_rep[,5:ncol(mega_intron_matrix_by_rep)], function(x) as.numeric(gsub("%", "", x)))
+mega_intron_PCA <- mega_intron_PCA[rowSums(is.na(mega_intron_PCA)) != ncol(mega_intron_PCA), ]
+
+for(i in 1:ncol(mega_intron_PCA)) {
+  mega_intron_PCA[is.na(mega_intron_PCA[,i]), i] <- mean(mega_intron_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_intron_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of Intron Retention Events",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### MXE events:
+mega_MXE_PCA <- sapply(mega_MXE_matrix_by_rep[,5:ncol(mega_MXE_matrix_by_rep)], function(x) as.numeric(gsub("%", "", x)))
+mega_MXE_PCA <- mega_MXE_PCA[rowSums(is.na(mega_MXE_PCA)) != ncol(mega_MXE_PCA), ]
+
+for(i in 1:ncol(mega_MXE_PCA)) {
+  mega_MXE_PCA[is.na(mega_MXE_PCA[,i]), i] <- mean(mega_MXE_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_MXE_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of MXE Events (upstreamness)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### All AS events combined:
+all_datasets <- list(mega_A3S_matrix_by_rep, mega_A5S_matrix_by_rep, mega_cassette_matrix_by_rep, mega_composite_matrix_by_rep, mega_intron_matrix_by_rep, mega_MXE_matrix_by_rep)
+combined_data <- do.call(rbind, all_datasets)
+
+# Convert necessary columns to numeric, replacing '%' and handling NA values
+mega_ALL_PCA <- sapply(combined_data[, 5:ncol(combined_data)], function(x) as.numeric(gsub("%", "", x)))
+
+mega_ALL_PCA <- mega_ALL_PCA[rowSums(is.na(mega_ALL_PCA)) != ncol(mega_ALL_PCA), ]
+
+for(i in 1:ncol(mega_ALL_PCA)) {
+  mega_ALL_PCA[is.na(mega_ALL_PCA[,i]), i] <- mean(mega_ALL_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_ALL_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of ALL AS Events Combined",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+
+### All AS events combined (minus composite events):
+all_datasets <- list(mega_A3S_matrix_by_rep, mega_A5S_matrix_by_rep, mega_cassette_matrix_by_rep, mega_intron_matrix_by_rep, mega_MXE_matrix_by_rep)
+combined_data <- do.call(rbind, all_datasets)
+
+# Convert necessary columns to numeric, replacing '%' and handling NA values
+mega_ALL_PCA <- sapply(combined_data[, 5:ncol(combined_data)], function(x) as.numeric(gsub("%", "", x)))
+
+mega_ALL_PCA <- mega_ALL_PCA[rowSums(is.na(mega_ALL_PCA)) != ncol(mega_ALL_PCA), ]
+
+for(i in 1:ncol(mega_ALL_PCA)) {
+  mega_ALL_PCA[is.na(mega_ALL_PCA[,i]), i] <- mean(mega_ALL_PCA[,i], na.rm = TRUE)
+}
+
+data_t <- t(mega_ALL_PCA)
+data_scaled <- scale(data_t)
+pca_res <- prcomp(data_scaled, center = TRUE, scale. = TRUE)
+pca_var <- pca_res$sdev^2
+pca_var_perc <- pca_var / sum(pca_var) * 100
+pca_data <- data.frame(pca_res$x)
+pca_data$CellType <- rownames(pca_data)
+
+pca_data <- pca_data %>%
+  mutate(CellTypeBase = ifelse(grepl("\\d$", CellType), CellType, sub(".*(\\d+)$", "\\1", CellType)))
+
+pca_data <- left_join(pca_data, condition, by = c("CellTypeBase" = "replicate"))
+
+# plot the PCA:
+ggplot(pca_data, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = CellType), hjust = 1.25, vjust = 1.25, size = 3) +
+  labs(
+    title = "PCA of ALL AS Events Combined (minus composite events)",
+    x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
+  ) +
+  theme_minimal() +
+  scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
+  theme(legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14))
+```
+
 # unc-31 plots:
 ```{r}
 data_frame_unc31 <- data.frame(`Cell Type` = names(mega_cassette_matrix[1058,]), `Percent Usage` = mega_cassette_matrix[1058,])

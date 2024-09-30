@@ -24,9 +24,11 @@ If using the practice dataset, you should expect an output that includes the fol
 
 These four .Rmds can be run on the practice dataset within a matter of hours; perhaps less if using a computer with a powerful processor (or in an HPC environment)
 
-I have also acquired the names of 31173 known *C. elegans* genes (genenames.csv) and 484 known *C. elegans* RNA-binding proteins (simplemine_results.csv) from WormBase
+I have also provided the names of 31173 known *C. elegans* genes (genenames.csv) and 484 known *C. elegans* RNA-binding proteins (simplemine_results.csv) from WormBase
 
-You will need to adjust the parameters in these files for the specific cell types you are interested in - I was interested in 46 *C. elegans* neurons, for instance, so that is how my pipeline has been constructed.
+You will need to adjust the parameters in these markdowns for the specific cell types you are interested in - I was interested in 46 *C. elegans* neurons, for instance, so that is how my pipeline has been constructed.
+
+Please email me or comment in the issues tab if you have any questions or find any errors; I will address them as soon as possible.
 
 Zachery Wolfe, Ph.D.
 

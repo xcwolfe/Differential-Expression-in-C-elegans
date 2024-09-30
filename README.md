@@ -4,9 +4,11 @@ This repository contains the scripts, commands, and input files necessary to ana
 System requirements:
 R version 4.4.1 (Race for Your Life) or greater \
 Rstudio version 2024.09.0+375 or greater \
-A command-line interface (shell) capable of running the UNIX operating system
+A command-line interface (shell) capable of running the UNIX operating system \
+JUM V3.0.0 or greater
 
-R can be downloaded and installed from the comprehensive R Archive Network (https://cran.r-project.org/)
+R can be downloaded and installed from the comprehensive R Archive Network (https://cran.r-project.org/) \
+JUM and its dependent scripts can be found on https://github.com/qqwang-berkeley/JUM
 
 I have ordered the R scripts in chronological order (1-12). I recommend running all scripts in this order to generate the correct files and file types.
 

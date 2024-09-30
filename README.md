@@ -18,9 +18,9 @@ You can run STAR and JUM.md any time before R script #6 (JUM file automation.R),
 The Bulk RNA-seq data I use (as an example) comes from Barrett et al. 2022 (CeNGEN). A sample count matrix is provided for all 46 cell types (Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv). This repository contains an additional dataset (Barrett_et_al_2022_CeNGEN_practice_RNAseq_data.csv) which can be used as a practice dataset; it contains only 8 cell types as opposed to the 46 used in the full dataset.
 
 If using the practice dataset, you should expect an output that includes the following (from .Rmds 1, 2, 4, and 5):
-Associated PCAs (from the underlying provided count matrix) for 8 cell types \
-Differential expression of detected genes, including RNA-binding proteins, between the 8 cell types (both in list and heatmap form) \
-Uniqueness indices and associated heatmaps for all genes, including RNA-binding proteins, representative of the 8 cell types \
+1. Associated PCAs (from the underlying provided count matrix) for 8 cell types \
+2. Differential expression of detected genes, including RNA-binding proteins, between the 8 cell types (both in list and heatmap form) \
+3. Uniqueness indices and associated heatmaps for all genes, including RNA-binding proteins, representative of the 8 cell types \
 These four .Rmds can be run on practice data within a matter of hours; perhaps less if using a computer with a powerful processor (or in an HPC environment)
 
 I have also acquired the names of 31173 known *C. elegans* genes (genenames.csv) and 484 known *C. elegans* RNA-binding proteins (simplemine_results.csv) from WormBase

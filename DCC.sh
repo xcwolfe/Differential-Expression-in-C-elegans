@@ -1,15 +1,15 @@
 # DCC pipeline:
 
  ```
-$ mkdir genome
-$ cd genome/
-$ wget ftp://ftp.ensembl.org/pub/release-107/fasta/caenorhabditis_elegans/dna/*.fa.gz
-$ gunzip *.gz
+mkdir genome
+cd genome/
+wget ftp://ftp.ensembl.org/pub/release-107/fasta/caenorhabditis_elegans/dna/*.fa.gz
+gunzip *.gz
  ```
 
 Go to http://useast.ensembl.org/Caenorhabditis_elegans/Info/Index and download the latest *C. elegans* genome as a .gtf file:
 
-`$ ftp://ftp.ensembl.org/pub/release-107/gtf/caenorhabditis_elegans/*.gz`
+`ftp://ftp.ensembl.org/pub/release-107/gtf/caenorhabditis_elegans/*.gz`
 
 Initialize STAR on your genome:
 
@@ -34,34 +34,34 @@ STAR \
 ```
  
 ```
-$ dos2unix initialize_star.txt
-$ sbatch initialize_star.txt
+dos2unix initialize_star.txt
+sbatch initialize_star.txt
  ```
   
 Installed DCC and its dependencies:
 
 ```
-$ cd $WORK; curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-$ ./bin/micromamba shell init -s bash -p ~/micromamba
-$ source ~/.bashrc
-$ micromamba create --name pysam_env -c defaults -c bioconda -c r -c conda-forge --override-channels  python=3.8 numpy pip jupyterlab matplotlib pandas pysam htseq
-$ git clone https://github.com/dieterich-lab/DCC.git
-$ cd DCC
-$ module load gcc-9.2
-$ micromamba activate pysam_env
-$ python setup.py install –user
+cd $WORK; curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+./bin/micromamba shell init -s bash -p ~/micromamba
+source ~/.bashrc
+micromamba create --name pysam_env -c defaults -c bioconda -c r -c conda-forge --override-channels  python=3.8 numpy pip jupyterlab matplotlib pandas pysam htseq
+git clone https://github.com/dieterich-lab/DCC.git
+cd DCC
+module load gcc-9.2
+micromamba activate pysam_env
+python setup.py install –user
  ```
 
 Create ASG1 directory in DCC folder:
 
-`$ mkdir ASG1`
+`mkdir ASG1`
 
 Create mate1 and mate2 folders in ASG1 directory:
 
 ```
-$ cd ASG1
-$ mkdir mate1
-$ mkdir mate2
+cd ASG1
+mkdir mate1
+mkdir mate2
  ```
 
 Moved ASG_SRR13995310_01.fastq and ASG_SRR13995310_02.fastq files to ASG1 directory
@@ -86,9 +86,9 @@ Create mate2.txt  and move into ASG1 directory:
 /work/users/zwolfe/DCC/ASG1/mate2/Chimeric.out.junction
 ```
 ```
-$ Module load star
-$ Module load samtools
-$ micromamba activate pysam_env
+module load star
+module load samtools
+micromamba activate pysam_env
 ```
 
 Create STAR_in_DCC.txt :
@@ -107,12 +107,12 @@ STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype BAM Sor
 ```
 
 ```
-$ dos2unix STAR_in_DCC.txt
-$ sbatch STAR_in_DCC.txt
+dos2unix STAR_in_DCC.txt
+sbatch STAR_in_DCC.txt
 ```
 
 ```
-$ cd mate1
+cd mate1
 ```
 
 Create STAR_in_DCC_mate_1.txt:
@@ -131,13 +131,13 @@ STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype None --
 ```
 
 ```
-$ dos2unix STAR_in_DCC_mate_1.txt
-$ sbatch STAR_in_DCC_mate_1.txt
+dos2unix STAR_in_DCC_mate_1.txt
+sbatch STAR_in_DCC_mate_1.txt
 ```
 
 ```
-$ cd .. 
-$ cd mate2
+cd .. 
+cd mate2
 ```
 
 Create STAR_in_DCC_mate_2.txt:
@@ -156,8 +156,8 @@ STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype None --
 ```
 
 ```
-$ dos2unix STAR_in_DCC_mate_2.txt
-$ sbatch STAR_in_DCC_mate_2.txt
+dos2unix STAR_in_DCC_mate_2.txt
+sbatch STAR_in_DCC_mate_2.txt
 ```
 
 ```
@@ -181,16 +181,16 @@ samtools index Aligned.sortedByCoord.out.bam
 ```
 
 ```
-$ dos2unix run_samtools_DCC.txt
-$ sbatch run_samtools_DCC.txt
+dos2unix run_samtools_DCC.txt
+sbatch run_samtools_DCC.txt
 ```
 
 ```
-$ dos2unix DCC_ASG.txt 
-$ dos2unix samplesheet.txt
-$ dos2unix mate1.txt
-$ dos2unix mate2.txt
-$ sbatch DCC_ASG.txt 
+dos2unix DCC_ASG.txt 
+dos2unix samplesheet.txt
+dos2unix mate1.txt
+dos2unix mate2.txt
+sbatch DCC_ASG.txt 
 ```
 
 Once you have completed each DCC run, rename your DCC output files with the cell type and replicate number as a prefix for the output files:

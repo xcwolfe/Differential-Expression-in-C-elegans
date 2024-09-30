@@ -1,5 +1,5 @@
 # Differential Expression in *C. elegans*
-This repository contains the scripts, commands, and input files necessary to analyze differential gene, RNA-binding protein, and A.S. expression in *C. elegans* (as of September 2024).
+This repository contains the scripts, commands, and input files necessary to analyze differential gene, RNA-binding protein, and A.S. expression in *C. elegans* (as of October 2024).
 
 System requirements:
 R version 4.4.1 (Race for Your Life) or greater \
@@ -20,8 +20,8 @@ The Bulk RNA-seq data I use (as an example) comes from Barrett et al. 2022 (CeNG
 If using the practice dataset, you should expect an output that includes the following (from .Rmds 1, 2, 4, and 5):
 1. Associated PCAs (from the underlying provided count matrix) for 8 cell types
 2. Differential expression of detected genes, including RNA-binding proteins, between the 8 cell types (both in list and heatmap form)
-3. Uniqueness indices and associated heatmaps for all genes, including RNA-binding proteins, representative of the 8 cell types
-These four .Rmds can be run on practice data within a matter of hours; perhaps less if using a computer with a powerful processor (or in an HPC environment)
+3. Uniqueness indices and associated heatmaps for all genes, including RNA-binding proteins, representative of the 8 cell types \
+These four .Rmds can be run on the practice dataset within a matter of hours; perhaps less if using a computer with a powerful processor (or in an HPC environment)
 
 I have also acquired the names of 31173 known *C. elegans* genes (genenames.csv) and 484 known *C. elegans* RNA-binding proteins (simplemine_results.csv) from WormBase
 

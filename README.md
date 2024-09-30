@@ -8,7 +8,8 @@ A command-line interface (shell) capable of running the UNIX operating system \
 JUM V3.0.0 or greater
 
 R can be downloaded and installed from the comprehensive R Archive Network (https://cran.r-project.org/) \
-JUM and its dependent scripts can be found on https://github.com/qqwang-berkeley/JUM
+JUM and its dependent scripts can be downloaded from https://github.com/qqwang-berkeley/JUM \
+All system requirements can be downloaded within a matter of minutes on a typical desktop computer
 
 I have ordered the R scripts in chronological order (1-12). I recommend running all scripts in this order to generate the correct files and file types.
 

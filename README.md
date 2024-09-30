@@ -21,6 +21,7 @@ If using the practice dataset, you should expect an output that includes the fol
 1. Associated PCAs (from the underlying provided count matrix) for 8 cell types
 2. Differential expression of detected genes, including RNA-binding proteins, between the 8 cell types (both in list and heatmap form)
 3. Uniqueness indices and associated heatmaps for all genes, including RNA-binding proteins, representative of the 8 cell types \
+
 These four .Rmds can be run on the practice dataset within a matter of hours; perhaps less if using a computer with a powerful processor (or in an HPC environment)
 
 I have also acquired the names of 31173 known *C. elegans* genes (genenames.csv) and 484 known *C. elegans* RNA-binding proteins (simplemine_results.csv) from WormBase

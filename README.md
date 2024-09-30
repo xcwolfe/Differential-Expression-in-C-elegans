@@ -2,8 +2,8 @@
 This repository contains the scripts, commands, and input files necessary to analyze differential gene, RNA-binding protein, and A.S. expression in *C. elegans* (as of September 2024).
 
 System requirements:
-R version 4.4.1 (Race for Your Life) or greater
-Rstudio version 2024.09.0+375 or greater
+R version 4.4.1 (Race for Your Life) or greater \
+Rstudio version 2024.09.0+375 or greater \
 A command-line interface (shell) capable of running the UNIX operating system
 
 R can be downloaded and installed from the comprehensive R Archive Network (https://cran.r-project.org/)

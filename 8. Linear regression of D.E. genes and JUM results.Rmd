@@ -239,3 +239,16 @@ ggplot(lin_reg_df_AS_compilation, aes(cassette_events, A5S_events, label = row.n
   labs(title = "Linear Regression Model of A5S vs Cassette Events by Cell Type Comparison", x = "cassette Events", y = "A5S Events") +
   theme(plot.title = element_text(hjust = 0.5, size = 12, face = 'bold'), axis.title.x = element_text(size = 12, face = 'bold'), axis.title.y = element_text(size = 12, face = 'bold'))
 ```
+
+Copyright 2024 The Regents of the University of California
+
+All Rights Reserved
+
+Created by Zachery Wolfe
+
+Department of Biochemistry
+
+This file is part of Differential Expression in C. elegans. \
+Differential Expression in C. elegans is a free pipeline: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. \
+Differential Expression in C. elegans is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. \
+You should have received a copy of the GNU General Public License along with Differential Expression in C. elegans. If not, see <https://www.gnu.org/licenses/>.

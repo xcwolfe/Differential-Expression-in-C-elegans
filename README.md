@@ -15,7 +15,7 @@ I have ordered the R scripts in chronological order (1-12). I recommend running 
 
 You can run STAR and JUM.md any time before R script #6 (JUM file automation.R), although I would recommend running it as soon as possible. If you are starting this pipeline with .fastq or .fastq.gz files, you *have* to run STAR and HTSeq before the first script.
 
-The Bulk RNA-seq data I use (as an example) comes from Barrett et al. 2022 (CeNGEN). A sample count matrix is provided for all 46 cell types (Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv). This repository contains an additional dataset (Barrett_et_al_2022_CeNGEN_practice_RNAseq_data.csv) which can be used as a practice dataset; it contains only 8 cell types as opposed to the 46 used in the full dataset.
+The Bulk RNA-seq data I use (as an example) comes from Barrett et al. 2022 (CeNGEN) (PRJNA952691). A sample count matrix is provided for all 46 cell types (Barrett_et_al_2022_CeNGEN_bulk_RNAseq_data.csv). This repository contains an additional dataset (Barrett_et_al_2022_CeNGEN_practice_RNAseq_data.csv) which can be used as a practice dataset; it contains only 8 cell types as opposed to the 46 used in the full dataset.
 
 If using the practice dataset, you should expect an output that includes the following (from .Rmds 1, 2, 4, and 5):
 1. Associated PCAs (from the underlying provided count matrix) for 8 cell types

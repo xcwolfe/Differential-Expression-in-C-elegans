@@ -9,7 +9,7 @@ STAR on all neurons using all 180 SRA files:
 Navigate to your work/group/norrislab directory which you plan to download all SRA files into (we need scratch space as this will take lots of memory): 
 
 ```
-$ cd /work/group/norrislab/Zach/ 
+cd /work/group/norrislab/Zach/ 
 ```
  
 
@@ -27,18 +27,18 @@ SRR24086887
 Convert this file from dos format to Unix format. NOTE: You will have to do this whenever you create a file on your personal computer that you plan to run on ManeFrame: 
 
 ```
-$ module load gcc dos2unix 
-$ dos2unix sra_accessions.txt
+module load gcc dos2unix 
+dos2unix sra_accessions.txt
 ```
 
 Load necessary modules for download: 
 ```
-$ module load gcc 
-$ module load spack 
-$ source <(spack module tcl loads --dependencies entrezdirect@10.7.20190114) 
-$ source <(spack module tcl loads --dependencies sratoolkiit@2.10.9-gcc-9.2.0-qiw3o6v) 
-$ source <(spack module tcl loads --dependencies parallel@20210922) 
-$ module load sratoolkit-2.10.9-gcc-9.2.0-qiw3o6v
+module load gcc 
+module load spack 
+source <(spack module tcl loads --dependencies entrezdirect@10.7.20190114) 
+source <(spack module tcl loads --dependencies sratoolkiit@2.10.9-gcc-9.2.0-qiw3o6v) 
+source <(spack module tcl loads --dependencies parallel@20210922) 
+module load sratoolkit-2.10.9-gcc-9.2.0-qiw3o6v
 ```
 
 Now use a loop of the fastq-dump command to download the .fastq files listed in your project (dos2unix and sbatch this script): 
@@ -177,9 +177,9 @@ done
 We also need to run HTSeq to generate counts from our STAR outputs. We can start by setting up a conda environment and pip installing HTSeq (if HTSeq is already installed, you can ignore this section): 
 
 ```
-$ module load conda 
-$ conda create -n htseq_env -c conda-forge python=3.9 
-$ pip install HTSeq 
+module load conda 
+conda create -n htseq_env -c conda-forge python=3.9 
+pip install HTSeq 
 ```
 
 Here is my command for running HTSeq (dos2unix and sbatch this script): 
@@ -281,9 +281,9 @@ Rscript /lustre/work/client/group/norrislab/Zach/R_script_JUM.txt experiment_des
 Before moving on to JUM_B, you may have to install the Descriptive perl package. To do this simply download the perl module and run the function below: 
  
 ```
-$ module load gcc perl 
-$ cpan -i Statistics::Descriptive 
-$ cpan -i List::MoreUtils 
+module load gcc perl 
+cpan -i Statistics::Descriptive 
+cpan -i List::MoreUtils 
 ```
 
 Now that the Rscript step is done and the descriptive package is loaded, we can run JUM_B (dos2unix and sbatch this script): 
@@ -361,16 +361,16 @@ DCC on all neurons using all STAR and samtools files:
 We can also run DCC. If you haven’t already, install DCC and its dependencies using micromamba:  
 
 ```
-$ cd $WORK; curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba 
-$ ./bin/micromamba shell init -s bash -p ~/micromamba 
-$ source ~/.bashrc 
-$ micromamba create --name pysam_env -c defaults -c bioconda -c r -c conda-forge --override-channels  python=3.8 numpy pip jupyterlab matplotlib pandas pysam htseq 
-$ git clone https://github.com/dieterich-lab/DCC.git 
-$ cd DCC 
+cd $WORK; curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba 
+./bin/micromamba shell init -s bash -p ~/micromamba 
+source ~/.bashrc 
+micromamba create --name pysam_env -c defaults -c bioconda -c r -c conda-forge --override-channels  python=3.8 numpy pip jupyterlab matplotlib pandas pysam htseq 
+git clone https://github.com/dieterich-lab/DCC.git 
+cd DCC 
 
-$ module load gcc 
-$ micromamba activate pysam_env 
-$ python setup.py install –user 
+module load gcc 
+micromamba activate pysam_env 
+python setup.py install –user 
 ```
 
 We can go back to /lustre/work/client/group/norrislab/Zach and create a new directory called /STAR_results_single_mates in which we will run STAR on individual mates of each replicate (dos2unix and sbatch this script): 
@@ -476,3 +476,16 @@ done
 ``` 
 
 Now we can move these output files to our hard drive and run them in the R script circRNA filtering and testing.Rmd 
+
+Copyright 2024 The Regents of the University of California
+
+All Rights Reserved
+
+Created by Zachery Wolfe
+
+Department of Biochemistry
+
+This file is part of Differential Expression in C. elegans. \
+Differential Expression in C. elegans is a free pipeline: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. \
+Differential Expression in C. elegans is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. \
+You should have received a copy of the GNU General Public License along with Differential Expression in C. elegans. If not, see <https://www.gnu.org/licenses/>.

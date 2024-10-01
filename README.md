@@ -38,3 +38,10 @@ University of California, Riverside
 
 zacheryw@ucr.edu
 
+Copyright 2024 The Regents of the University of California
+
+All Rights Reserved
+
+Created by Zachery Wolfe
+
+Department of Biochemistry

@@ -128,9 +128,7 @@ p <- ggplot(combined_data, aes(x = Region, y = PhyloP_score, color = Region)) +
                 width = 0.5, color = "black", fill = NA) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
-  labs(title = "PhyloP Scores for Each Nucleotide in pct-1",
-    x = "Regions",
-    y = "PhyloP Score") +
+  labs(title = "PhyloP Scores for Each Nucleotide in pct-1", x = "Regions", y = "PhyloP Score") +
   guides(fill = FALSE) +
   theme(legend.position = "none")
 

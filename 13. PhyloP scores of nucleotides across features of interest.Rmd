@@ -1,0 +1,140 @@
+---
+title: "13. PhyloP scores of nucleotides across features of interest"
+output: html_document
+---
+
+```{r}
+library("tidyverse")
+```
+
+# Load your PhyloP score dataset:
+```{r}
+phylop <- read_tsv("chrIV_8176481_8178681_phyloP_formatted.txt")
+phylop <- t(as.data.frame(phylop))
+colnames(phylop)[1] <- "PhyloP score"
+```
+
+# Declare which scores belong to which features (i.e., exons and introns):
+```{r}
+first_exon <- data.frame(phylop[as.character(8176481:8176538),])
+first_intron <- data.frame(phylop[as.character(8176539:8177108),])
+second_exon <- data.frame(phylop[as.character(8177109:8177211),])
+second_intron <- data.frame(phylop[as.character(8177212:8177761),])
+third_exon <- data.frame(phylop[as.character(8177762:8177960),])
+third_intron <- data.frame(phylop[as.character(8177961:8178577),])
+fourth_exon <- data.frame(phylop[as.character(8178578:8178681),])
+
+col_name <- "PhyloP score"
+
+colnames(first_exon) <- col_name
+colnames(first_intron) <- col_name
+colnames(second_exon) <- col_name
+colnames(second_intron) <- col_name
+colnames(third_exon) <- col_name
+colnames(third_intron) <- col_name
+colnames(fourth_exon) <- col_name
+```
+
+# List of datasets and corresponding titles:
+```{r}
+regions <- list(
+  "1st Exon" = first_exon,
+  "1st Intron" = first_intron,
+  "2nd Exon" = second_exon,
+  "2nd Intron" = second_intron,
+  "3rd Exon" = third_exon,
+  "3rd Intron" = third_intron,
+  "4th Exon" = fourth_exon
+)
+```
+
+# Violin plot:
+```{r}
+for (region_name in names(regions)) {
+  region_data <- data.frame(regions[[region_name]])
+  colnames(region_data) <- "PhyloP score"
+  
+  # Sort the data
+  sorted_data <- data.frame(region_data[order(-region_data[,1]),])
+  colnames(sorted_data) <- "PhyloP score"
+  
+  # Create the plot
+  p <- ggplot(sorted_data, aes(x = region_name, y = `PhyloP score`)) +
+    geom_violin(fill = "lightblue", color = "black", trim = FALSE) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "darkorange4") +
+    geom_hline(yintercept = mean(sorted_data$`PhyloP score`), linetype = "twodash", color = "black") +
+    labs(y = "PhyloP Scores", x = "Number of Nucleotides", title = paste("PhyloP Scores for Each Nucleotide in the", region_name, "of pct-1")) +
+    theme(
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      panel.grid.major.x = element_blank(),
+      axis.line.x = element_blank(),
+      plot.title = element_text(face = "bold", size = 14),
+      axis.title = element_text(face = "bold", size = 12),
+      axis.title.x = element_text(size = 9, face = "bold"),
+      panel.background = element_rect(fill = "white"),
+      plot.background = element_rect(fill = "white")
+    )
+  
+  print(p)
+  ggsave(filename = paste0(tolower(gsub(" ", "_", region_name)), "_violin_pct1.svg"), plot = p, width = 6, height = 4)
+}
+
+# Create a list to store the combined data
+combined_data <- do.call(rbind, lapply(names(regions), function(region_name) {
+  region_data <- data.frame(Region = region_name, PhyloP_score = regions[[region_name]][, 1])
+  return(region_data)
+}))
+
+# Plot the combined data with individual mean lines for each region using stat_summary
+p <- ggplot(combined_data, aes(x = Region, y = PhyloP_score, fill = Region)) +
+  geom_violin(trim = FALSE, color = "black") +
+  # Add individual mean lines using stat_summary
+  stat_summary(fun = mean, geom = "errorbar", aes(ymin = ..y.., ymax = ..y..),
+               color = "black", size = 1.5, width = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkorange4") +
+  labs(y = "PhyloP Scores", x = "Regions", title = "PhyloP Scores for Each Nucleotide in pct-1") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.ticks.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.line.x = element_line(color = "black"),
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(face = "bold", size = 12),
+    axis.title.x = element_text(size = 9, face = "bold"),
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white")
+  )
+
+print(p)
+ggsave("all_regions_combined_violin_pct1.svg", plot = p, width = 10, height = 6)
+```
+
+# Strip plots:
+```{r}
+# Calculate summary statistics for each region
+summary_stats <- combined_data %>%
+  group_by(Region) %>%
+  summarise(
+    median = median(PhyloP_score, na.rm = TRUE),
+    q25 = quantile(PhyloP_score, 0.25, na.rm = TRUE),
+    q75 = quantile(PhyloP_score, 0.75, na.rm = TRUE)
+  )
+
+# Plot the combined data with jitter and crossbars for summary statistics
+p <- ggplot(combined_data, aes(x = Region, y = PhyloP_score, color = Region)) +
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 1, size = 0.55) +
+  geom_crossbar(data = summary_stats, aes(x = Region, y = median, ymin = q25, ymax = q75), 
+                width = 0.5, color = "black", fill = NA) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
+  labs(title = "PhyloP Scores for Each Nucleotide in pct-1",
+    x = "Regions",
+    y = "PhyloP Score") +
+  guides(fill = FALSE) +
+  theme(legend.position = "none")
+
+print(p)
+ggsave("all_regions_strip_plot_pct1.svg", plot = p, width = 10, height = 6)
+```
+

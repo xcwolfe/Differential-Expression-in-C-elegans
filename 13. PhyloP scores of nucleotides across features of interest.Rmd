@@ -597,8 +597,7 @@ p <- ggplot(combined_data, aes(x = Region, y = PhyloP_score, fill = Region)) +
     axis.title = element_text(face = "bold", size = 12),
     axis.title.x = element_text(size = 9, face = "bold"),
     panel.background = element_rect(fill = "white"),
-    plot.background = element_rect(fill = "white")
-  )
+    plot.background = element_rect(fill = "white"))
 
 print(p)
 ggsave("all_regions_combined_violin_pct1.svg", plot = p, width = 10, height = 6)

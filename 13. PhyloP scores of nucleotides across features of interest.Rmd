@@ -395,6 +395,23 @@ high_uniqueness_high_phylop <- combined_data %>%
 high_uniqueness_high_phylop <- high_uniqueness_high_phylop %>%
   dplyr::select(AS_event_ID, Highest_Abs, Cassette_Exon_Score, everything())
 
+# Optional - add gene name for each AS_event_ID:
+high_uniqueness_high_phylop <- high_uniqueness_high_phylop %>%
+  rowwise() %>%
+  mutate(
+    Gene = mega_cassette$Gene[mega_cassette$AS_event_ID == .data$AS_event_ID][1]) %>%
+  ungroup()
+
+# Optional - reorder columns to insert Gene between Chr and Region_Start
+high_uniqueness_high_phylop <- high_uniqueness_high_phylop[, c(
+  "AS_event_ID", 
+  "Highest_Abs", 
+  "Cassette_Exon_Score", 
+  "Chr", 
+  "Gene",
+  "Region_Start", 
+  setdiff(names(high_uniqueness_high_phylop), c("AS_event_ID", "Highest_Abs", "Cassette_Exon_Score", "Chr", "Region_Start", "Gene")))]
+
 # Return the number of events meeting the criteria
 print(paste("Number of cassette exons above high uniqueness, high phyloP threshold:", nrow(high_uniqueness_high_phylop)))
 

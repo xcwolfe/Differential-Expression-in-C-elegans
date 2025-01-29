@@ -7,6 +7,7 @@ output: html_document
 library("tidyverse")
 library("patchwork")
 library("ggpubr")
+library("dplyr")
 ```
 
 # Extract start and end coordinates of each IR event:
@@ -376,6 +377,42 @@ combined_data <- combined_data %>%
 
 highest_uniqueness_plot <- create_regression_plot(combined_data, "Highest_Abs")
 print(highest_uniqueness_plot)
+```
+
+# In the last regression, which data points represent cassette exons with high abs. uniqueness values AND high conservation scores?
+```{r}
+# Define thresholds:
+uniqueness_threshold <- quantile(combined_data$Highest_Abs, 0.9, na.rm = TRUE)   ### change threshold here
+phylop_threshold <- quantile(combined_data$Cassette_Exon_Score, 0.9, na.rm = TRUE)   ### change threshold here
+
+# Filter and arrange:
+high_uniqueness_high_phylop <- combined_data %>%
+  filter(
+    Highest_Abs >= uniqueness_threshold,
+    Cassette_Exon_Score >= phylop_threshold) %>%
+  arrange(desc(Highest_Abs), desc(Cassette_Exon_Score))
+
+high_uniqueness_high_phylop <- high_uniqueness_high_phylop %>%
+  dplyr::select(AS_event_ID, Highest_Abs, Cassette_Exon_Score, everything())
+
+# Return the number of events meeting the criteria
+print(paste("Number of cassette exons above high uniqueness, high phyloP threshold:", nrow(high_uniqueness_high_phylop)))
+
+# Optional - view the top cassette events:
+head(high_uniqueness_high_phylop, 20)
+
+# Optional - create a scatter plot highlighting these events:
+highlight_plot <- ggplot(combined_data, aes(x = Highest_Abs, y = Cassette_Exon_Score)) +
+  geom_point(color = "gray", alpha = 0.5) +
+  geom_point(data = high_uniqueness_high_phylop, color = "red2", size = 2.8) +
+  geom_hline(yintercept = phylop_threshold, linetype = "dashed", color = "blue") +
+  geom_vline(xintercept = uniqueness_threshold, linetype = "dashed", color = "blue") +
+  labs(
+    title = "Cassette Exons with High (Abs.) Uniqueness and High PhyloP Score",
+    x = "Absolute Highest Uniqueness Value",
+    y = "Cassette Exon PhyloP Score") +
+  theme_minimal()
+print(highlight_plot)
 ```
 
 # Do the same linear regression, but alter it for unique neuron types:

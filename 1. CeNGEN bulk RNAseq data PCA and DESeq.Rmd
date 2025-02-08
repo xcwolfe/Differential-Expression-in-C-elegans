@@ -13,8 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # DESeq setup
 ```{r}
-setwd("C:/Users/xcwol/Downloads") # Change your working directory!
-
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
  
@@ -104,7 +102,7 @@ list(sort(t_PCA$rotation[,3], decreasing = FALSE)[1:10])
 # Make your cts object and run DESeq:
 ```{r}
 cts <- count_matrix
-# make a condition table
+# make a condition table:
 condition = read.table("experimental_conditions_46_neurons.csv", header = TRUE, sep=",", row.names=1)
 
 dds <- DESeqDataSetFromMatrix(countData = cts, colData = condition, design= ~ type)
@@ -179,8 +177,7 @@ ggplot(pca_df, aes(x = PC1, y = PC2, label = CellType, color = condition)) +
   labs(
     title = "PCA by Neuron Type (DESeq results)",
     x = paste0("Principal Component 1 (", round(pca_var_perc[1], 2), "%)"),
-    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")
-  ) +
+    y = paste0("Principal Component 2 (", round(pca_var_perc[2], 2), "%)")) +
   theme_minimal() +
   scale_color_manual(values = c("Sensory" = "dodgerblue", "Motor" = "gold3", "Interneuron" = "salmon", "Polymodal" = "darkgreen")) +
   theme(legend.text = element_text(size = 12),

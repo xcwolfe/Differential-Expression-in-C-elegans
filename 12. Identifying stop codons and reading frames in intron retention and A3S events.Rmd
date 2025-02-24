@@ -1291,8 +1291,7 @@ piepercent <- round(100 * values / sum(values), 2)
 pie_data <- data.frame(
   category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
   value = values,
-  percentage = piepercent
-)
+  percentage = piepercent)
 
 # Get all colors in the Pastel1 palette
 pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
@@ -1314,8 +1313,7 @@ piepercent <- round(100 * values / sum(values), 2)
 pie_data <- data.frame(
   category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
   value = values,
-  percentage = piepercent
-)
+  percentage = piepercent)
 
 # Get all colors in the Pastel1 palette
 pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
@@ -1375,8 +1373,7 @@ piepercent <- round(100 * values / sum(values), 2)
 pie_data <- data.frame(
   category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon"),
   value = values,
-  percentage = piepercent
-)
+  percentage = piepercent)
 
 # Get all colors in the Pastel1 palette
 pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")
@@ -1422,8 +1419,7 @@ piepercent <- round(100 * values / sum(values), 2)
 pie_data <- data.frame(
   category = c("Frame-shifting", "Frame-preserving with stop codon", "Frame-preserving without stop codon", "Alternative last exons"),
   value = values,
-  percentage = piepercent
-)
+  percentage = piepercent)
 
 # select colors in the Pastel1 palette
 pastel1_colors <- brewer.pal(n = 9, name = "Pastel1")

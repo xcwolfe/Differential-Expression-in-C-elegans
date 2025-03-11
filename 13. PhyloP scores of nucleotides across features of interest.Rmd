@@ -28,7 +28,7 @@ extracted_coords <- lapply(intron_sums_heatmap$AS_event_ID, function(id) {
 
 extracted_coords <- do.call(rbind, extracted_coords)
 rownames(extracted_coords) <- intron_sums_heatmap$AS_event_ID
-#write.csv(extracted_coords, file = "extracted_coords_IR_events.csv")   ### move this file to HPCC and run average_phylop_score_for_IR_events.txt
+#write.csv(extracted_coords, file = "extracted_coords_IR_events.csv")
 ```
 
 # calculate mean phylop scores between extracted coordinates ranges
@@ -271,7 +271,7 @@ extracted_coords <- lapply(rownames(cassette_sums_heatmap), function(id) {
 
 extracted_coords <- do.call(rbind, extracted_coords)
 rownames(extracted_coords) <- sub("^[^ ]+ ", "", rownames(cassette_sums_heatmap))
-#write.csv(extracted_coords, file = "extracted_coords_cassette_events.csv")   ### move this file to HPCC and run average_phylop_score_for_cassette_exons.txt
+#write.csv(extracted_coords, file = "extracted_coords_cassette_events.csv")
 ```
 
 # calculate mean phylop scores between extracted coordinates ranges
@@ -748,7 +748,7 @@ p <- ggplot(sorted_data, aes(x = region_name, y = `PhyloP score`)) +
 }
 
 combined_data <- do.call(rbind, lapply(names(regions), function(region_name) {
-  region_data <- data.frame(Region = region_name, PhyloP_score = regions[[region_name]][, 1])
+  region_data <- data.frame(Region = region_name, PhyloP_score = regions[[region_name]][,1])
   return(region_data)
 }))
 

@@ -7,7 +7,13 @@ output: html_document
 library("tidyverse")
 library("patchwork")
 library("ggpubr")
-library("dplyr")
+library("rtracklayer")
+library("GenomicRanges")
+```
+
+# import .bw (conservation score) file:
+```{r}
+bw <- import.bw("ce11.phyloP26way.bw")
 ```
 
 # Extract start and end coordinates of each IR event:
@@ -22,14 +28,44 @@ extracted_coords <- lapply(intron_sums_heatmap$AS_event_ID, function(id) {
 
 extracted_coords <- do.call(rbind, extracted_coords)
 rownames(extracted_coords) <- intron_sums_heatmap$AS_event_ID
-write.csv(extracted_coords, file = "extracted_coords_IR_events.csv")   ### move this file to HPCC and run average_phylop_score_for_IR_events.txt
+#write.csv(extracted_coords, file = "extracted_coords_IR_events.csv")   ### move this file to HPCC and run average_phylop_score_for_IR_events.txt
 ```
 
-# Once you have run the Unix script average_phylop_score_for_IR_events.txt on HPCC, import your average scores for each IR event here:
+# calculate mean phylop scores between extracted coordinates ranges
 ```{r}
-intron_phylop <- read_tsv("phyloP_scores_combined.txt")
-intron_phylop <- as.data.frame(intron_phylop)
-intron_phylop$Average_Score <- as.numeric(intron_phylop$Average_Score)   # convert the Average_Score column to numeric
+# Initialize output data frame
+phyloP_scores_combined <- data.frame(AS_event_ID = character(), Chr = character(), Start = integer(), 
+                        End = integer(), Average_Score = numeric(), stringsAsFactors = FALSE)
+
+# Process each row of extracted_coords
+for (i in seq_len(nrow(extracted_coords))) {
+  AS_event_ID <- rownames(extracted_coords)[i]
+  chr <- paste0("chr", extracted_coords[i, 1])
+  start <- as.integer(extracted_coords[i, 2])
+  end <- as.integer(extracted_coords[i, 3])
+  
+  # Check if start and end are valid
+  if (!is.na(start) && !is.na(end) && start < end) {
+    # Extract phyloP scores from the BigWig file
+    scores <- import.bw("ce11.phyloP26way.bw", which = GRanges(chr, IRanges(start, end)))$score
+    
+    # Compute average score
+    average <- if (length(scores) > 0) mean(scores, na.rm = TRUE) else NA
+    
+  # Debugging output
+  cat(sprintf("Processing: AS_event_ID=%s, Chr=%s, Start=%d, End=%d, average=%f\n", AS_event_ID, chr, start, end, average))
+  
+    # Append result to output data frame
+    phyloP_scores_combined <- rbind(phyloP_scores_combined, data.frame(AS_event_ID, chr, start, end, average, stringsAsFactors = FALSE))
+  } else {
+    cat(sprintf("Skipping invalid coordinates: AS_event_ID=%s (%s, %d, %d)\n", AS_event_ID, chr, start, end))
+  }
+}
+```
+
+# Modify and format phyloP_scores_combined into intron_phylop:
+```{r}
+intron_phylop <- as.data.frame(phyloP_scores_combined)
 col_name <- "PhyloP score"
 colnames(intron_phylop)[5] <- col_name
 ```
@@ -96,10 +132,11 @@ ggplot(combined_data, aes(x = Min_Value, y = `PhyloP score`)) +
 regression_results <- data.frame(Column = character(),Intercept = numeric(),Slope = numeric(),R_Squared = numeric(),P_Value = numeric(),stringsAsFactors = FALSE)
 
 for (i in singletypes) {
-  uniqueness_values <- intron_sums_heatmap[[i]]
+  uniqueness_values <- intron_sums_heatmap
+  valid_indices <- row_number(intersect(phyloP_scores_combined$AS_event_ID, uniqueness_values$AS_event_ID))
+  uniqueness_values <- intron_sums_heatmap[valid_indices,i]
   regression_data <- data.frame(uniqueness_values, PhyloP_score = intron_phylop$`PhyloP score`)
   regression_data <- regression_data[complete.cases(regression_data),]
-  # eliminate zero-uniqueness values from graph/regression (optional, but may be helpful):
   regression_data <- regression_data[regression_data$uniqueness_values != 0,]
   
   lm_model <- lm(PhyloP_score ~ uniqueness_values, data = regression_data)
@@ -214,7 +251,7 @@ print(p)
 ```{r}
 intron_phylop <- intron_phylop[order(-intron_phylop$`PhyloP score`),]
 intron_phylop$Gene <- mega_intron$Gene[match(intron_phylop$AS_event_ID, mega_intron$AS_event_ID)]
-intron_phylop <- intron_phylop[,c("AS_event_ID","Chr","Start","End","Gene","PhyloP score")]
+intron_phylop <- intron_phylop[,c("AS_event_ID","chr","start","end","Gene","PhyloP score")]
 write.csv(intron_phylop, file = "intron_retention_phylop_scores.csv", row.names = F)
 ```
 
@@ -234,13 +271,52 @@ extracted_coords <- lapply(rownames(cassette_sums_heatmap), function(id) {
 
 extracted_coords <- do.call(rbind, extracted_coords)
 rownames(extracted_coords) <- sub("^[^ ]+ ", "", rownames(cassette_sums_heatmap))
-write.csv(extracted_coords, file = "extracted_coords_cassette_events.csv")   ### move this file to HPCC and run average_phylop_score_for_cassette_exons.txt
+#write.csv(extracted_coords, file = "extracted_coords_cassette_events.csv")   ### move this file to HPCC and run average_phylop_score_for_cassette_exons.txt
 ```
 
-# Once you have run the Unix script average_phylop_score_for_cassette_exons.txt on HPCC, import your average scores for each IR event here:
+# calculate mean phylop scores between extracted coordinates ranges
 ```{r}
-cassette_phylop <- read_tsv("phyloP_scores_combined.txt")
-cassette_phylop <- as.data.frame(cassette_phylop)
+# Initialize output data frame
+phyloP_scores_combined <- data.frame(AS_event_ID = character(), Chr = character(), region_start = integer(), cassette_start = integer(), cassette_end = integer(), region_end = integer(), Average_Score = numeric(), stringsAsFactors = FALSE)
+
+# Process each row of extracted_coords
+for (i in seq_len(nrow(extracted_coords))) {
+  AS_event_ID <- rownames(extracted_coords)[i]
+  chr <- paste0("chr", extracted_coords[i, 1])
+  region_start <- as.integer(extracted_coords[i, 2])
+  cassette_start <- as.integer(extracted_coords[i, 3])
+  cassette_end <- as.integer(extracted_coords[i, 4])
+  region_end <- as.integer(extracted_coords[i, 5])
+  
+  # Check if start and end are valid
+  if (!is.na(region_start) && !is.na(region_end) && region_start < region_end &&
+      !is.na(cassette_start) && !is.na(cassette_end) && cassette_start < cassette_end) {
+    # Extract phyloP scores from the BigWig file
+    Total_Region_Score <- import.bw("ce11.phyloP26way.bw", which = GRanges(chr, IRanges(region_start, region_end)))$score
+    Cassette_Exon_Score <- import.bw("ce11.phyloP26way.bw", which = GRanges(chr, IRanges(cassette_start, cassette_end)))$score
+    Flanking_Regions_Score_1 <- import.bw("ce11.phyloP26way.bw", which = GRanges(chr, IRanges(region_start, cassette_start)))$score
+    Flanking_Regions_Score_2 <- import.bw("ce11.phyloP26way.bw", which = GRanges(chr, IRanges(cassette_end, region_end)))$score
+    Flanking_Regions_Score <- c(Flanking_Regions_Score_1, Flanking_Regions_Score_2)
+    
+    # Compute average scores
+    Total_Region_Score <- if (length(Total_Region_Score) > 0) mean(Total_Region_Score, na.rm = TRUE) else NA
+    Cassette_Exon_Score <- if (length(Cassette_Exon_Score) > 0) mean(Cassette_Exon_Score, na.rm = TRUE) else NA
+    Flanking_Regions_Score <- if (length(Flanking_Regions_Score) > 0) mean(Flanking_Regions_Score, na.rm = TRUE) else NA
+    
+  # Debugging output
+  cat(sprintf("Processing: AS_event_ID=%s, Chr=%s, Start=%d, End=%d, Total Region Score=%f\n", AS_event_ID, chr, region_start, region_end, Total_Region_Score))
+  
+    # Append result to output data frame
+    phyloP_scores_combined <- rbind(phyloP_scores_combined, data.frame(AS_event_ID, chr, region_start, cassette_start, cassette_end, region_end, Total_Region_Score, Cassette_Exon_Score, Flanking_Regions_Score, stringsAsFactors = FALSE))
+  } else {
+    cat(sprintf("Skipping invalid coordinates: AS_event_ID=%s (%s, %d, %d)\n", AS_event_ID, chr, region_start, region_end))
+  }
+}
+```
+
+# Modify and format phyloP_scores_combined into cassette_phylop:
+```{r}
+cassette_phylop <- as.data.frame(phyloP_scores_combined)
 cassette_phylop$Total_Region_Score <- as.numeric(cassette_phylop$Total_Region_Score)   # convert the score columns to numeric
 cassette_phylop$Cassette_Exon_Score <- as.numeric(cassette_phylop$Cassette_Exon_Score)   # convert the score columns to numeric
 cassette_phylop$Flanking_Regions_Score <- as.numeric(cassette_phylop$Flanking_Regions_Score)   # convert the score columns to numeric
@@ -379,13 +455,13 @@ highest_uniqueness_plot <- create_regression_plot(combined_data, "Highest_Abs")
 print(highest_uniqueness_plot)
 ```
 
-# In the last regression, which data points represent cassette exons with high abs. uniqueness values AND high conservation scores?
+# In the last regression, which data points represent cassette exons with high abs. uniqueness values AND high conservation score?
 ```{r}
 # Define thresholds:
 uniqueness_threshold <- quantile(combined_data$Highest_Abs, 0.9, na.rm = TRUE)   ### change threshold here
 phylop_threshold <- quantile(combined_data$Cassette_Exon_Score, 0.9, na.rm = TRUE)   ### change threshold here
 
-# Filter and arrange:
+# Filter and arrange
 high_uniqueness_high_phylop <- combined_data %>%
   filter(
     Highest_Abs >= uniqueness_threshold,
@@ -407,16 +483,18 @@ high_uniqueness_high_phylop <- high_uniqueness_high_phylop[, c(
   "AS_event_ID", 
   "Highest_Abs", 
   "Cassette_Exon_Score", 
-  "Chr", 
+  "chr", 
   "Gene",
-  "Region_Start", 
-  setdiff(names(high_uniqueness_high_phylop), c("AS_event_ID", "Highest_Abs", "Cassette_Exon_Score", "Chr", "Region_Start", "Gene")))]
+  "region_start", 
+  setdiff(names(high_uniqueness_high_phylop), c("AS_event_ID", "Highest_Abs", "Cassette_Exon_Score", "chr", "region_start", "Gene")))]
 
 # Return the number of events meeting the criteria
 print(paste("Number of cassette exons above high uniqueness, high phyloP threshold:", nrow(high_uniqueness_high_phylop)))
 
 # Optional - view the top cassette events:
 head(high_uniqueness_high_phylop, 20)
+# optional - write.csv of results:
+write.csv(head(high_uniqueness_high_phylop, 20), file = "cassette_high_uniqueness_high_phylop.csv")
 
 # Optional - create a scatter plot highlighting these events:
 highlight_plot <- ggplot(combined_data, aes(x = Highest_Abs, y = Cassette_Exon_Score)) +
@@ -426,7 +504,7 @@ highlight_plot <- ggplot(combined_data, aes(x = Highest_Abs, y = Cassette_Exon_S
   geom_vline(xintercept = uniqueness_threshold, linetype = "dashed", color = "blue") +
   labs(
     title = "Cassette Exons with High (Abs.) Uniqueness and High PhyloP Score",
-    x = "Absolute Highest Uniqueness Value",
+    x = "Highest Absolute Uniqueness Value (any cell type)",
     y = "Cassette Exon PhyloP Score") +
   theme_minimal()
 print(highlight_plot)
@@ -452,7 +530,8 @@ for (i in singletypes) {
   merged_data <- merge(regression_data, cassette_phylop, by = "AS_event_ID", all.x = TRUE)
   regression_data <- merged_data[!is.na(merged_data$Cassette_Exon_Score),]
   
-  # eliminate zero-uniqueness values from graph/regression:
+  # eliminate zero-uniqueness values from graph/regression??
+  # doesn't really help that much...
   regression_data <- regression_data[regression_data$uniqueness_values != 0,]
   regression_data <- regression_data[regression_data$Cassette_Exon_Score != "No Data",]
   regression_data$Total_Region_Score <- as.numeric(regression_data$Total_Region_Score)
@@ -557,7 +636,48 @@ unlink("usage_regression_plots", recursive = TRUE)
 
 ### alternatively, if you already know the coordinates of interest you want to examine (through use of the more generically-named script average_phylop_score_for_regions_of_interest.txt), you can enter them manually in the chunk(s) below:
 
-# Load your PhyloP score dataset:
+## implement exact commands from UNIX but in R language ## 3-11:
+```{r}
+# Define coordinate ranges for exons and introns
+regions <- list(
+  exon1 = c(8176481, 8176538),
+  intron1 = c(8176539, 8177108),
+  exon2 = c(8177109, 8177211),
+  intron2 = c(8177212, 8177761),
+  exon3 = c(8177762, 8177960),
+  intron3 = c(8177961, 8178577),
+  exon4 = c(8178578, 8178681)
+)
+
+# BigWig file path
+bigwig_file <- "ce11.phyloP26way.bw"
+
+# Function to calculate average phyloP score for a given range
+calculate_average <- function(start, end, bigwig_file) {
+  scores <- import.bw(bigwig_file, which = GRanges("chrIV", IRanges(start, end)))$score
+  
+  if (length(scores) > 0) {
+    avg_score <- mean(scores, na.rm = TRUE)
+  } else {
+    avg_score <- NA
+  }
+  
+  return(avg_score)
+}
+
+# Calculate and print the average scores for each region
+cat("Average phyloP scores for the defined regions:\n")
+
+for (region in names(regions)) {
+  start <- regions[[region]][1]
+  end <- regions[[region]][2]
+  avg_score <- calculate_average(start, end, bigwig_file)
+  
+  cat(sprintf("%s (%d-%d): %s\n", region, start, end, ifelse(is.na(avg_score), "No data", round(avg_score, 5))))
+}
+```
+
+# Load your PhyloP score dataset (pct-1):
 ```{r}
 phylop <- read_tsv("chrIV_8176481_8178681_phyloP_formatted.txt")
 phylop <- t(as.data.frame(phylop))
@@ -603,38 +723,35 @@ for (region_name in names(regions)) {
   region_data <- data.frame(regions[[region_name]])
   colnames(region_data) <- "PhyloP score"
   
-  # Sort the data
   sorted_data <- data.frame(region_data[order(-region_data[,1]),])
   colnames(sorted_data) <- "PhyloP score"
   
-  # Create the plot
-  p <- ggplot(sorted_data, aes(x = region_name, y = `PhyloP score`)) +
-    geom_violin(fill = "lightblue", color = "black", trim = FALSE) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "darkorange4") +
-    geom_hline(yintercept = mean(sorted_data$`PhyloP score`), linetype = "twodash", color = "black") +
-    labs(y = "PhyloP Scores", x = "Number of Nucleotides", title = paste("PhyloP Scores for Each Nucleotide in the", region_name, "of pct-1")) +
-    theme(
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank(),
-      panel.grid.major.x = element_blank(),
-      axis.line.x = element_blank(),
-      plot.title = element_text(face = "bold", size = 14),
-      axis.title = element_text(face = "bold", size = 12),
-      axis.title.x = element_text(size = 9, face = "bold"),
-      panel.background = element_rect(fill = "white"),
-      plot.background = element_rect(fill = "white"))
+p <- ggplot(sorted_data, aes(x = region_name, y = `PhyloP score`)) +
+  geom_violin(fill = "lightblue", color = "black", trim = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkorange4") +
+  geom_hline(yintercept = mean(sorted_data$`PhyloP score`), linetype = "twodash", color = "black") +
+  geom_text(aes(x = region_name, y = mean(sorted_data$`PhyloP score`), label = sprintf("Mean: %.2f", mean(sorted_data$`PhyloP score`))), vjust = -0.8, hjust = 0.5, color = "black", size = 3, fontface = "plain") +     ###    mean line label    ###
+  labs(y = "PhyloP Scores", x = "Number of Nucleotides", title = paste("PhyloP Scores for Each Nucleotide in the", region_name, "of pct-1")) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.line.x = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(face = "bold", size = 12),
+    axis.title.x = element_text(size = 9, face = "bold"),
+    panel.background = element_rect(fill = "white"),
+    plot.background = element_rect(fill = "white"))
   
   print(p)
   ggsave(filename = paste0(tolower(gsub(" ", "_", region_name)), "_violin_pct1.svg"), plot = p, width = 6, height = 4)
 }
 
-# Create a list to store the combined data
 combined_data <- do.call(rbind, lapply(names(regions), function(region_name) {
   region_data <- data.frame(Region = region_name, PhyloP_score = regions[[region_name]][, 1])
   return(region_data)
 }))
 
-# Plot the combined data with individual mean lines for each region using stat_summary
 p <- ggplot(combined_data, aes(x = Region, y = PhyloP_score, fill = Region)) +
   geom_violin(trim = FALSE, color = "black") +
   # Add individual mean lines using stat_summary
@@ -655,29 +772,4 @@ p <- ggplot(combined_data, aes(x = Region, y = PhyloP_score, fill = Region)) +
 
 print(p)
 ggsave("all_regions_combined_violin_pct1.svg", plot = p, width = 10, height = 6)
-```
-
-# Strip plots:
-```{r}
-# Calculate summary statistics for each region
-summary_stats <- combined_data %>%
-  group_by(Region) %>%
-  summarise(
-    median = median(PhyloP_score, na.rm = TRUE),
-    q25 = quantile(PhyloP_score, 0.25, na.rm = TRUE),
-    q75 = quantile(PhyloP_score, 0.75, na.rm = TRUE))
-
-# Plot the combined data with jitter and crossbars for summary statistics
-p <- ggplot(combined_data, aes(x = Region, y = PhyloP_score, color = Region)) +
-  geom_jitter(position = position_jitter(width = 0.2), alpha = 1, size = 0.55) +
-  geom_crossbar(data = summary_stats, aes(x = Region, y = median, ymin = q25, ymax = q75), 
-                width = 0.5, color = "black", fill = NA) +
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
-  labs(title = "PhyloP Scores for Each Nucleotide in pct-1", x = "Regions", y = "PhyloP Score") +
-  guides(fill = FALSE) +
-  theme(legend.position = "none")
-
-print(p)
-ggsave("all_regions_strip_plot_pct1.svg", plot = p, width = 10, height = 6)
 ```

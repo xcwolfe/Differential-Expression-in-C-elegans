@@ -6,7 +6,7 @@ How many samples do you have? If you have more than 2 experimental samples, you 
 
 STAR on all neurons using all 180 SRA files: 
 
-Navigate to your work/group/norrislab directory which you plan to download all SRA files into (we need scratch space as this will take lots of memory): 
+Navigate to your working directory which you plan to download all SRA files into (we need scratch space as this will take lots of memory): 
 
 ```
 cd /work/group/norrislab/Zach/ 

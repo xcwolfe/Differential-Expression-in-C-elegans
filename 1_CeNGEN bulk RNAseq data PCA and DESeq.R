@@ -1,11 +1,6 @@
----
-title: "CeNGEN bulk RNAseq Data PCA and DESeq"
-output: html_document
----
-
 #FIRST
 
-# See 'Type vs type DESeq comparisons.Rmd' for statistical summaries and outputs
+# See 'Type vs type DESeq comparisons.R' for statistical summaries and outputs
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -38,8 +33,6 @@ load("C:/Your/Directory/.RData")
 ```{r}
 # Identify the directory containing the .txt files
 directory_path <- "C:/Your/Directory"
-
-# Load the file paths
 file_paths <- list.files(directory_path, pattern = "\\_counts.txt$", full.names = TRUE)
 
 # Initialize variables

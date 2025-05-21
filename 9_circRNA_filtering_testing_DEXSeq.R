@@ -1,21 +1,11 @@
----
-title: "circRNA filtering and testing"
-output: html_document
----
-
 #NINTH
 
-##Prior to running this R markdown, you must run DCC on your samples to test for circular RNA. See https://github.com/dieterich-lab/DCC for instructions on how to perform this using Unix.
+## Prior to running this R markdown, you must run DCC on your samples to test for circular RNA. See https://github.com/dieterich-lab/DCC for instructions on how to perform this using Unix.
 
-##I have also uploaded my own DCC log on the GitHub repository for this project.
+## I have also uploaded my own DCC log on the GitHub repository for this project.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r}
-save.image("E:/.RData")
-load("E:/.RData")
 ```
 
 ```{r}

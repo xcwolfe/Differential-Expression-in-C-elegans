@@ -1,4 +1,4 @@
-#SEVENTH
+## 7th ##
 
 ## Note from Zach: You'll notice that many of these heatmap scripts are slightly varied forms of one another. This is because the .txt final output of JUM varies by splicing event - this is particularly true for columns containing deltaPSI values.
 

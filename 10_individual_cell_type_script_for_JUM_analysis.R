@@ -1,4 +1,4 @@
-#TENTH
+## 10th ##
 
 ## The difference between this script and the script titled "7_cell_type_vs_cell_type_heatmap_script_for_JUM_analysis.R" is that this script focuses on the alternative splicing counts of cell types independently - we are no longer interested on cell type XXX vs YYY, but now on the abosolute counts of cell type XXX.
 

@@ -1,8 +1,3 @@
----
-title: "Total gene search"
-output: html_document
----
-
 #FIFTH
 
 ```{r setup, include=FALSE}
@@ -25,8 +20,8 @@ library("purrr")
 ```
 
 ```{r}
-save.image("C:/Users/xcwol/Downloads/.RData")
-load("C:/Users/xcwol/Downloads/.RData")
+save.image("C:/Your/directory/.RData")
+load("C:/Your/directory/.RData")
 ```
 
 

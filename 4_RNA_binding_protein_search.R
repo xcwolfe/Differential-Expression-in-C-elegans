@@ -1,8 +1,3 @@
----
-title: "RNA binding protein search"
-output: html_document
----
-
 #FOURTH
 
 ```{r setup, include=FALSE}
@@ -27,8 +22,8 @@ library("purrr")
 ```
 
 ```{r}
-save.image("C:/Users/xcwol/Downloads/.RData")
-load("C:/Users/xcwol/Downloads/.RData")
+save.image("C:/Your/directory/.RData")
+load("C:/Your/directory/.RData")
 ```
 
 
@@ -36,7 +31,7 @@ load("C:/Users/xcwol/Downloads/.RData")
 
 # First I would like to create a file with all the RBPs of interest:
 ```{r}
-RBP_test_genes_file <- read.csv(file = "HUGHESRBPgenenames.csv", header = T, row.names = 1)
+RBP_test_genes_file <- read.csv(file = "HUGHES_RBP_genenames.csv", header = T, row.names = 1)
 RBP_test_genes <- rownames(RBP_test_genes_file)
 
 mined_RBPs_file <- read.csv(file = "simplemine_results.csv", header = T) # Duplicates of nog-1: used the row that contained "public name" of nog-1

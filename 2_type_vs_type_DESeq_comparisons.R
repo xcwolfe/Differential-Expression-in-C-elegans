@@ -1,7 +1,4 @@
----
-title: "type vs type 1x1"
-output: html_document
----
+
 
 #SECOND
 

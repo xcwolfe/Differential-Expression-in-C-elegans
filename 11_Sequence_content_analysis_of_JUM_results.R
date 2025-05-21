@@ -1,17 +1,7 @@
----
-title: "Sequence content analysis of JUM results (for MEME)"
-output: html_document
----
-
 #ELEVENTH
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r}
-#load("E:/Zach Wolfe's JUM analysis/.RData")
-#save.image("E:/Zach Wolfe's JUM analysis/.RData")
 ```
 
 ```{r}

@@ -1,4 +1,4 @@
-#NINTH
+## 9th ##
 
 ## Prior to running this R markdown, you must run DCC on your samples to test for circular RNA. See https://github.com/dieterich-lab/DCC for instructions on how to perform this using Unix.
 

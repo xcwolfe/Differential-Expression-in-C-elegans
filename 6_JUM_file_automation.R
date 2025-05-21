@@ -1,8 +1,3 @@
----
-title: "Creating new JUM txts"
-output: html_document
----
-
 #SIXTH
 
 ```{r setup, include=FALSE}

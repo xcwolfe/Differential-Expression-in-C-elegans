@@ -1,8 +1,3 @@
----
-title: "Identifying Stop Codons in Intron Retention Events"
-output: html_document
----
-
 #TWELFTH
 
 ```{r setup, include=FALSE}

@@ -1,8 +1,3 @@
----
-title: "UMAP on CeNGEN data"
-output: html_document
----
-
 #THIRD
 
 ```{r setup, include=FALSE}

@@ -29,7 +29,7 @@ load("C:/Your/directory/.RData")
 
 # Convert RBP names to WBGene:
 
-# First I would like to create a file with the RNA binding proteins of interest:
+# First I will create a file with the RNA binding proteins of interest:
 ```{r}
 RBP_test_genes_file <- read.csv(file = "HUGHES_RBP_genenames.csv", header = T, row.names = 1)
 RBP_test_genes <- rownames(RBP_test_genes_file)

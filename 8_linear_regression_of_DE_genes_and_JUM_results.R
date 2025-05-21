@@ -1,15 +1,10 @@
----
-title: "Linear regression of D.E. genes and JUM results"
-output: html_document
----
-
 #EIGHTH
 
 ```{r}
 library("ggplot2")
 ```
 
-### Example/practice:
+### Example/training:
 # Create a dataframe that contains the count of AS events that pass statistical thresholds in XXX vs YYY:
 # (used for linear regression later)
 ```{r}

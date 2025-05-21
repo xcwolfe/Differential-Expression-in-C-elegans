@@ -1,8 +1,3 @@
----
-title: "Cell type vs cell type heatmap script for JUM analysis"
-output: html_document
----
-
 #SEVENTH
 
 ## Note from Zach: You'll notice that many of these heatmap scripts are slightly varied forms of one another. This is because the .txt final output of JUM varies by splicing event - this is particularly true for columns containing deltaPSI values.
@@ -37,8 +32,8 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
 ```
 
 ```{r}
-save.image("C:/Users/xcwol/Downloads/.RData")
-load("C:/Users/xcwol/Downloads/.RData")
+save.image("C:/Your/directory/.RData")
+load("C:/Your/directory/.RData")
 ```
 
 # List your cell types/conditions:

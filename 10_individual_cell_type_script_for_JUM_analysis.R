@@ -1,20 +1,11 @@
----
-title: "Individual cell type script for JUM analysis"
-output: html_document
----
-
 #TENTH
 
-## The difference between this script and the script titled "7. Cell type vs cell type heatmap script for JUM analysis" is that this script focuses on the alternative splicing counts of cell types independently - we are no longer interested on cell type XXX vs YYY, but now on the abosolute counts of cell type XXX.
+## The difference between this script and the script titled "7_cell_type_vs_cell_type_heatmap_script_for_JUM_analysis.R" is that this script focuses on the alternative splicing counts of cell types independently - we are no longer interested on cell type XXX vs YYY, but now on the abosolute counts of cell type XXX.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-#load("E:/Zach Wolfe's JUM analysis/.RData")   # change your working directory here
-#save.image("E:/Zach Wolfe's JUM analysis/.RData")
-```
 
 ```{r}
 library("pheatmap")

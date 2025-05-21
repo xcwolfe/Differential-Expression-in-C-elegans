@@ -22,7 +22,6 @@ Initialize STAR on your genome:
 #SBATCH -t 1000
 #SBATCH -o output.out
 #SBATCH -e output.err
-#SBATCH -p high-mem-1
 module load star
 STAR \
  --runThreadN 1 \
@@ -100,7 +99,6 @@ Create STAR_in_DCC.txt :
 #SBATCH -t 10000
 #SBATCH -o output.out
 #SBATCH -e output.err
-#SBATCH -p high-mem-1
 
 module load star
 STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype BAM SortedByCoordinate --readFilesIn *_1.fastq *_2.fastq --readFilesCommand cat --outReadsUnmapped Fastx --outSJfilterOverhangMin 15 15 15 15 --alignSJoverhangMin 15 --alignSJDBoverhangMin 15 --outFilterMultimapNmax 20 --outFilterScoreMin 1 --outFilterMatchNmin 1 --outFilterMismatchNmax 2 --chimSegmentMin 15 --chimScoreMin 15 --chimScoreSeparation 10 --chimJunctionOverhangMin 15 --alignTranscriptsPerReadNmax 200000 --alignTranscriptsPerWindowNmax 20000 
@@ -124,7 +122,6 @@ Create STAR_in_DCC_mate_1.txt:
 #SBATCH -t 10000
 #SBATCH -o output.out
 #SBATCH -e output.err
-#SBATCH -p high-mem-1
 
 module load star
 STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype None --readFilesIn *_1.fastq --readFilesCommand cat --outReadsUnmapped Fastx --outSJfilterOverhangMin 15 15 15 15 --alignSJoverhangMin 15 --alignSJDBoverhangMin 15 --outFilterMultimapNmax 20 --outFilterScoreMin 1 --outFilterMatchNmin 1 --outFilterMismatchNmax 2 --chimSegmentMin 15 --chimScoreMin 15 --chimScoreSeparation 10 --chimJunctionOverhangMin 15 --alignTranscriptsPerReadNmax 200000 --alignTranscriptsPerWindowNmax 20000 
@@ -149,7 +146,6 @@ Create STAR_in_DCC_mate_2.txt:
 #SBATCH -t 10000
 #SBATCH -o output.out
 #SBATCH -e output.err
-#SBATCH -p high-mem-1
 
 module load star
 STAR --runThreadN 10 --genomeDir /work/users/zwolfe/genome/ --outSAMtype None --readFilesIn *_2.fastq --readFilesCommand cat --outReadsUnmapped Fastx --outSJfilterOverhangMin 15 15 15 15 --alignSJoverhangMin 15 --alignSJDBoverhangMin 15 --outFilterMultimapNmax 20 --outFilterScoreMin 1 --outFilterMatchNmin 1 --outFilterMismatchNmax 2 --chimSegmentMin 15 --chimScoreMin 15 --chimScoreSeparation 10 --chimJunctionOverhangMin 15 --alignTranscriptsPerReadNmax 200000 --alignTranscriptsPerWindowNmax 20000 
@@ -173,7 +169,6 @@ Create run_samtools_DCC.txt:
 #SBATCH -t 180
 #SBATCH -o output.out
 #SBATCH -e output.err
-#SBATCH -p standard-mem-s
 
 module load samtools
 
